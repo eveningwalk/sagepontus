@@ -1,0 +1,15 @@
+<h2>당신의 응답 요약</h2>
+
+{% if responses %}
+  <ul>
+    {% for response in responses %}
+      <li><strong>{{ response.question_id }}:</strong> {{ response.answer }}</li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p>아직 응답이 저장되지 않았어요.</p>
+{% endif %}
+
+<form method="get" action="{% url 'questionnaire:final_prompt' %}">
+  <button type="submit">최종 Prompt 보기</button>
+</form>

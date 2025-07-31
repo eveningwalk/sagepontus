@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<body class="min-h-screen flex items-center justify-center bg-gray-100">
+    <div class="max-w-2xl mx-auto p-6 bg-white rounded shadow">
+      <h3 class="text-2xl font-bold mb-6">질문에 답해주세요</h2>
+      <br>
+    
+      <form method="post">
+        {% csrf_token %}
+    
+        <div class="mb-6">
+          <!-- 질문 텍스트 -->
+          <label for="{{ form.answer.id_for_label }}" class="block text-lg font-semibold mb-2">
+            {{ question.text }}
+          </label>
+          <!-- 힌트 -->
+          {% if hint %}
+            <p class="text-xs text-gray-500 italic mb-2">
+              💡 {{ hint }}
+            </p>
+          {% endif %}
+          <!-- 예시 텍스트 (원래 placeholder에 들어가던 내용) -->
+          {% if placeholder %}
+            <div class="text-sm text-gray-700 p-3 mb-3">
+              <strong>예시:</strong> {{ placeholder }}
+            </div>
+          {% endif %}
+            
+    
+          <!-- 입력창 -->
+          {{ form.answer }}
+        </div>
+    
+        <div class="text-right">
+          <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+            다음
+          </button>
+        </div>
+      </form>
+    </div>
+</body>
+{% endblock %}
