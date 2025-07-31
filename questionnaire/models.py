@@ -5,7 +5,6 @@ from django.db import models
 
     
 
-'''
 class Question(models.Model):
     question_id = models.CharField(max_length=100, unique=True)  # ex: 'goal_problem'
     text = models.TextField()                                    # 질문 내용
@@ -14,7 +13,6 @@ class Question(models.Model):
 
     def __str__(self):
         return f"{self.order}. {self.text[:30]}"
-
 class ResponseSet(models.Model):
     session_key = models.CharField(max_length=40)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -29,17 +27,14 @@ class Response(models.Model):
     question_id = models.CharField(max_length=100)
     answer = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
 '''
-
-# questionnaire/models.py
-
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
     description = models.TextField(blank=True, help_text="이 카테고리에 대한 간단한 설명")
 
     def __str__(self):
         return self.name
-
 
 class Question(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='questions')
@@ -49,3 +44,4 @@ class Question(models.Model):
 
     def __str__(self):
         return f"[{self.category.name}] {self.text[:30]}"
+'''
