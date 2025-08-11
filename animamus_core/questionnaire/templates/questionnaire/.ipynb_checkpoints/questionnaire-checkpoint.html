@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>질문 진행</title>
+</head>
+<body>
+    <h2>{{ question }}</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">다음</button>
+    </form>
+
+    {% if hint %}
+        <p style="color:red;">💬 {{ hint }}</p>
+    {% endif %}
+
+    {% if is_last_question %}
+        <hr>
+        <!-- 마지막 질문이라면 summary로 넘어가는 링크 표시 -->
+        <a href="{% url 'questionnaire:summary' %}">🧾 응답 요약 보기 →</a>
+    {% endif %}
+</body>
+</html>

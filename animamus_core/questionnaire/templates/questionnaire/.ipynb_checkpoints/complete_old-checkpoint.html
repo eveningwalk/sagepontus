@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>완료</title>
+</head>
+<body>
+  <h2>답변이 모두 저장되었습니다 🎉</h2>
+  <ul>
+    {% for key, value in responses.items %}
+      <li><strong>{{ key }}:</strong> {{ value }}</li>
+    {% endfor %}
+  </ul>
+</body>
+</html>
