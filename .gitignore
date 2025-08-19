@@ -1,0 +1,37 @@
+
+
+
+#python
+__pycache__/
+*.py[cod]
+*.egg
+*.egg-info/
+dist/
+build/
+
+# Virtual environment
+.env/
+venv/
+ENV/
+env/
+
+# Django
+*.sqlite3
+db.sqlite3
+*.log
+*.pot
+*.pyc
+*.mo
+local_settings.py
+
+# VS Code
+.vscode/
+
+# System
+.DS_Store
+
+# Hugging Face cache
+~/.cache/huggingface/
+.cache/huggingface/
+
+
