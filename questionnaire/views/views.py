@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
 from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_category_name
 from questionnaire.prompts import run_prompt_generation_pair
+from questionnaire.views.views_demo import demo_landing
 
 
 def _is_demo_session(request) -> bool:
@@ -31,7 +32,7 @@ def root(request):
     if request.user.is_authenticated:
         return home(request)
     if getattr(settings, "DEMO_ENABLED", False):
-        return redirect("demo")
+        return demo_landing(request)
     return redirect("accounts:login")
 
 
