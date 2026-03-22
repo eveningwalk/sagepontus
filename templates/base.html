@@ -11,6 +11,13 @@
 <body>
   {% block body %}
   <div class="page-root">
+    {% if messages %}
+    <div class="flash-msgs" role="status">
+      {% for message in messages %}
+      <p class="flash-msgs__line">{{ message }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
     {% block content %}
     {% endblock %}
   </div>

@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from questionnaire.models.models import Question,Category, Answer
 from django.contrib.auth.decorators import login_required
@@ -50,7 +51,20 @@ def home(request):
 
 @login_required
 def show_question_step(request, category, order, block_id):
-    block_node = get_object_or_404(BrainBlockNode, id=block_id)
+    block_node = (
+        BrainBlockNode.objects.select_related("braintree")
+        .filter(id=block_id, braintree__user=request.user)
+        .first()
+    )
+    if not block_node:
+        messages.warning(
+            request,
+            "질문 링크가 없거나 만료되었습니다. 처음부터 다시 시작해 주세요.",
+        )
+        if getattr(settings, "DEMO_ENABLED", False):
+            return redirect("demo")
+        return redirect("questionnaire:home")
+
     braintree = block_node.braintree
 
     cat = get_object_or_404(Category, name=category)

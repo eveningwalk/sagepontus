@@ -32,6 +32,19 @@ body {
   min-height: 100vh;
 }
 
+.flash-msgs {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: #fff3cd;
+  color: #664d03;
+  border-bottom: 1px solid #ffecb5;
+  font-size: 0.95rem;
+}
+
+.flash-msgs__line {
+  margin: 0;
+}
+
 /* ---- 사이드바 레이아웃 (index.html) ---- */
 .app-shell {
   display: flex;
