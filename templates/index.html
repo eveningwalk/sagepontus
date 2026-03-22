@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{% block page_title %}Sage Pontus{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="app-shell">
+  <aside class="app-sidebar" aria-label="주 메뉴">
+    <div class="app-sidebar__brand">
+      <a href="{% url 'home' %}">Sage Pontus</a>
+    </div>
+    <nav class="app-sidebar__nav">
+      <a class="app-sidebar__link {% block nav_home_active %}{% endblock %}" href="{% url 'home' %}">홈 · BrainTree</a>
+      <a class="app-sidebar__link" href="{% url 'home' %}#braintree-new">새 BrainTree 만들기</a>
+      <a class="app-sidebar__link" href="{% url 'demo' %}">데모 시연 (QR · 로그인 생략)</a>
+    </nav>
+    <div class="app-sidebar__footer">
+      {% if user.is_authenticated %}
+        <span>{{ user.username }}</span>
+        ·
+        <a class="app-sidebar__footer-link" href="{% url 'accounts:logout' %}">로그아웃</a>
+      {% else %}
+        <a class="app-sidebar__footer-link" href="{% url 'accounts:login' %}">로그인</a>
+      {% endif %}
+    </div>
+  </aside>
+  <main class="app-main">
+    <div class="app-main__inner">
+      {% block main %}
+      {% endblock %}
+    </div>
+  </main>
+</div>
+{% endblock %}

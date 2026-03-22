@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,6 +34,11 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'adminsortable2',
+    'django_extensions',
+    'rest_framework',
+    'animamus_common',
+    'accounts',
     'questionnaire',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -61,6 +67,7 @@ ROOT_URLCONF = 'animamus_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        #'DIRS': [],
         'DIRS': [BASE_DIR / 'templates'],
         #'DIRS': [BASE_DIR / 'questionnaire/templates'],
         #'DIRS': [os.path.join(BASE_DIR, 'templates')], 
@@ -111,7 +118,12 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+#LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko'  # 기본 언어
+USE_I18N = True
+USE_L10N = True
+LOCALE_PATHS = [BASE_DIR / 'locale']
+
 
 TIME_ZONE = 'UTC'
 
@@ -122,11 +134,22 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+'''
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'questionnaire/static',
 ]
+'''
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+
+
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

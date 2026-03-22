@@ -1,0 +1,243 @@
+/*
+ * 데모 세션 전용: 카톡·안드로이드 인앱 WebView 등 좁은 화면
+ * — safe-area, dvh, 터치 최소 크기, iOS 입력 확대 완화, 세로 중앙 정렬 해제
+ */
+
+.app-shell--demo-mobile {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  background: #e8eaef;
+  -webkit-tap-highlight-color: rgba(59, 91, 219, 0.15);
+}
+
+.app-mobile-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-shrink: 0;
+  padding: 0.55rem max(0.85rem, env(safe-area-inset-right)) 0.55rem
+    max(0.85rem, env(safe-area-inset-left));
+  padding-top: max(0.55rem, env(safe-area-inset-top));
+  background: linear-gradient(180deg, #1c2333 0%, #141a26 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.12);
+}
+
+.app-mobile-header__brand {
+  font-weight: 700;
+  font-size: 1.02rem;
+  letter-spacing: 0.02em;
+  color: #e6e9ef;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.app-mobile-header__brand:active {
+  opacity: 0.88;
+}
+
+.app-mobile-header__nav {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
+.app-mobile-header__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0 0.55rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #b8c0d0;
+  text-decoration: none;
+  border-radius: 10px;
+}
+
+.app-mobile-header__link:active {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.app-main--demo-mobile {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.65rem max(0.65rem, env(safe-area-inset-right)) max(0.85rem, env(safe-area-inset-bottom))
+    max(0.65rem, env(safe-area-inset-left));
+  overflow: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+/* 데스크톱용 세로 중앙 정렬(app_shell.css) 무력화 — 인앱에서 카드가 둥둥 떠 보이지 않게 */
+.app-main--demo-mobile:has(.question-page),
+.app-main--demo-mobile:has(.flow-page) {
+  display: block;
+  justify-content: flex-start;
+}
+
+.app-main__inner--demo-mobile {
+  max-width: 100%;
+  margin: 0;
+  width: 100%;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.app-shell--demo-mobile .question-page,
+.app-shell--demo-mobile .flow-page {
+  width: 100%;
+  max-width: none;
+}
+
+.app-shell--demo-mobile .question-card,
+.app-shell--demo-mobile .domain-card,
+.app-shell--demo-mobile .flow-card {
+  padding: 1.15rem 0.95rem;
+  border-radius: 14px;
+  max-width: none;
+}
+
+.app-shell--demo-mobile .question-card__title,
+.app-shell--demo-mobile .domain-card__title,
+.app-shell--demo-mobile .flow-card__title {
+  font-size: 1.12rem;
+  line-height: 1.42;
+  word-break: keep-all;
+}
+
+/* 질문 폼: 라벨·입력·버튼 순서 고정 (키보드+sticky 조합 시 라벨이 버튼 옆으로 붙는 현상 방지) */
+.app-shell--demo-mobile .question-card__form {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+.app-shell--demo-mobile .question-card__answer-block {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.app-shell--demo-mobile .question-card__label {
+  display: block;
+  width: 100%;
+  margin-bottom: 0;
+  flex: 0 0 auto;
+}
+
+/* iOS: 포커스 시 자동 확대 방지 */
+.app-shell--demo-mobile .question-card__textarea,
+.app-shell--demo-mobile .flow-answer-item__textarea {
+  font-size: 16px;
+  line-height: 1.5;
+  min-height: 112px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+/*
+ * 하단 버튼은 sticky 제거: iOS·카톡 WebView에서 키보드 열릴 때
+ * 시각적 뷰포트와 겹치며 라벨/버튼이 한 줄로 보이는 경우가 있음.
+ */
+.app-shell--demo-mobile .question-card__actions {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+  margin-top: 0.85rem;
+  padding-top: 0.85rem;
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  position: static;
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border-top: 1px solid rgba(28, 35, 51, 0.1);
+}
+
+.app-shell--demo-mobile .question-card__actions--single {
+  justify-content: stretch;
+}
+
+.app-shell--demo-mobile .question-card__btn,
+.app-shell--demo-mobile .question-card__submit {
+  width: 100%;
+  max-width: 100%;
+  min-height: 48px;
+  font-size: 1rem;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.app-shell--demo-mobile .domain-card__grid {
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+}
+
+.app-shell--demo-mobile .domain-card__btn {
+  min-height: 48px;
+  font-size: 1rem;
+}
+
+.app-shell--demo-mobile .domain-card__btn--primary {
+  line-height: 1.35;
+}
+
+.app-shell--demo-mobile .flow-actions {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+
+.app-shell--demo-mobile .flow-btn {
+  width: 100%;
+  min-height: 48px;
+  font-size: 1rem;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.app-shell--demo-mobile .flow-answer-item__edit {
+  display: inline-block;
+  min-height: 44px;
+  line-height: 44px;
+  padding: 0 0.2rem;
+  margin-top: 0.45rem;
+}
+
+.app-shell--demo-mobile .flow-ai-block__body,
+.app-shell--demo-mobile .flow-collapsible__answer {
+  font-size: 0.95rem;
+}
+
+.app-shell--demo-mobile .flow-card__lead a {
+  word-break: break-word;
+}
+
+/* 키보드·홈 인디케이터 위 여유 */
+.app-shell--demo-mobile .app-main--demo-mobile {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}

@@ -1,0 +1,33 @@
+{% extends "index.html" %}
+
+{% block nav_home_active %}app-sidebar__link--active{% endblock %}
+
+{% block page_title %}홈 — Sage Pontus{% endblock %}
+
+{% block main %}
+<h2>👋 안녕하세요, {{ user.username }} 님!</h2>
+<p>당신의 BrainTree 모음</p>
+
+<form id="braintree-new" method="post" action="{% url 'questionnaire:create_tree_and_start' %}">
+    {% csrf_token %}
+    <input type="text" name="name" placeholder="새 BrainTree 이름" />
+    <button type="submit">+ 새 BrainTree 만들기</button>
+</form>
+
+<div class="braintree-list" style="margin-top: 1.5rem;">
+    {% if braintrees %}
+        <ul>
+            {% for tree in braintrees %}
+                <li>
+                    <strong>{{ tree.title }}</strong>
+                    <small>(생성일: {{ tree.created_at|date:"Y-m-d" }})</small>
+                    <a href="{% url 'questionnaire:edit_tree' tree.id %}">이름 수정</a> |
+                    <a href="{% url 'questionnaire:delete_tree' tree.id %}">삭제</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>아직 BrainTree가 없습니다. 새로 만들어보세요!</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,9 @@
+<h2>{{ tree.name }} - 답변 모아보기</h2>
+<ul>
+  {% for answer in answers %}
+    <li>
+      <strong>{{ answer.question.text }}</strong><br>
+      {{ answer.text|linebreaks }}
+    </li>
+  {% endfor %}
+</ul>

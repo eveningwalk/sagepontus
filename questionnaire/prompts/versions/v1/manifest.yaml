@@ -1,0 +1,19 @@
+# Sage Pontus — 프롬프트 버전 v1 (기본)
+# Hugging Face Inference API(chat)용. 모델은 HF_MODEL_ID 로 덮어쓸 수 있음.
+# Inference Provider가 있는 모델만 사용(미배포 모델은 Router 404).
+# 라우팅: HF_INFERENCE_PROVIDER(기본 auto; hf-inference 고정 시 해당 라우트에 배포된 모델만).
+version: v1
+description: "실행 중심 사용자용 기본 전략·프롬프트 생성"
+model: "Qwen/Qwen2.5-1.5B-Instruct"
+api: chat
+generation:
+  max_tokens: 512
+  temperature: 0.65
+  top_p: 0.92
+tasks:
+  strategy:
+    system: strategy_system.jinja
+    user: strategy_user.jinja
+  prompt_builder:
+    system: prompt_builder_system.jinja
+    user: prompt_builder_user.jinja

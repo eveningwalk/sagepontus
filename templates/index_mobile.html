@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/demo_mobile.css' %}">
+{% endblock %}
+
+{% block title %}{% block page_title %}Sage Pontus{% endblock %}{% endblock %}
+
+{% block content %}
+<div class="app-shell app-shell--demo-mobile">
+  <header class="app-mobile-header" role="banner">
+    <a href="{% url 'home' %}" class="app-mobile-header__brand">Sage Pontus</a>
+    <nav class="app-mobile-header__nav" aria-label="빠른 이동">
+      <a class="app-mobile-header__link" href="{% url 'home' %}">홈</a>
+      {% if user.is_authenticated %}
+      <a class="app-mobile-header__link" href="{% url 'accounts:logout' %}">로그아웃</a>
+      {% endif %}
+    </nav>
+  </header>
+  <main class="app-main app-main--demo-mobile" id="main">
+    <div class="app-main__inner app-main__inner--demo-mobile">
+      {% block main %}
+      {% endblock %}
+    </div>
+  </main>
+</div>
+{% endblock %}

@@ -16,8 +16,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from questionnaire import views  # ✅ 이 줄을 추가해줘
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('questionnaire.urls')),
+    path('questionnaire/', include('questionnaire.urls')),
+    path('accounts/', include('accounts.urls')),  # 사용자 기능은 여기에
+    path('demo/', views.demo_entry, name='demo'),
+    #path('', views.landing_page, name='landing'),  # 루트는 직접 연결
+    path('', views.root, name='home'),
 ]

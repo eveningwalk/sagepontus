@@ -1,0 +1,12 @@
+<h2>도메인을 선택해주세요</h2>
+<p>공통 질문을 기반으로, 어떤 역할에 해당하는지 선택하세요:</p>
+
+<form method="post">
+  {% csrf_token %}
+  <div class="button-row">
+    <button type="submit" name="domain" value="marketing" class="domain-btn">Marketing</button>
+    <button type="submit" name="domain" value="content_creation" class="domain-btn">Contents Creation</button>
+    <button type="submit" name="domain" value="efficiency" class="domain-btn">Efficiency</button>
+    <button type="submit" name="domain" value="business_growth" class="domain-btn">Business Growth</button>
+  </div>
+</form>

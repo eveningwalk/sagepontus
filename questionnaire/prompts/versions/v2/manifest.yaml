@@ -1,0 +1,16 @@
+# v2: 측정·검증 강조 (동일 API, 다른 지시문·생성 파라미터)
+version: v2
+description: "측정 가능한 목표와 검증 단계를 강조한 전략·프롬프트"
+model: "Qwen/Qwen2.5-1.5B-Instruct"
+api: chat
+generation:
+  max_tokens: 600
+  temperature: 0.55
+  top_p: 0.9
+tasks:
+  strategy:
+    system: strategy_system.jinja
+    user: strategy_user.jinja
+  prompt_builder:
+    system: prompt_builder_system.jinja
+    user: prompt_builder_user.jinja

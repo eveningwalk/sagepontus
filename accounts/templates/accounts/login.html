@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% load i18n %}
+
+{% block content %}
+<div style="max-width: 400px; margin: 0 auto; padding: 2rem;">
+  <div style="background: #fff; padding: 2rem; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+    <h2 style="text-align: center;">{% trans "로그인" %}</h2>
+
+    {% if error %}
+      <div style="color: red; margin-bottom: 1rem;">
+        {% trans "아이디 또는 비밀번호가 올바르지 않습니다." %}
+      </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div style="margin-bottom: 1rem;">
+        <label for="username">{% trans "아이디" %}</label><br>
+        <input type="text" name="username" id="username" required autofocus>
+      </div>
+
+      <div style="margin-bottom: 1rem;">
+        <label for="password">{% trans "비밀번호" %}</label><br>
+        <input type="password" name="password" id="password" required>
+      </div>
+
+      <button type="submit" style="width: 100%; background-color: #4CAF50; color: white; padding: 0.6rem; border: none; border-radius: 4px;">
+        {% trans "로그인하기" %}
+      </button>
+    </form>
+
+    <p style="margin-top: 1rem; text-align: center;">
+      <a href="{% url 'demo' %}">{% trans "데모 시연 (로그인 없이)" %}</a>
+    </p>
+    <p style="margin-top: 1rem; text-align: center;">
+      {% trans "처음 오셨나요?" %}
+      <a href="{% url 'accounts:signup' %}">{% trans "회원가입하기" %}</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

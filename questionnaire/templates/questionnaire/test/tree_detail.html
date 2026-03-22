@@ -1,0 +1,19 @@
+<h2>{{ tree.title }} - 트리 상세</h2>
+
+<a href="{% url 'questionnaire:add_node' tree.id node.id %}">➕ 노드 추가</a>
+
+<ul>
+  {% for node in nodes %}
+    <li>
+      {{ node.order }}. {{ node.title }}
+      <a href="{% url 'questionnaire:edit_node' node.id %}">✏️ 수정</a>
+      <a href="{% url 'questionnaire:delete_node' node.id %}">❌ 삭제</a>
+      <a href="{% url 'questionnaire:show_question_step' category='common' order=1 tree_id=tree.id node_id=node.id %}">➡️ 질문 시작</a> <!-- 여기서 질문 흐름 연결 예정 -->
+        
+    </li>
+  {% empty %}
+    <li>아직 노드가 없습니다.</li>
+  {% endfor %}
+</ul>
+
+<a href="/">🏠 홈으로</a>

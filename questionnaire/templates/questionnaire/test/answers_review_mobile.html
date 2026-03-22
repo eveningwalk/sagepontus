@@ -1,0 +1,53 @@
+{% extends "index_mobile.html" %}
+
+{% block page_title %}답변 검토 · Sage Pontus{% endblock %}
+
+{% block main %}
+<div class="flow-page">
+  <article class="flow-card">
+    <span class="flow-card__step">1 / 2</span>
+    <h1 class="flow-card__title">답변을 확인하고 수정하세요</h1>
+    <p class="flow-card__lead">
+      도메인 질문이 모두 끝났습니다. 아래 내용을 검토한 뒤 <strong>수정 완료</strong>를 누르면, 답변을 반영해 맞춤 프롬프트(및 실행 요약)를 만들어 드립니다.
+      {% if tree %}
+      <span class="flow-card__tree">BrainTree: {{ tree.title }}</span>
+      {% endif %}
+    </p>
+
+    <form method="post" action="">
+      {% csrf_token %}
+      <div class="flow-answer-list">
+        {% for a in answers %}
+        <div class="flow-answer-item">
+          <p class="flow-answer-item__q">
+            Q{{ a.question.order }}.
+            {{ a.question.question_text }}
+            {% if a.question.category %}
+            <span class="flow-answer-item__scope">{{ a.question.category.name }}</span>
+            {% endif %}
+          </p>
+          <label class="visually-hidden" for="answer_{{ a.id }}">답변 {{ forloop.counter }}</label>
+          <textarea
+            class="flow-answer-item__textarea"
+            id="answer_{{ a.id }}"
+            name="answer_{{ a.id }}"
+            rows="5"
+            autocomplete="off"
+          >{{ a.answer_text }}</textarea>
+          <a class="flow-answer-item__edit" href="{% url 'questionnaire:edit_answer' a.id %}">이 답만 상세 수정</a>
+        </div>
+        {% empty %}
+        <p class="flow-card__lead">저장된 답변이 없습니다. 질문 단계로 돌아가 주세요.</p>
+        {% endfor %}
+      </div>
+
+      <div class="flow-actions">
+        <a class="flow-btn flow-btn--ghost" href="{% url 'home' %}">나중에 하기</a>
+        {% if answers %}
+        <button type="submit" class="flow-btn flow-btn--primary">수정 완료 · AI 결과 보기</button>
+        {% endif %}
+      </div>
+    </form>
+  </article>
+</div>
+{% endblock %}

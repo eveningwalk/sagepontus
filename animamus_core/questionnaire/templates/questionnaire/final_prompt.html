@@ -1,8 +1,0 @@
-<!-- questionnaire/templates/questionnaire/final_prompt.html -->
-{% extends "base.html" %}
-
-{% block content %}
-  <h2>최종 요약 Prompt</h2>
-  <pre>{{ prompt }}</pre>
-  <a href="{% url 'questionnaire:start' %}" class="btn btn-primary">처음부터 다시하기</a>
-{% endblock %}

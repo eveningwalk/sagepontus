@@ -1,0 +1,55 @@
+{% extends "index.html" %}
+
+{% block page_title %}도메인 선택 — Sage Pontus{% endblock %}
+
+{% block main %}
+<div class="question-page">
+  <article class="domain-card">
+    <div class="domain-card__badges">
+      <span class="question-card__scope question-card__scope--common">공통 질문 완료</span>
+      <span class="question-card__scope question-card__scope--domain">다음 단계</span>
+    </div>
+
+    <h1 class="domain-card__title">도메인을 선택해주세요</h1>
+    <p class="domain-card__lead">
+      공통 질문을 마쳤습니다. 이어서 다룰 <strong>역할·도메인</strong>을 골라 주세요.
+      {% if tree.title %}
+        <span class="domain-card__tree">(트리: {{ tree.title }})</span>
+      {% endif %}
+    </p>
+
+    {% if demo_mode and demo_default_domain %}
+    <div class="domain-card__demo" role="region" aria-label="데모 안내">
+      <strong class="domain-card__demo-title">데모 시연</strong>
+      <p class="domain-card__demo-text">
+        추천 도메인 <em>{{ demo_default_domain }}</em>으로 바로 이어갈 수 있습니다.
+      </p>
+      <form method="post" class="domain-card__demo-form">
+        {% csrf_token %}
+        <button type="submit" name="domain" value="{{ demo_default_domain }}" class="domain-card__btn domain-card__btn--primary">
+          추천 도메인으로 계속 → {{ demo_default_domain }}
+        </button>
+      </form>
+    </div>
+    {% endif %}
+
+    <form method="post" class="domain-card__form">
+      {% csrf_token %}
+      <p class="domain-card__label">도메인 목록</p>
+      <div class="domain-card__grid">
+        {% for category in categories %}
+          <button
+            type="submit"
+            name="domain"
+            value="{{ category.name }}"
+            class="domain-card__btn"
+            title="{{ category.description|default:category.name }}"
+          >
+            {{ category.name }}
+          </button>
+        {% endfor %}
+      </div>
+    </form>
+  </article>
+</div>
+{% endblock %}

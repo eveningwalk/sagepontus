@@ -1,0 +1,53 @@
+body {
+    background-color: #ffffff; /* 깔끔한 흰 배경 */
+    font-family: Arial, sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0 20px;
+}
+
+h2 {
+    color: #2c3e50;
+    margin-top: 20px;
+}
+
+p {
+    font-size: 1em;
+}
+
+.guidance {
+    font-weight: bold;
+    color: #34495e;
+}
+
+.hint {
+    font-style: italic;
+    color: #7f8c8d;
+}
+
+textarea {
+    width: 100%;
+    border: 1px solid #bdc3c7;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 1em;
+}
+
+button {
+    background-color: #3498db;
+    color: #fff;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: #2980b9;
+}
+
+.announcement {
+    display: none; /* mini에서는 특별 공지 없음 */
+}

@@ -1,0 +1,26 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    # 프로젝트 루트 .env 는 Compose가 치환용으로 읽습니다. 아래 environment 로 컨테이너에도 전달됩니다.
+    # cp .env.example .env 후 HF_TOKEN=hf_... 를 넣으세요.
+    environment:
+      - DEBUG=1
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-}
+      - DJANGO_ALLOW_NGROK=${DJANGO_ALLOW_NGROK:-}
+      - DJANGO_NGROK_ORIGIN=${DJANGO_NGROK_ORIGIN:-}
+      - CSRF_TRUSTED_ORIGINS=${CSRF_TRUSTED_ORIGINS:-}
+      - DEMO_ENABLED=${DEMO_ENABLED:-}
+      - DEMO_USER_USERNAME=${DEMO_USER_USERNAME:-}
+      - HF_TOKEN=${HF_TOKEN:-}
+      - HUGGINGFACE_HUB_TOKEN=${HUGGINGFACE_HUB_TOKEN:-}
+      - HF_MODEL_ID=${HF_MODEL_ID:-}
+      - HF_INFERENCE_PROVIDER=${HF_INFERENCE_PROVIDER:-}
+

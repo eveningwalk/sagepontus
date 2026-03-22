@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>👋 안녕하세요, {{ user.username }} 님!</h2>
+    <p>당신의 BrainTree 모음</p>
+
+    <!-- 새 BrainTree 추가 -->
+    <form method="post" action="{% url 'questionnaire:create_tree_and_start' %}">
+        {% csrf_token %}
+        <input type="text" name="name" placeholder="새 BrainTree 이름" />
+        <button type="submit">+ 새 BrainTree 만들기</button>
+    </form>
+
+
+    <!-- BrainTree 리스트 -->
+    <div class="braintree-list">
+        {% if braintrees %}
+            <ul>
+                {% for tree in braintrees %}
+    <li>
+        <strong>{{ tree.title }}</strong>  
+        <small>(생성일: {{ tree.created_at|date:"Y-m-d" }})</small>
+        {% comment %}
+        <a href="{% url 'questionnaire:show_question_step' tree.id %}">열기</a> |  
+        {% endcomment %}
+        <a href="{% url 'questionnaire:edit_tree' tree.id %}">이름 수정</a> |  
+        <a href="{% url 'questionnaire:delete_tree' tree.id %}">삭제</a>
+
+        <!-- 브레인트리 블록 노드 리스트 -->
+    <ul class="blocknode-list">
+      {% for block in tree.blocks.all %}
+        <li>
+          <h4>🧱 {{ block.title }} <small>(type: {{ block.type }}, depth: {{ block.level }}, order: {{ block.order }})</small></h4>
+          <p>{{ block.description }}</p>
+    
+          <!-- 질문/답변 노드 리스트 -->
+          {% if block.brainnodes.exists %}
+            <ul class="brainnodes-list">
+              {% for node in block.brainnodes.all %}
+                <li>
+                  ❓ <strong>{{ node.question_text|default:"(질문 없음)" }}</strong><br>
+                  💬 {{ node.answer_text|default:"(답변 없음)" }}
+                  <small>(order: {{ node.order }})</small>
+    
+                  <!-- 액션 링크 -->
+                  <div class="node-actions">
+                    <a href="{% url 'questionnaire:edit_node' node.id %}">✏️ 수정</a>
+                    <a href="{% url 'questionnaire:delete_node' node.id %}">❌ 삭제</a>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>📭 질문/답변 노드가 없습니다.</p>
+          {% endif %}
+    
+          <!-- 블록 노드 액션 -->
+          <div class="block-actions">
+            <a href="{% url 'questionnaire:add_node' tree.id block.id %}">➕ 질문/답변 노드 추가</a>
+            {% if block.level == 1 %}
+              <a href="{% url 'questionnaire:select_domain' block.id %}">🌿 새 분기 만들기</a>
+            {% endif %}
+          </div>
+        </li>
+      {% empty %}
+        <li>📂 아직 블록 노드가 없습니다.</li>
+      {% endfor %}
+    </ul>
+
+            
+        </ul>
+    </li>
+{% endfor %}
+
+            </ul>
+        {% else %}
+            <p>아직 BrainTree가 없습니다. 새로 만들어보세요!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

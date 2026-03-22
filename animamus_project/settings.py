@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -22,17 +23,64 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-2peb2r+=(#-hjr%hfw4%j*!+zz!m+y8j@2osi_q5=nb^3f8fg&'
+# 프로덕션에서는 반드시 환경 변수 DJANGO_SECRET_KEY를 설정하세요.
+# Docker 등에서 DJANGO_SECRET_KEY= 만 넘어오면 빈 문자열이 되어 기본값이 무시되므로, 비었을 때는 개발용 기본값 사용.
+_secret_key = os.environ.get("DJANGO_SECRET_KEY", "").strip()
+SECRET_KEY = _secret_key or "django-insecure-local-dev-only-not-for-production"
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# 호스트/CSRF: 브라우저가 localhost·127.0.0.1·LAN IP 등으로 접속할 때 쿠키 도메인이 달라지면
+# "CSRF token from POST incorrect" 가 납니다. 배포 시 환경 변수로 맞추세요.
+# Docker 등에서 DJANGO_ALLOWED_HOSTS= 만 넘어오면 빈 문자열이 되어 기본 목록이 무시됨 → 비었을 때는 로컬 기본값 사용
+_default_allowed = "localhost,127.0.0.1,0.0.0.0"
+_raw_hosts = os.environ.get("DJANGO_ALLOWED_HOSTS", "").strip() or _default_allowed
+ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(",") if h.strip()]
 
+# ngrok 터널: DJANGO_ALLOW_NGROK=1 이면 *.ngrok-free.app 등 서브도메인 허용(선행 점 패턴)
+# 고정 호스트만 쓸 경우에는 DJANGO_ALLOWED_HOSTS에 호스트명을 직접 넣어도 됨.
+if os.environ.get("DJANGO_ALLOW_NGROK", "").strip() in ("1", "true", "True", "yes"):
+    for _ng in (".ngrok-free.app", ".ngrok.io", ".ngrok.app"):
+        if _ng not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_ng)
+
+# Django 4+: 비HTTPS도 Referer/Origin 검사에 사용 (포트 포함)
+_default_origins = (
+    "http://localhost:8000,http://127.0.0.1:8000,"
+    "http://[::1]:8000"
+)
+# Docker 등에서 CSRF_TRUSTED_ORIGINS= 만 넘어오면 빈 문자열이 되어 기본 목록이 무시됨 → 비었을 때는 기본값 사용
+_raw_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip() or _default_origins
+CSRF_TRUSTED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+# ngrok HTTPS로 접속 시 Origin 이 https://서브도메인.ngrok-free.app 이므로, 와일드카드 불가 → 전체 출처 한 줄
+_ngrok_origin = os.environ.get("DJANGO_NGROK_ORIGIN", "").strip()
+if _ngrok_origin and _ngrok_origin not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(_ngrok_origin)
+
+# 공개 데모 (/demo/): QR·평가용. 프로덕션에서는 DEMO_ENABLED=0 권장.
+# Docker 에서 DEMO_ENABLED= 만 넘어오면 빈 문자열 → 아래에서 DEBUG 기본값으로 복구
+_demo_flag = os.environ.get("DEMO_ENABLED", "").strip()
+if not _demo_flag:
+    _demo_flag = "1" if DEBUG else "0"
+DEMO_ENABLED = _demo_flag == "1"
+DEMO_USER_USERNAME = os.environ.get("DEMO_USER_USERNAME", "demo_gov_evaluator")
+# 데모 도메인 선택 화면의 추천 도메인 (DB Category.name 과 일치, 현재는 startup 질문만 시드됨)
+DEMO_DOMAIN_CATEGORY = os.environ.get("DEMO_DOMAIN_CATEGORY", "startup")
+
+# questionnaire/prompts/versions/<PROMPT_VERSION>/manifest.yaml
+PROMPT_VERSION = os.environ.get("PROMPT_VERSION", "v1")
+# Hugging Face Inference API — manifest 의 model 보다 우선(비우면 manifest 사용)
+HF_MODEL_ID = os.environ.get("HF_MODEL_ID", "").strip()
 
 # Application definition
 
 INSTALLED_APPS = [
+    'adminsortable2',
+    'django_extensions',
+    'rest_framework',
+    'animamus_common',
+    'accounts',
     'questionnaire',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -61,6 +109,7 @@ ROOT_URLCONF = 'animamus_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        #'DIRS': [],
         'DIRS': [BASE_DIR / 'templates'],
         #'DIRS': [BASE_DIR / 'questionnaire/templates'],
         #'DIRS': [os.path.join(BASE_DIR, 'templates')], 
@@ -111,7 +160,12 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+#LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ko'  # 기본 언어
+USE_I18N = True
+USE_L10N = True
+LOCALE_PATHS = [BASE_DIR / 'locale']
+
 
 TIME_ZONE = 'UTC'
 
@@ -122,11 +176,22 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
-
+'''
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'questionnaire/static',
 ]
+'''
+
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+]
+
+
+
+
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>질문셋 테스트</title>
+    <style>
+        body { font-family: sans-serif; padding: 2rem; }
+        .domain-btn { margin: 0.5rem; padding: 0.7rem 1.2rem; font-size: 1rem; cursor: pointer; }
+        .question-box { margin-top: 2rem; }
+        .question-item { margin-bottom: 1.5rem; padding: 1rem; border: 1px solid #ccc; border-radius: 6px; }
+    </style>
+</head>
+<body>
+    <h1>도메인별 질문셋 테스트</h1>
+
+
+    <style>
+        .button-row {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+        }
+        .domain-btn {
+        padding: 0.7rem 1.2rem;
+        font-size: 1rem;
+        cursor: pointer;
+        }
+    </style>
+
+    <div class="button-row">
+      <form method="get" action="{% url 'questionnaire:question_step' category='common' order=1 %}">
+        <button class="domain-btn">공통 질문</button>
+      </form>
+    </div>
+    
+
+</body>
+</html>

@@ -1,0 +1,128 @@
+//http://127.0.0.1:8000/questionnaire/tree/35/
+
+<div id="tree-info">
+    <h2 id="tree-title"></h2>
+    <p id="tree-owner"></p>
+</div>
+
+<div id="tree-container"></div>
+
+<style>
+#tree-info {
+    margin-bottom: 20px;
+}
+
+#tree-container svg {
+    border: 1px solid #ccc;
+    display: block;
+    background: #f9f9f9;
+}
+text {
+    font: 12px sans-serif;
+}
+</style>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+fetch("{% url 'questionnaire:brainblock_tree_json' braintree.id %}")
+.then(response => response.json())
+.then(data => {
+    // Set title and owner
+    document.getElementById('tree-title').textContent = data.tree_title;
+    document.getElementById('tree-owner').textContent = "Owner: " + data.tree_owner;
+
+    // Transform data: BrainNodes and Answers as children
+    function transformNode(block) {
+        let children = [];
+        if(block.brainnodes && block.brainnodes.length > 0){
+            children = block.brainnodes.map(bn => ({
+                title: bn.question,
+                children: bn.answers.map(a => ({title: `${a.user}: ${a.answer}`, children: []}))
+            }));
+        }
+        if(block.children){
+            children = children.concat(block.children.map(transformNode));
+        }
+        return {...block, children};
+    }
+
+    const rootData = {title: data.tree_title, children: data.nodes.map(transformNode)};
+    const root = d3.hierarchy(rootData, d => d.children);
+
+    // Dynamic SVG sizing
+    //const maxDepth = root.height + 1;
+    //const levelWidth = 200;  // horizontal space per level
+    //const svgWidth = Math.max(1200, maxDepth * levelWidth);
+    //const svgHeight = Math.max(600, root.descendants().length * 50); // vertical space
+
+
+    const maxDepth = root.height + 1;
+    const totalNodes = root.descendants().length;
+    
+    // Horizontal spacing
+    const levelWidth = 300; // width per depth level
+    const svgWidth = Math.max(1600, maxDepth * levelWidth);
+    
+    // Vertical spacing
+    const nodeSpacing = 60; // vertical space per node
+    const svgHeight = Math.max(800, totalNodes * nodeSpacing);
+
+    
+
+    const svg = d3.select("#tree-container")
+        .append("svg")
+        .attr("width", svgWidth)
+        .attr("height", svgHeight)
+        .append("g")
+        .attr("transform", "translate(50,50)");
+    
+
+    // Horizontal tree layout (root on left)
+    //const treeLayout = d3.tree().size([svgHeight - 100, svgWidth - 150]);
+    const treeLayout = d3.tree().size([svgHeight - 100, svgWidth - 200]); // 
+    treeLayout(root);
+
+    // Draw links
+    svg.selectAll('line')
+        .data(root.links())
+        .enter()
+        .append('line')
+        .attr('x1', d => d.source.y)
+        .attr('y1', d => d.source.x)
+        .attr('x2', d => d.target.y)
+        .attr('y2', d => d.target.x)
+        .attr('stroke', '#555');
+
+    // Draw nodes
+    const nodes = svg.selectAll('g.node')
+        .data(root.descendants())
+        .enter()
+        .append('g')
+        .attr('transform', d => `translate(${d.y},${d.x})`);
+
+    // Node circles: color by type
+    nodes.append('circle')
+        .attr('r', 12)
+        .attr('fill', d => {
+            if(d.children) return 'lightblue';       // BrainBlockNode
+            else if(d.depth === 2) return 'lightgreen'; // BrainNode
+            else return 'orange';                     // Answer
+        })
+        .style('cursor', 'pointer');
+
+    // Node labels
+    nodes.append('text')
+        .attr('x', 15)
+        .attr('y', 4)
+        .text(d => d.data.title);
+
+    // Click to show answers for BrainNodes
+    nodes.on('click', (event, d) => {
+        if(d.depth === 2 && d.children && d.children.length > 0){ // BrainNode
+            let msg = "";
+            d.children.forEach(a => msg += ` - ${a.data.title}\n`);
+            if(msg) alert(`Q: ${d.data.title}\n${msg}`);
+        }
+    });
+});
+</script>

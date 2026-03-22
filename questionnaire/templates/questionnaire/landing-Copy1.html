@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Animamus - 시작</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        .domain-card {
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 10px;
+            display: inline-block;
+            width: 200px;
+            cursor: pointer;
+            text-align: center;
+            transition: 0.2s;
+        }
+        .domain-card:hover { background-color: #f0f0f0; }
+    </style>
+</head>
+<body>
+    <h1>Animamus 서비스 시작</h1>
+    <p>관심 있는 도메인을 선택하세요.</p>
+
+    <div id="domains">
+        <div class="domain-card" data-step-id="3">온라인 마케팅</div>
+        <div class="domain-card" data-step-id="4">e커머스 기획</div>
+        <div class="domain-card" data-step-id="5">스타트업 전략</div>
+        <div class="domain-card" data-step-id="6">개인 브랜딩</div>
+        <div class="domain-card" data-step-id="7">재무/투자 계획</div>
+    </div>
+
+    <script>
+        document.querySelectorAll('.domain-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const stepId = card.getAttribute('data-step-id');
+                // Step 1 첫 Question 페이지로 이동
+                window.location.href = `/questions/step/${stepId}/`;
+            });
+        });
+    </script>
+</body>
+</html>

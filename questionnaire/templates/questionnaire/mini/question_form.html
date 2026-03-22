@@ -1,0 +1,83 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ category.name }} - 질문 {{ step }}/{{ total }}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'questionnaire/css/mini.css' %}">
+</head>
+<body>
+    <h2>{{ category.name }} - 질문 {{ step }} / {{ total }}</h2>
+    <p><strong>{{ question.text }}</strong></p>
+
+    {% if question.guidance %}
+        <p class="guidance">예시: {{ question.guidance }}</p>
+    {% endif %}
+    {% if question.hint %}
+        <p class="hint">설명: {{ question.hint }}</p>
+    {% endif %}
+
+ <textarea id="answer" rows="5" placeholder="답변을 입력하세요" style="width:100%;"></textarea>
+<br><br>
+<button id="submitBtn">다음</button>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const submitBtn = document.getElementById('submitBtn');
+    const answerEl = document.getElementById('answer');
+    const nextStep = {{ step }};  // Django context
+    const categorySlug = "{{ category.slug }}";
+    const version = "{{ version }}";
+
+    submitBtn.addEventListener('click', function() {
+        const answer = answerEl.value.trim();
+        if (!answer) {
+            alert('답변을 입력해주세요.');
+            return;
+        }
+
+        fetch("/api/responses/", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            body: JSON.stringify({
+                question_id: "{{ question.question_id }}",
+                answer: answer
+            })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('네트워크 오류');
+            return response.json();
+        })
+        .then(data => {
+            alert(data.message || '답변이 저장되었습니다.');
+            // 저장 성공 시에만 다음 질문 또는 version 전환
+            window.location.href = `/` + categorySlug + `/questions/` + nextStep + `/`;
+        })
+        .catch(error => {
+            console.error("답변 저장 실패:", error);
+            alert('답변 저장에 실패했습니다. 다시 시도해주세요.');
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let cookie of cookies) {
+                cookie = cookie.trim();
+                if (cookie.startsWith(name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+});
+</script>
+
+</body>
+</html>

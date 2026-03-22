@@ -1,0 +1,37 @@
+{% extends "index.html" %}
+
+{% block page_title %}답변 수정 · Sage Pontus{% endblock %}
+
+{% block main %}
+<div class="flow-page">
+  <article class="flow-card">
+    <span class="flow-card__step">편집</span>
+    <h1 class="flow-card__title">답변 수정</h1>
+    <p class="flow-card__lead">{{ answer.question.question_text }}</p>
+
+    <form method="post" action="">
+      {% csrf_token %}
+      <label class="question-card__label" for="id_answer_text">답변 내용</label>
+      <textarea
+        id="id_answer_text"
+        name="answer_text"
+        class="flow-answer-item__textarea"
+        rows="6"
+        required
+      >{{ answer.answer_text }}</textarea>
+
+      <div class="flow-actions flow-actions--spaced">
+        {% if answer.brainnode.block_id %}
+        <a
+          class="flow-btn flow-btn--ghost"
+          href="{% url 'questionnaire:summary' block_id=answer.brainnode.block_id %}"
+        >취소 · 검토로 돌아가기</a>
+        {% else %}
+        <a class="flow-btn flow-btn--ghost" href="{% url 'home' %}">취소</a>
+        {% endif %}
+        <button type="submit" class="flow-btn flow-btn--primary">저장</button>
+      </div>
+    </form>
+  </article>
+</div>
+{% endblock %}

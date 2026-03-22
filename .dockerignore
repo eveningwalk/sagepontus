@@ -1,0 +1,36 @@
+# Git / VCS
+.git
+.gitignore
+.dockerignore
+
+# Python
+**/__pycache__
+**/*.py[cod]
+**/*.pyo
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/*.egg-info
+venv
+ENV
+env
+animamus_env
+.venv
+
+# Django / 로컬 DB
+*.sqlite3
+db.sqlite3
+media
+staticfiles
+.cache
+
+# IDE / OS
+.idea
+.vscode
+.DS_Store
+*.swp
+
+# 기타 (빌드 컨텍스트 축소)
+*.md
+.ipynb_checkpoints
+**/.ipynb_checkpoints
