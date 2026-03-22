@@ -10,9 +10,9 @@ from django.urls import path
 
 urlpatterns = [
     path("", views.home, name="home"),
-    path('questionnaire/question/<str:category>/<int:order>/<int:block_id>', views.show_question_step, name='show_question_step'),
+    path('question/<str:category>/<int:order>/<int:block_id>', views.show_question_step, name='show_question_step'),
     path('edit-answer/<int:answer_id>/', views.edit_answer, name='edit_answer'),
-    path('questionnaire/select-domain/<int:parent_block_id>/', views.select_domain, name='select_domain' ),
+    path('select-domain/<int:parent_block_id>/', views.select_domain, name='select_domain'),
     path('summary/<int:block_id>', views.summary, name='summary'),
     path(
         'prompt-flow/<int:block_id>/results/',
