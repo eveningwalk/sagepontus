@@ -51,9 +51,11 @@ if os.environ.get("DJANGO_ALLOW_NGROK", "").strip() in ("1", "true", "True", "ye
 if os.environ.get("K_SERVICE") and ".run.app" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(".run.app")
 
-# sagepontus.com 커스텀 도메인 (예: demo.sagepontus.com)
-if ".sagepontus.com" not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(".sagepontus.com")
+# sagepontus.com 커스텀 도메인 — apex·서브도메인·와일드카드(선행 점) 모두 명시
+# (Cloud Run 의 DJANGO_ALLOWED_HOSTS 가 좁게만 잡혀 있어도 아래는 항상 병합됨)
+for _h in ("demo.sagepontus.com", "sagepontus.com", ".sagepontus.com"):
+    if _h not in ALLOWED_HOSTS:
+        ALLOWED_HOSTS.append(_h)
 
 # Django 4+: 비HTTPS도 Referer/Origin 검사에 사용 (포트 포함)
 _default_origins = (
