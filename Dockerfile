@@ -27,10 +27,11 @@ RUN pip install --no-cache-dir -r requirements-docker.txt
 
 COPY . .
 
-RUN chmod +x /app/entrypoint.sh
+# 볼륨 마운트(.:/app) 시 호스트 파일이 +x 가 아니면 직접 exec 가 실패할 수 있음 → sh 로 실행
+RUN chmod +x /app/entrypoint.sh || true
 
 # Cloud Run 은 PORT(기본 8080)에서 수신해야 함. 로컬: docker run -e PORT=8000 -p 8000:8000 ...
 ENV PORT=8080
 EXPOSE 8080
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.sh"]

@@ -98,20 +98,26 @@ def _run_task(
 ) -> str:
     tasks = manifest.get("tasks") or {}
     spec = tasks.get(task_key) or {}
-    sys_file = spec.get("system")
     user_file = spec.get("user")
-    if not sys_file or not user_file:
-        raise KeyError(f"manifest tasks.{task_key} 에 system/user 가 없습니다.")
+    if not user_file:
+        raise KeyError(f"manifest tasks.{task_key} 에 user 가 없습니다.")
 
     env = _jinja_env(version)
-    system = _render_task(env, sys_file, ctx)
     user = _render_task(env, user_file, ctx)
+
+    system_file = spec.get("system")
+    system: str | None = None
+    if system_file:
+        system = _render_task(env, str(system_file), ctx).strip() or None
 
     if (manifest.get("api") or "chat") != "chat":
         raise NotImplementedError("현재는 api: chat 만 지원합니다.")
 
-    gen = manifest.get("generation") or {}
-    return chat_completion_generate(model_id, system, user, gen)
+    gen = dict(manifest.get("generation") or {})
+    task_gen = spec.get("generation")
+    if isinstance(task_gen, dict):
+        gen.update(task_gen)
+    return chat_completion_generate(model_id, user, gen, system=system)
 
 
 def run_prompt_generation_pair(answers) -> tuple[str, str]:

@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import importlib.util
 import os
 
 import dj_database_url
@@ -57,6 +58,12 @@ for _h in ("demo.sagepontus.com", "sagepontus.com", ".sagepontus.com"):
     if _h not in ALLOWED_HOSTS:
         ALLOWED_HOSTS.append(_h)
 
+# 로컬 개발: .env에 DJANGO_ALLOWED_HOSTS를 배포 호스트만 넣어도 runserver 접속 가능
+if DEBUG:
+    for _local in ("127.0.0.1", "localhost", "[::1]"):
+        if _local not in ALLOWED_HOSTS:
+            ALLOWED_HOSTS.append(_local)
+
 # Django 4+: 비HTTPS도 Referer/Origin 검사에 사용 (포트 포함)
 _default_origins = (
     "http://localhost:8000,http://127.0.0.1:8000,"
@@ -77,6 +84,16 @@ if not os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip():
 _ngrok_origin = os.environ.get("DJANGO_NGROK_ORIGIN", "").strip()
 if _ngrok_origin and _ngrok_origin not in CSRF_TRUSTED_ORIGINS:
     CSRF_TRUSTED_ORIGINS.append(_ngrok_origin)
+
+# 로컬 개발: CSRF_TRUSTED_ORIGINS를 프로덕션만 넣은 경우에도 127.0.0.1:8000 등 POST 가능
+if DEBUG:
+    for _origin in (
+        "http://127.0.0.1:8000",
+        "http://localhost:8000",
+        "http://[::1]:8000",
+    ):
+        if _origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(_origin)
 
 # 공개 데모 (/demo/): QR·평가용. 프로덕션에서는 DEMO_ENABLED=0 권장.
 # Docker 에서 DEMO_ENABLED= 만 넘어오면 빈 문자열 → 아래에서 DEBUG 기본값으로 복구
@@ -112,6 +129,11 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+]
+# Gunicorn/Cloud Run 등에서는 runserver 가 없어 정적 파일이 404 가 됨 → WhiteNoise(Docker 이미지에 포함)
+if importlib.util.find_spec("whitenoise"):
+    MIDDLEWARE.append("whitenoise.middleware.WhiteNoiseMiddleware")
+MIDDLEWARE += [
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -139,6 +161,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'questionnaire.context_processors.demo_flags',
             ],
         },
     },
@@ -221,6 +244,8 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
+# collectstatic 대상 — Gunicorn+WhiteNoise 가 여기서 서빙
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 
 

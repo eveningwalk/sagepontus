@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
 from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_category_name
 from questionnaire.prompts import run_prompt_generation_pair
-from questionnaire.views.views_demo import demo_landing
+from questionnaire.device import landing_template_name
 
 
 def _is_demo_session(request) -> bool:
@@ -27,12 +27,12 @@ def _demo_flow_template(request, base_name: str) -> str:
 
 def root(request):
     """
-    루트 URL(/). QR이 도메인만 넣으면 여기로 옴 — 비로그인은 데모가 켜져 있으면 /demo/ 로 보냄.
+    루트 URL(/). 비로그인 + 데모 ON → /landing/ 과 동일한 데모 랜딩(리다이렉트 없이 표시).
     """
     if request.user.is_authenticated:
         return home(request)
     if getattr(settings, "DEMO_ENABLED", False):
-        return demo_landing(request)
+        return render(request, landing_template_name(request), {})
     return redirect("accounts:login")
 
 
@@ -159,11 +159,27 @@ def select_domain(request, parent_block_id):
     parent_node = get_object_or_404(BrainBlockNode, id=parent_block_id)
     tree = parent_node.braintree  # ← 이렇게 바로 접근 가능!
     categories = Category.objects.exclude(name='common')  # 'common' 제외
+    allowed_domain = getattr(settings, "DEMO_DOMAIN_CATEGORY", "startup")
 
     if request.method == "POST":
         selected_domain = request.POST.get("domain")
-        print("선택된 도메인:", selected_domain)  # ✅ 로그 확인용
-
+        if selected_domain != allowed_domain:
+            demo_mode = bool(request.session.get("demo_mode"))
+            demo_default_domain = None
+            if _is_demo_session(request):
+                demo_default_domain = pick_demo_domain_category_name()
+            return render(
+                request,
+                _demo_flow_template(request, "select_domain"),
+                {
+                    "tree": tree,
+                    "parent_node": parent_node,
+                    "categories": categories,
+                    "demo_mode": demo_mode,
+                    "demo_default_domain": demo_default_domain,
+                    "allowed_domain": allowed_domain,
+                },
+            )
 
         # 1. 도메인 카테고리 가져오기 (없으면 생성)
         category, _ = Category.objects.get_or_create(name=selected_domain)
@@ -203,6 +219,7 @@ def select_domain(request, parent_block_id):
         "categories": categories,
         "demo_mode": demo_mode,
         "demo_default_domain": demo_default_domain,
+        "allowed_domain": allowed_domain,
     })
 
 def _get_prompt_flow_answers(user, block_id):

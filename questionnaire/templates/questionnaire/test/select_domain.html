@@ -18,7 +18,7 @@
       {% endif %}
     </p>
 
-    {% if demo_mode and demo_default_domain %}
+    {% if demo_mode and demo_default_domain and demo_default_domain == allowed_domain %}
     <div class="domain-card__demo" role="region" aria-label="데모 안내">
       <strong class="domain-card__demo-title">데모 시연</strong>
       <p class="domain-card__demo-text">
@@ -38,6 +38,7 @@
       <p class="domain-card__label">도메인 목록</p>
       <div class="domain-card__grid">
         {% for category in categories %}
+          {% if category.name == allowed_domain %}
           <button
             type="submit"
             name="domain"
@@ -47,6 +48,17 @@
           >
             {{ category.name }}
           </button>
+          {% else %}
+          <button
+            type="button"
+            class="domain-card__btn domain-card__btn--disabled"
+            disabled
+            aria-disabled="true"
+            title="준비 중입니다"
+          >
+            {{ category.name }}
+          </button>
+          {% endif %}
         {% endfor %}
       </div>
     </form>

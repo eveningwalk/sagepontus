@@ -34,8 +34,8 @@ DEMO_ANSWERS: dict[tuple[str, int], str] = {
 
 def demo_fallback_answer(category_name: str, order: int) -> str:
     return (
-        f"[데모 기본값] «{category_name}» 영역 {order}번 질문에 대한 예시 응답입니다. "
-        "필요 시 수정 후 진행할 수 있습니다."
+        f"{category_name} 영역 {order}번에 대한 시연용 예시입니다. "
+        "실제 상황에 맞게 한두 문장으로 바꿔 주세요."
     )
 
 

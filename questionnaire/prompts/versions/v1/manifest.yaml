@@ -12,8 +12,11 @@ generation:
   top_p: 0.92
 tasks:
   strategy:
-    system: strategy_system.jinja
     user: strategy_user.jinja
   prompt_builder:
-    system: prompt_builder_system.jinja
     user: prompt_builder_user.jinja
+    system: prompt_builder_system.jinja
+    # 설문 형식 출력 억제: 약간 낮은 temperature·여유 토큰
+    generation:
+      temperature: 0.4
+      max_tokens: 640

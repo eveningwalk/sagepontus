@@ -3,23 +3,18 @@
 {% block page_title %}맞춤 프롬프트 · Sage Pontus{% endblock %}
 
 {% block main %}
-<div class="flow-page">
+<div class="flow-page flow-page--narrow">
   <article class="flow-card">
     <span class="flow-card__step">2 / 2</span>
     <h1 class="flow-card__title">답변을 반영한 맞춤 프롬프트</h1>
     <p class="flow-card__lead">
-      질문에 남긴 답변을 바탕으로, 다른 AI·챗봇에 붙여 넣을 <strong>프롬프트</strong>와 함께 실행 관점 요약을 만들어 두었습니다.
+      질문에 남긴 답변을 바탕으로, 다른 AI·챗봇에 붙여 넣을 <strong>프롬프트</strong>를 만들어 두었습니다.
       답변을 다시 손보고 싶다면
       <a href="{% url 'questionnaire:summary' block_id=block_id %}">답변 검토 단계</a>로 돌아가거나 아래에서 개별 답변을 수정할 수 있습니다.
       {% if tree %}
       <span class="flow-card__tree">BrainTree: {{ tree.title }}</span>
       {% endif %}
     </p>
-
-    <div class="flow-ai-block">
-      <h2 class="flow-ai-block__title">실행 관점 요약</h2>
-      <p class="flow-ai-block__body">{{ result_1|linebreaksbr }}</p>
-    </div>
 
     <div class="flow-ai-block">
       <h2 class="flow-ai-block__title">복사해 쓸 프롬프트</h2>
@@ -49,7 +44,7 @@
 
     <div class="flow-actions flow-done-footer">
       <a class="flow-btn flow-btn--ghost" href="{% url 'questionnaire:summary' block_id=block_id %}">답변 다시 검토</a>
-      <a class="flow-btn flow-btn--primary" href="{% url 'home' %}">홈으로</a>
+      <a class="flow-btn flow-btn--primary" href="{% url 'landing' %}">데모 첫 화면으로</a>
     </div>
   </article>
 </div>

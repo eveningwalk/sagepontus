@@ -6,21 +6,16 @@
 <div class="app-shell">
   <aside class="app-sidebar" aria-label="주 메뉴">
     <div class="app-sidebar__brand">
-      <a href="{% url 'home' %}">Sage Pontus</a>
+      <a href="{% if DEMO_ENABLED %}{% url 'landing' %}{% else %}{% url 'home' %}{% endif %}">Sage Pontus</a>
     </div>
-    <nav class="app-sidebar__nav">
-      <a class="app-sidebar__link {% block nav_home_active %}{% endblock %}" href="{% url 'home' %}">홈 · BrainTree</a>
-      <a class="app-sidebar__link" href="{% url 'home' %}#braintree-new">새 BrainTree 만들기</a>
-      <a class="app-sidebar__link" href="{% url 'demo' %}">데모 시연 (QR · 로그인 생략)</a>
-    </nav>
-    <div class="app-sidebar__footer">
-      {% if user.is_authenticated %}
-        <span>{{ user.username }}</span>
-        ·
-        <a class="app-sidebar__footer-link" href="{% url 'accounts:logout' %}">로그아웃</a>
-      {% else %}
-        <a class="app-sidebar__footer-link" href="{% url 'accounts:login' %}">로그인</a>
+    <nav class="app-sidebar__nav" aria-label="앱 메뉴">
+      {% if DEMO_ENABLED %}
+      <a class="app-sidebar__link {% block nav_landing_active %}{% endblock %}" href="{% url 'landing' %}">데모 랜딩 (시작)</a>
       {% endif %}
+    </nav>
+    <div class="app-sidebar__block-sink" style="display:none" aria-hidden="true">
+      {% block nav_home_active %}{% endblock %}
+      {% block nav_demo_active %}{% endblock %}
     </div>
   </aside>
   <main class="app-main">

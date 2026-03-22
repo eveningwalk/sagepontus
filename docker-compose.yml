@@ -3,14 +3,16 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: python manage.py runserver 0.0.0.0:8000
+    # ENTRYPOINT(entrypoint.sh → gunicorn)와 충돌하지 않음. runserver 쓰려면 override 에서 entrypoint 비우고 command 지정.
     volumes:
       - .:/app
     ports:
+      # 컨테이너 내 gunicorn 은 PORT 로 바인딩 — 아래 PORT=8000 과 맞춤
       - "8000:8000"
     # 프로젝트 루트 .env 는 Compose가 치환용으로 읽습니다. 아래 environment 로 컨테이너에도 전달됩니다.
     # cp .env.example .env 후 HF_TOKEN=hf_... 를 넣으세요.
     environment:
+      - PORT=8000
       - DEBUG=1
       - DATABASE_URL=${DATABASE_URL:-}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-}

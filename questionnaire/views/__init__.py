@@ -14,4 +14,4 @@ from .views import (
     answers_review,
     prompt_flow_results,
 )
-from .views_demo import demo_entry, demo_landing
+from .views_demo import demo_entry, landing

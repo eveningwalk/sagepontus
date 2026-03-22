@@ -9,13 +9,17 @@
 
 {% block content %}
 <div class="app-shell app-shell--demo-mobile">
-  <header class="app-mobile-header" role="banner">
+  <header class="app-mobile-header{% block mobile_header_class %}{% endblock %}" role="banner">
+    {% block mobile_header_brand %}
     <a href="{% url 'home' %}" class="app-mobile-header__brand">Sage Pontus</a>
+    {% endblock %}
     <nav class="app-mobile-header__nav" aria-label="빠른 이동">
+      {% block mobile_header_nav %}
       <a class="app-mobile-header__link" href="{% url 'home' %}">홈</a>
       {% if user.is_authenticated %}
       <a class="app-mobile-header__link" href="{% url 'accounts:logout' %}">로그아웃</a>
       {% endif %}
+      {% endblock %}
     </nav>
   </header>
   <main class="app-main app-main--demo-mobile" id="main">
@@ -25,4 +29,22 @@
     </div>
   </main>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  function setDemoVh() {
+    var h = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    document.documentElement.style.setProperty("--demo-vh", h + "px");
+  }
+  setDemoVh();
+  window.addEventListener("resize", setDemoVh, { passive: true });
+  window.addEventListener("orientationchange", setDemoVh);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", setDemoVh, { passive: true });
+    window.visualViewport.addEventListener("scroll", setDemoVh, { passive: true });
+  }
+})();
+</script>
 {% endblock %}

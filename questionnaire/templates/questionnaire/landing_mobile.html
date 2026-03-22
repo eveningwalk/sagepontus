@@ -1,0 +1,32 @@
+{% extends "index_mobile.html" %}
+
+{% block page_title %}시작 — Sage Pontus 데모{% endblock %}
+
+{% block mobile_header_class %} app-mobile-header--landing{% endblock %}
+
+{% block mobile_header_brand %}
+<a href="{% url 'landing' %}" class="app-mobile-header__brand">Sage Pontus</a>
+{% endblock %}
+
+{% block mobile_header_nav %}
+{# 데모 랜딩 첫 화면: 데스크톱 사이드바와 같이 추가 메뉴 없음 #}
+{% endblock %}
+
+{% block main %}
+<div class="flow-page landing-page landing-page--mobile">
+  <article class="flow-card">
+    <span class="flow-card__step">데모</span>
+    <h1 class="flow-card__title">Sage Pontus 데모 시작</h1>
+    <p class="flow-card__lead">
+      설문 답변을 바탕으로 다른 AI에 붙여 넣을 <strong>맞춤 프롬프트</strong>를 만드는 흐름을,
+      로그인 없이 체험할 수 있습니다.
+    </p>
+    <p class="flow-card__lead flow-card__lead--note">
+      아래 버튼을 누르면 데모 전용 세션이 시작되고 질문 화면으로 이동합니다.
+    </p>
+    <div class="flow-actions landing-page__actions">
+      <a class="flow-btn flow-btn--primary" href="{% url 'demo' %}">데모 시작하기</a>
+    </div>
+  </article>
+</div>
+{% endblock %}

@@ -4,17 +4,19 @@
 
 {% block main %}
 <div class="question-page">
-  <article class="question-card">
-    <div class="question-card__badges" role="group" aria-label="질문 구분">
-      <span class="question-card__scope question-card__scope--{{ question_scope }}">{{ scope_label }}</span>
-      <span class="question-card__badge">{{ question.get_purpose_display }}</span>
+  <article class="question-card" aria-labelledby="q-step-title">
+    <div class="question-card__prompt">
+      <div class="question-card__badges" role="group" aria-label="질문 구분">
+        <span class="question-card__scope question-card__scope--{{ question_scope }}">{{ scope_label }}</span>
+        <span class="question-card__badge">{{ question.get_purpose_display }}</span>
+      </div>
+      <h1 class="question-card__title" id="q-step-title">
+        <span class="question-card__order">{{ question.order }}</span>
+        {{ question.question_text }}
+      </h1>
+      <p class="question-card__desc">{{ question.question_description }}</p>
+      <p class="question-card__hint"><span class="question-card__hint-label">힌트</span> {{ question.question_hint }}</p>
     </div>
-    <h1 class="question-card__title">
-      <span class="question-card__order">{{ question.order }}</span>
-      {{ question.question_text }}
-    </h1>
-    <p class="question-card__desc">{{ question.question_description }}</p>
-    <p class="question-card__hint"><span class="question-card__hint-label">힌트</span> {{ question.question_hint }}</p>
 
     <form method="post" class="question-card__form">
       {% csrf_token %}

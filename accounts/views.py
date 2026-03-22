@@ -2,8 +2,7 @@ from django.shortcuts import render, redirect
 
 # Create your views here.
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import authenticate, login as auth_login
-from django.contrib.auth import logout
+from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 
 def landing_page(request):
@@ -52,8 +51,8 @@ def login(request):
     
 
 def logout(request):
-    logout(request)
-    return redirect('login')
+    auth_logout(request)
+    return redirect('accounts:login')
 
 @login_required
 def show_question_step(request, category, order):

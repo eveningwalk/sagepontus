@@ -3,18 +3,18 @@
 {% block page_title %}답변 검토 · Sage Pontus{% endblock %}
 
 {% block main %}
-<div class="flow-page">
+<div class="flow-page flow-page--answer-review">
   <article class="flow-card">
     <span class="flow-card__step">1 / 2</span>
     <h1 class="flow-card__title">답변을 확인하고 수정하세요</h1>
     <p class="flow-card__lead">
-      도메인 질문이 모두 끝났습니다. 아래 내용을 검토한 뒤 <strong>수정 완료</strong>를 누르면, 답변을 반영해 맞춤 프롬프트(및 실행 요약)를 만들어 드립니다.
+      도메인 질문이 모두 끝났습니다. 아래 내용을 검토한 뒤 <strong>수정 완료</strong>를 누르면, 답변을 반영해 맞춤 프롬프트를 만들어 드립니다.
       {% if tree %}
       <span class="flow-card__tree">BrainTree: {{ tree.title }}</span>
       {% endif %}
     </p>
 
-    <form method="post" action="">
+    <form id="answers-review-form" method="post" action="">
       {% csrf_token %}
       <div class="flow-answer-list">
         {% for a in answers %}
@@ -43,10 +43,27 @@
       <div class="flow-actions">
         <a class="flow-btn flow-btn--ghost" href="{% url 'home' %}">나중에 하기</a>
         {% if answers %}
-        <button type="submit" class="flow-btn flow-btn--primary">수정 완료 · AI 결과 보기</button>
+        <button type="submit" id="answers-review-submit" class="flow-btn flow-btn--primary" aria-live="polite">수정 완료 · AI 결과 보기</button>
         {% endif %}
       </div>
     </form>
   </article>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  var form = document.getElementById("answers-review-form");
+  var btn = document.getElementById("answers-review-submit");
+  if (!form || !btn) return;
+  form.addEventListener("submit", function () {
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.setAttribute("aria-busy", "true");
+    btn.classList.add("flow-btn--loading");
+    btn.textContent = "결과 가져오는 중…";
+  });
+})();
+</script>
 {% endblock %}

@@ -1,22 +1,25 @@
 /*
  * 데모 세션 전용: 카톡·안드로이드 인앱 WebView 등 좁은 화면
- * — safe-area, dvh, 터치 최소 크기, iOS 입력 확대 완화, 세로 중앙 정렬 해제
+ * — safe-area, dvh, 터치 최소 크기, iOS 입력 확대 완화
+ * — 질문 단계(.question-page)는 헤더 아래 영역 가운데 카드 배치
  */
 
 .app-shell--demo-mobile {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
+  /* --demo-vh: index_mobile extra_js 에서 visualViewport 로 갱신(주소창·툴바 변화 반영) */
+  height: var(--demo-vh, 100dvh);
+  max-height: var(--demo-vh, 100dvh);
+  min-height: 0;
+  overflow: hidden;
   background: #e8eaef;
   -webkit-tap-highlight-color: rgba(59, 91, 219, 0.15);
 }
 
 .app-mobile-header {
-  position: sticky;
-  top: 0;
-  z-index: 40;
+  /* sticky 는 일부 WebView 에서 형제인 main 과 레이어가 겹쳐 보일 수 있음 — flex 열에서 고정 높이로 유지 */
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -70,22 +73,35 @@
 }
 
 .app-main--demo-mobile {
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
   min-height: 0;
   padding: 0.65rem max(0.65rem, env(safe-area-inset-right)) max(0.85rem, env(safe-area-inset-bottom))
     max(0.65rem, env(safe-area-inset-left));
-  overflow: auto;
+  overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior-y: contain;
+  /* contain 은 일부 WebView/Chrome 에서 당김 새로고침·뷰포트 갱신이 막히는 경우가 있음 */
+  overscroll-behavior-y: auto;
+  touch-action: manipulation;
 }
 
-/* 데스크톱용 세로 중앙 정렬(app_shell.css) 무력화 — 인앱에서 카드가 둥둥 떠 보이지 않게 */
-.app-main--demo-mobile:has(.question-page),
+/* 질문 단계: 세로 중앙 정렬은 카드가 위로 밀려 헤더와 겹쳐 보일 수 있어 상단부터 배치 */
+.app-main--demo-mobile:has(.question-page) {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+  padding-top: 0.35rem;
+}
+
+/* 플로우(검토·결과 등)는 기존처럼 상단부터 */
 .app-main--demo-mobile:has(.flow-page) {
   display: block;
   justify-content: flex-start;
+  min-height: 0;
 }
 
 .app-main__inner--demo-mobile {
@@ -97,13 +113,54 @@
   padding: 0;
 }
 
-.app-shell--demo-mobile .question-page,
+.app-main__inner--demo-mobile:has(.question-page) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
+  min-height: 0;
+  width: 100%;
+}
+
+.app-shell--demo-mobile .question-page {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 0 0.25rem;
+  box-sizing: border-box;
+}
+
 .app-shell--demo-mobile .flow-page {
   width: 100%;
   max-width: none;
 }
 
-.app-shell--demo-mobile .question-card,
+.app-shell--demo-mobile .question-card {
+  padding: 1.35rem 1.15rem;
+  border-radius: 16px;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  background: #fff;
+  border: 1px solid rgba(28, 35, 51, 0.1);
+  box-shadow:
+    0 1px 3px rgba(20, 26, 38, 0.06),
+    0 16px 48px rgba(20, 26, 38, 0.12);
+}
+
+.app-shell--demo-mobile .question-card__prompt {
+  background: rgba(28, 35, 51, 0.04);
+  border: 1px solid rgba(28, 35, 51, 0.09);
+}
+
+.app-shell--demo-mobile .question-card__prompt .question-card__hint {
+  margin-bottom: 0;
+}
+
 .app-shell--demo-mobile .domain-card,
 .app-shell--demo-mobile .flow-card {
   padding: 1.15rem 0.95rem;
@@ -240,4 +297,48 @@
 /* 키보드·홈 인디케이터 위 여유 */
 .app-shell--demo-mobile .app-main--demo-mobile {
   padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* ---- 데모 랜딩(첫 화면) 전용: 헤더는 브랜드만 ---- */
+.app-mobile-header--landing .app-mobile-header__nav {
+  display: none;
+}
+
+.app-mobile-header--landing {
+  justify-content: center;
+}
+
+.app-mobile-header--landing .app-mobile-header__brand {
+  text-align: center;
+}
+
+/* 랜딩 카드: 세로 가운데, 안전 영역 */
+.app-shell--demo-mobile .landing-page--mobile {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
+  min-height: min(100dvh, 100vh);
+  min-height: min(-webkit-fill-available, 100vh);
+  padding-top: 0.35rem;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+
+.app-shell--demo-mobile .landing-page--mobile .flow-card {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 28rem;
+}
+
+.app-shell--demo-mobile .flow-card__lead--note {
+  margin-top: 0.75rem;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  opacity: 0.92;
+}
+
+.app-shell--demo-mobile .landing-page__actions {
+  margin-top: 1.35rem;
 }

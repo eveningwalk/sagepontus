@@ -13,6 +13,7 @@ from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
+from questionnaire.device import landing_template_name
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode
 
 
@@ -31,14 +32,14 @@ def _get_or_create_demo_user() -> User:
     return user
 
 
-def demo_landing(request):
+def landing(request):
     """
-    GET / — 데모가 켜져 있을 때 비로그인 방문자에게 보이는 첫 화면(로그인 없음).
-    「데모 시작」으로 /demo/ 진입.
+    GET /landing/ — 데모 전용 랜딩(시작) 페이지. 로그인 없음.
+    「데모 시작하기」→ /demo/ 진입.
     """
     if not getattr(settings, "DEMO_ENABLED", False):
         raise Http404("Demo is disabled.")
-    return render(request, "questionnaire/demo_landing.html", {})
+    return render(request, landing_template_name(request), {})
 
 
 def demo_entry(request):

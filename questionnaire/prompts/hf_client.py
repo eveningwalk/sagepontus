@@ -29,9 +29,16 @@ def _inference_provider() -> str:
     return raw
 
 
-def chat_completion_generate(model_id: str, system: str, user: str, generation: dict[str, Any]) -> str:
+def chat_completion_generate(
+    model_id: str,
+    user: str,
+    generation: dict[str, Any],
+    *,
+    system: str | None = None,
+) -> str:
     """
     InferenceClient.chat_completion — OpenAI 호환 응답에서 본문만 반환.
+    system 이 있으면 messages 앞에 role=system 으로 추가한다.
     토큰: HF_TOKEN 또는 HUGGINGFACE_HUB_TOKEN.
     Router 호출에는 보통 유효한 Hub 토큰이 필요(401 방지).
     라우팅: HF_INFERENCE_PROVIDER (기본 auto; hf-inference 는 해당 라우트에만·미배포 모델은 404).
@@ -46,11 +53,13 @@ def chat_completion_generate(model_id: str, system: str, user: str, generation: 
     token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_HUB_TOKEN") or None
     client = InferenceClient(model=model_id, token=token, provider=_inference_provider())
 
+    messages: list[dict[str, str]] = []
+    if system and system.strip():
+        messages.append({"role": "system", "content": system.strip()})
+    messages.append({"role": "user", "content": user})
+
     kwargs: dict[str, Any] = {
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
+        "messages": messages,
         "max_tokens": int(generation.get("max_tokens", 512)),
         "temperature": float(generation.get("temperature", 0.7)),
     }

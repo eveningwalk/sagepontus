@@ -9,8 +9,10 @@ generation:
   top_p: 0.9
 tasks:
   strategy:
-    system: strategy_system.jinja
     user: strategy_user.jinja
   prompt_builder:
-    system: prompt_builder_system.jinja
     user: prompt_builder_user.jinja
+    system: prompt_builder_system.jinja
+    generation:
+      temperature: 0.4
+      max_tokens: 640
