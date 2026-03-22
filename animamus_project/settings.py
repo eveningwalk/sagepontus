@@ -45,6 +45,10 @@ if os.environ.get("DJANGO_ALLOW_NGROK", "").strip() in ("1", "true", "True", "ye
         if _ng not in ALLOWED_HOSTS:
             ALLOWED_HOSTS.append(_ng)
 
+# Cloud Run: K_SERVICE 이 있으면 *.run.app 호스트(리전 URL) 허용
+if os.environ.get("K_SERVICE") and ".run.app" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".run.app")
+
 # Django 4+: 비HTTPS도 Referer/Origin 검사에 사용 (포트 포함)
 _default_origins = (
     "http://localhost:8000,http://127.0.0.1:8000,"

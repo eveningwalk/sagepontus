@@ -27,6 +27,8 @@ RUN pip install --no-cache-dir -r requirements-docker.txt
 
 COPY . .
 
-EXPOSE 8000
+# Cloud Run 은 PORT(기본 8080)에서 수신해야 함. 로컬: docker run -e PORT=8000 -p 8000:8000 ...
+ENV PORT=8080
+EXPOSE 8080
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+CMD ["sh", "-c", "gunicorn animamus_project.wsgi:application --bind 0.0.0.0:${PORT} --workers 1 --timeout 120"]
