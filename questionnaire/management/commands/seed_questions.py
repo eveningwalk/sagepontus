@@ -3,6 +3,22 @@ import json
 from django.core.management.base import BaseCommand
 from questionnaire.models import Category, Question  # 실제 모델 경로 맞게 수정
 
+_VALID_PURPOSE = frozenset({"context", "motivation", "constraint", "other"})
+
+
+def _normalize_purpose(raw) -> str:
+    """JSON의 'context: …' 형태를 Question.purpose choices 값으로 맞춘다."""
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        return "context"
+    s = str(raw).strip().lower()
+    if s in _VALID_PURPOSE:
+        return s
+    for key in ("context", "motivation", "constraint", "other"):
+        if s.startswith(key):
+            return key
+    return "context"
+
+
 class Command(BaseCommand):
     help = 'questions 디렉토리의 JSON 파일을 읽어 질문을 DB에 등록합니다.'
 
@@ -49,12 +65,9 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.ERROR(f"❌ {file_name}에서 questions 데이터를 찾을 수 없습니다."))
                 continue
 
-            # Category 존재 확인
-            try:
-                category = Category.objects.get(name=category_name)
-            except Category.DoesNotExist:
-                self.stdout.write(self.style.WARNING(f"⚠️ Category '{category_name}'가 존재하지 않아 생략됨"))
-                continue
+            category, cat_created = Category.objects.get_or_create(name=category_name)
+            if cat_created:
+                self.stdout.write(self.style.SUCCESS(f"카테고리 자동 생성: {category_name}"))
 
             # questions 등록
             for item in questions:
@@ -71,7 +84,7 @@ class Command(BaseCommand):
                             'question_text': item.get('question_text', ''),
                             'question_description': item.get('description', ''),
                             'question_hint': item.get('hint', ''),
-                            'purpose': item.get('purpose', 'context'),  # 🔹 추가
+                            'purpose': _normalize_purpose(item.get('purpose', 'context')),
                         }
                     )
                 except Exception as e:

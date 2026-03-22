@@ -1,6 +1,6 @@
 import json
 import os
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from questionnaire.models.models import Category
 
 class Command(BaseCommand):
@@ -15,12 +15,13 @@ class Command(BaseCommand):
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 categories = json.load(f)
-        except FileNotFoundError:
-            self.stdout.write(self.style.ERROR(f'파일을 찾을 수 없습니다: {file_path}'))
-            return
-        except json.JSONDecodeError:
-            self.stdout.write(self.style.ERROR('JSON 파일 형식이 잘못되었습니다.'))
-            return
+        except FileNotFoundError as e:
+            raise CommandError(
+                f"categories.json 을 찾을 수 없습니다: {file_path}. "
+                "이미지에 questionnaire/management/categories.json 이 포함되는지 확인하세요."
+            ) from e
+        except json.JSONDecodeError as e:
+            raise CommandError("categories.json 형식이 잘못되었습니다.") from e
 
         for name in categories:
             obj, created = Category.objects.get_or_create(name=name)

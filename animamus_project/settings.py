@@ -32,7 +32,9 @@ _secret_key = os.environ.get("DJANGO_SECRET_KEY", "").strip()
 SECRET_KEY = _secret_key or "django-insecure-local-dev-only-not-for-production"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# Cloud Run 등: DJANGO_DEBUG=0 또는 false. 미설정 시 로컬 개발 편의로 True(기존 동작).
+_debug_env = os.environ.get("DJANGO_DEBUG", "").strip()
+DEBUG = _debug_env.lower() in ("1", "true", "yes") if _debug_env else True
 
 # 호스트/CSRF: 브라우저가 localhost·127.0.0.1·LAN IP 등으로 접속할 때 쿠키 도메인이 달라지면
 # "CSRF token from POST incorrect" 가 납니다. 배포 시 환경 변수로 맞추세요.
