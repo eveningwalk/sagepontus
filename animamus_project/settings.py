@@ -51,6 +51,10 @@ if os.environ.get("DJANGO_ALLOW_NGROK", "").strip() in ("1", "true", "True", "ye
 if os.environ.get("K_SERVICE") and ".run.app" not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append(".run.app")
 
+# sagepontus.com 커스텀 도메인 (예: demo.sagepontus.com)
+if ".sagepontus.com" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".sagepontus.com")
+
 # Django 4+: 비HTTPS도 Referer/Origin 검사에 사용 (포트 포함)
 _default_origins = (
     "http://localhost:8000,http://127.0.0.1:8000,"
@@ -59,6 +63,14 @@ _default_origins = (
 # Docker 등에서 CSRF_TRUSTED_ORIGINS= 만 넘어오면 빈 문자열이 되어 기본 목록이 무시됨 → 비었을 때는 기본값 사용
 _raw_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip() or _default_origins
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+# 커스텀 도메인 데모: CSRF_TRUSTED_ORIGINS 미설정 시 https/http demo 호스트 보강
+if not os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip():
+    for _demo_origin in (
+        "https://demo.sagepontus.com",
+        "http://demo.sagepontus.com",
+    ):
+        if _demo_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(_demo_origin)
 # ngrok HTTPS로 접속 시 Origin 이 https://서브도메인.ngrok-free.app 이므로, 와일드카드 불가 → 전체 출처 한 줄
 _ngrok_origin = os.environ.get("DJANGO_NGROK_ORIGIN", "").strip()
 if _ngrok_origin and _ngrok_origin not in CSRF_TRUSTED_ORIGINS:
