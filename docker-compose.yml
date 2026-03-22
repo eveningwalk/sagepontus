@@ -12,6 +12,7 @@ services:
     # cp .env.example .env 후 HF_TOKEN=hf_... 를 넣으세요.
     environment:
       - DEBUG=1
+      - DATABASE_URL=${DATABASE_URL:-}
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:-}
       - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-}
       - DJANGO_ALLOW_NGROK=${DJANGO_ALLOW_NGROK:-}

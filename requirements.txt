@@ -18,6 +18,7 @@ cycler==0.12.1
 debugpy==1.8.16
 decorator==5.2.1
 defusedxml==0.7.1
+dj-database-url==2.3.0
 Django==5.2.5
 django-admin-sortable2==2.2.8
 django-extensions==4.1
@@ -101,6 +102,7 @@ pycparser==2.22
 pydot==4.0.1
 Pygments==2.19.2
 pygraphviz==1.14
+psycopg[binary]==3.2.4
 pyparsing==3.2.5
 python-dateutil==2.9.0.post0
 python-json-logger==3.3.0
