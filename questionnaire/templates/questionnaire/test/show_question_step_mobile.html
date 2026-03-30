@@ -28,7 +28,7 @@
           class="question-card__textarea"
           rows="6"
           placeholder="답변을 입력하세요..."
-          required
+          {% if not demo_session %}required{% endif %}
           autocomplete="off"
           autocapitalize="sentences"
           enterkeyhint="done"

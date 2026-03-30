@@ -100,6 +100,8 @@ def show_question_step(request, category, order, block_id):
             return redirect('home')
 
         answer_text = request.POST.get('answer', '').strip()
+        if _is_demo_session(request) and not answer_text:
+            answer_text = get_demo_default_answer(cat.name, order).strip()
         if answer_text:
             # 이전 질문 노드 찾기
             '''
@@ -164,6 +166,7 @@ def show_question_step(request, category, order, block_id):
         'block': block_node,
         'tree': braintree,
         'demo_default_answer': demo_default_answer,
+        'demo_session': _is_demo_session(request),
         'question_scope': question_scope,
         'scope_label': scope_label,
         'is_last_domain_question': is_last_domain_question,
