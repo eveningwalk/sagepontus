@@ -110,31 +110,44 @@ def build_mptt_tree(node):
     }
 
 # Page view: renders template
+@login_required
 def tree_view(request, braintree_id):
-    braintree = get_object_or_404(BrainTree, id=braintree_id)
+    braintree = get_object_or_404(BrainTree, id=braintree_id, user=request.user)
     return render(request, "questionnaire/test/tree_view.html", {"braintree": braintree})
 
 # JSON endpoint for BrainBlockNode tree
 def brainblock_tree_json(request, braintree_id):
     braintree = get_object_or_404(BrainTree, id=braintree_id)
 
+    PURPOSE_LABELS = {
+        "context":    "맥락 탐색",
+        "motivation": "심리 기반 동기/목표",
+        "constraint": "조건/제약",
+        "other":      "기타",
+    }
+
     def serialize_node(node):
         # Include BrainNodes (questions + answers) under this block
         brainnodes_data = []
-        for bn in node.brainnodes.all():
-            answers_data = [
-                {"user": a.user.username, "answer": a.answer_text} 
-                for a in bn.answers.all()
-            ]
+        for bn in node.brainnodes.order_by('order').prefetch_related('answers__question'):
+            answers_data = []
+            purpose_label = ""
+            for a in bn.answers.all():
+                answers_data.append({"user": a.user.username, "answer": a.answer_text})
+                if not purpose_label and a.question_id:
+                    purpose_label = PURPOSE_LABELS.get(a.question.purpose, "")
             brainnodes_data.append({
                 "id": bn.id,
+                "order": bn.order,
                 "question": bn.question_text,
-                "answers": answers_data
+                "purpose_label": purpose_label,
+                "answers": answers_data,
             })
 
         return {
             "id": node.id,
             "title": node.title,
+            "type": node.type,
             "brainnodes": brainnodes_data,
             "children": [serialize_node(c) for c in node.get_children()]
         }

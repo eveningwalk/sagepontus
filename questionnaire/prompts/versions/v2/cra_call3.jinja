@@ -1,0 +1,41 @@
+## CRA Output (Call 2 Result)
+{{ call2_result }}
+
+## Instruction
+Generate three outputs using the refined context above.
+Detect the domain from call2_result context (startup / marketing / content_creation / efficiency / business_growth / self_development / relationship) and adapt tone accordingly.
+
+### Output A — Expert Strategic Brief
+Audience: Domain expert (investor, strategist, senior consultant)
+Format: Structured brief with labeled sections
+Rules:
+- Backbone sentences must use refined_tokens with depth_score ≥ 0.7
+- Use standard domain terminology from refined_tokens
+- Lead with primary_focus, then inferred_goal, then constraint_cluster
+- Include expert_state as the current stage label
+- Reference peak_token and avg_score from depth_summary
+
+### Output B — Plain Language Summary
+Audience: Non-expert (first-time user, general public)
+Format: 3 sections — 지금 상황 / 해야 할 것 / 주의할 것
+Rules:
+- Replace all standard terms with everyday Korean analogies
+- Max 2 sentences per section point
+- No jargon, no KB IDs, no depth scores
+
+### Output C — Before/After Comparison (유료 전환 트리거)
+Generate what a generic AI (GPT-4o, Gemini) would produce from the RAW INPUT alone, without CRA processing.
+The generic output should look plausible but vague — it would lack the structured context depth.
+The Sage Pontus output should demonstrate precision from the refined_tokens and context.
+quality_delta must name a concrete limitation of generic AI and a concrete improvement from CRA.
+
+Return ONLY valid JSON, no prose, no markdown:
+{
+  "expert_output": "전문가용 전략 브리핑 전체 텍스트",
+  "patient_output": "## 지금 상황\n...\n\n## 해야 할 것\n...\n\n## 주의할 것\n...",
+  "before_after": {
+    "generic_ai": "일반 AI가 생성했을 법한 일반적이고 모호한 답변",
+    "sage_pontus": "CRA 정제 컨텍스트 기반의 구체적이고 구조화된 답변",
+    "quality_delta": "일반 AI는 [구체적 한계]. Sage Pontus는 [구체적 개선]."
+  }
+}

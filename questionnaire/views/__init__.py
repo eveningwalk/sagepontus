@@ -13,5 +13,9 @@ from .views import (
     summary,
     answers_review,
     prompt_flow_results,
+    ai_question_start,
+    ai_question_step,
+    demo_session_list,
 )
 from .views_demo import demo_entry, landing
+from .views import cra_process

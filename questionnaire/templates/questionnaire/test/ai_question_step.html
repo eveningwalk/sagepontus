@@ -1,0 +1,99 @@
+{% extends "base_demo.html" %}
+
+{% block page_title %}AI 보완 질문 {{ order }} — Sage Pontus{% endblock %}
+
+{% block main %}
+
+<!-- Progress indicator -->
+<div class="mb-8 flex items-center gap-3">
+  <div class="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+    <div class="bg-secondary h-1.5 rounded-full transition-all duration-500"
+         style="width: {% widthratio order total 100 %}%"></div>
+  </div>
+  <span class="text-xs font-medium text-muted-foreground whitespace-nowrap">{{ order }} / {{ total }}</span>
+</div>
+
+<!-- AI question card -->
+<article class="bg-card rounded-2xl border border-secondary/20 shadow-sm p-8">
+
+  <!-- AI badge -->
+  <div class="flex items-center gap-2 mb-6">
+    <span class="inline-flex items-center gap-1.5 text-xs font-medium bg-secondary/10 text-secondary px-3 py-1 rounded-full">
+      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+      </svg>
+      AI 보완 질문
+    </span>
+    <span class="text-xs text-muted-foreground">앞선 답변을 분석해 생성된 질문입니다</span>
+  </div>
+
+  <!-- Question -->
+  <div class="mb-6">
+    <div class="flex items-start gap-3 mb-3">
+      <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-secondary/10 flex items-center justify-center text-sm font-bold text-secondary">
+        {{ order }}
+      </span>
+      <h1 class="text-xl font-bold text-foreground leading-snug">{{ question.text }}</h1>
+    </div>
+  </div>
+
+  <!-- Hint -->
+  {% if question.hint %}
+  <div class="ml-11 mb-6 flex items-start gap-2 p-3 rounded-lg bg-muted/60 border border-border">
+    <svg class="w-4 h-4 text-muted-foreground mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+    </svg>
+    <p class="text-sm text-muted-foreground">{{ question.hint }}</p>
+  </div>
+  {% endif %}
+
+  <!-- Form -->
+  <form method="post" class="ml-11">
+    {% csrf_token %}
+    <label class="visually-hidden" for="id_answer">답변</label>
+    <textarea
+      id="id_answer"
+      name="answer"
+      rows="5"
+      placeholder="답변을 입력하세요..."
+      class="w-full rounded-xl border border-border bg-background text-foreground placeholder-muted-foreground px-4 py-3 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-colors"
+    ></textarea>
+
+    <div class="mt-4 flex items-center justify-between">
+      {% if order > 1 %}
+      <a href="{% url 'questionnaire:ai_question_step' block_id=block_id order=order|add:'-1' %}"
+         class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground px-5 h-10 rounded-lg border border-border hover:bg-muted transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+        </svg>
+        이전
+      </a>
+      {% else %}
+      <span></span>
+      {% endif %}
+
+      <button type="submit"
+              class="inline-flex items-center gap-2 text-sm font-semibold bg-secondary hover:bg-secondary/90 text-white px-6 h-10 rounded-lg shadow-sm hover:shadow-md transition-all ring-2 ring-secondary/20 hover:ring-secondary/40">
+        {% if is_last %}
+        답변 완료
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+        </svg>
+        {% else %}
+        다음
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+        {% endif %}
+      </button>
+    </div>
+  </form>
+
+</article>
+
+<!-- Context note -->
+<p class="mt-6 text-center text-xs text-muted-foreground">
+  이 질문은 앞선 공통·도메인 답변의 빈칸을 채우기 위해 AI가 자동 생성했습니다.
+</p>
+
+{% endblock %}

@@ -1,67 +1,74 @@
 """
-정부과제 데모 시연용 기본 답변 (카테고리명 + 질문 순서).
-DB 질문 순서(common 1~6, startup 1~10)와 맞추면 시연 시 버튼만으로 진행 가능.
-DB에 질문이 더 늘어도 fallback 문구로 채움.
+경진대회 데모 시연용 기본 답변.
+도메인: physical_therapist (물리치료사)
+DB 질문 순서(common 1~6, physical_therapist 1~8)와 맞춤.
 """
 from __future__ import annotations
 
 from typing import Optional
 
-# (category_name, order) -> 평가자용 예시 답변 (질문 JSON 순서와 일치)
+# (category_name, order) -> 시연용 예시 답변
 DEMO_ANSWERS: dict[tuple[str, int], str] = {
-    # --- common (questions_common.json) ---
+
+    # ── common (1~6) — 물리치료사 맥락 ────────────────────────────────────
     ("common", 1): (
-        "공공·행정 분야에서 디지털 전환 과제를 수행 중이며, "
-        "이해관계자 협의와 규정 준수를 병행해야 하는 상황입니다."
+        "외래 물리치료실에서 근골격계 환자를 담당하고 있으며, "
+        "오늘은 요추 추간판 탈출증과 방사통을 호소하는 40대 남성 환자의 "
+        "치료 계획을 정리하고 싶습니다."
     ),
     ("common", 2): (
-        "핵심 목표는 시범 서비스 안정화와 예산 내 결과물 도출이며, "
-        "분기별 점검 지표로 진척도를 관리합니다."
+        "빠른 통증 감소와 일상 복귀를 1차 목표로 하고, "
+        "4주 내 기능 회복 프로그램까지 연결하는 것이 핵심입니다."
     ),
     ("common", 3): (
-        "일정·인력·외부 연계(용역) 등 제약이 있어 단계적 롤아웃을 계획하고 있습니다."
+        "회당 치료 시간이 30분 내외로 제한되어 있고, "
+        "환자가 고혈압 약을 복용 중이어서 일부 심부 열치료는 주의가 필요합니다."
     ),
     ("common", 4): (
-        "친근하고 명료한 톤으로, 단계별 실행 계획을 한눈에 볼 수 있는 요약 형태가 가장 도움이 됩니다."
+        "임상 SOAP 노트 형식으로 작성하되, "
+        "환자에게 설명할 수 있는 쉬운 홈케어 가이드도 함께 있으면 좋겠습니다."
     ),
     ("common", 5): (
-        "규정 준수, 이해관계자 합의, 예산·일정 제약을 반드시 반영하고 "
-        "리스크가 큰 항목은 별도로 표시해 주었으면 합니다."
+        "ICD 표준 진단 코드와 국제 임상 가이드라인(McKenzie, NICE)을 "
+        "참고해 근거 기반 치료 계획을 강조해 주세요."
     ),
     ("common", 6): (
-        "민감한 표현은 피하고, 공문·보고서에 맞는 격식을 유지해 주세요. "
-        "수치는 출처가 불명확하면 추정으로 명시하지 않기로 합니다."
+        "진단은 의사 영역이므로 AI가 독립 진단을 내리지 않도록 하고, "
+        "모든 수치와 치료 강도는 '제안' 수준으로 명시해 주세요."
     ),
-    # --- startup (questions_startup.json, DEMO_DOMAIN_CATEGORY 기본값) ---
-    ("startup", 1): (
-        "소상공인·로컬 매장의 온라인 노출이 부족해 신규 고객 유입이 정체되는 문제를 해결하고 싶습니다."
+
+    # ── physical_therapist (1~8) ───────────────────────────────────────────
+    ("physical_therapist", 1): (
+        "왼쪽 허리 통증과 함께 왼쪽 다리 후면으로 내려가는 저린감이 있으며, "
+        "장시간 앉아 있으면 악화됩니다."
     ),
-    ("startup", 2): (
-        "반복 업무를 자동화하고, 초보 운영자도 따라 할 수 있는 체크리스트형 가이드를 제공하는 것이 핵심 가치입니다."
+    ("physical_therapist", 2): (
+        "MRI 상 L4-L5 추간판 탈출증(HNP) 진단을 받았으며, "
+        "좌측 방사통(Radiculopathy)이 동반된 상태입니다."
     ),
-    ("startup", 3): (
-        "초기 예산은 제한적이며, 내부 인력 2명과 외부 멘토링·정부 지원 과제 연계를 활용할 계획입니다."
+    ("physical_therapist", 3): (
+        "3년 전 동일 부위 수술 경험 없음, 고혈압 약 복용 중, "
+        "6개월 전에 동일 증상으로 물리치료를 3주 받은 경험이 있습니다."
     ),
-    ("startup", 4): (
-        "1차 타깃은 동네 상권을 중심으로 한 소상공인·자영업자이며, 온라인 예약·주문에 익숙한 30~50대입니다."
+    ("physical_therapist", 4): (
+        "1순위: 통증 수준 NRS 7 → 3 이하로 감소. "
+        "2순위: 좌측 하지 근력 회복 및 보행 정상화."
     ),
-    ("startup", 5): (
-        "매출 안정과 브랜드 신뢰가 높아져 장기적으로 지역 일자리 기여와 지속 가능한 운영이 가능해지길 기대합니다."
+    ("physical_therapist", 5): (
+        "도수치료(요추 mobilization)와 운동치료(맥켄지 신전 운동)를 중심으로, "
+        "전기치료(TENS)와 온열치료(핫팩)를 보조로 사용하고 싶습니다."
     ),
-    ("startup", 6): (
-        "사용자 경험과 비용 효율을 최우선으로 하고, 법규·개인정보 보호를 반드시 지키는 것이 중요합니다."
+    ("physical_therapist", 6): (
+        "고혈압으로 인한 심부 열치료 주의, 급성기 굴곡 운동 금기, "
+        "건강보험 급여 범위 내 치료로 제한합니다."
     ),
-    ("startup", 7): (
-        "타사 상표를 무단으로 사용하지 않으며, 허위·과장 광고 없이 검증 가능한 수치만 제시합니다."
+    ("physical_therapist", 7): (
+        "전문 임상 SOAP 노트와 함께, "
+        "환자용 홈케어 가이드는 의학 용어 없이 쉽게 작성해 주세요."
     ),
-    ("startup", 8): (
-        "3개월 내 MVP 출시, 6개월 내 유료 전환 목표를 잡고 분기별로 목표를 재조정합니다."
-    ),
-    ("startup", 9): (
-        "간결한 보고서 형식과 단계별 실행 계획, 발표용 1페이지 요약이 있으면 좋겠습니다."
-    ),
-    ("startup", 10): (
-        "간단한 시장 조사 메모와 경쟁 서비스 스크린샷, 초기 사용자 인터뷰 요약을 참고 자료로 제공할 수 있습니다."
+    ("physical_therapist", 8): (
+        "치료 단계별 진행 기준(예: NRS 점수 변화 시 다음 단계 전환)과 "
+        "재발 방지를 위한 자가 운동 프로그램 포함 여부를 중점 검토하겠습니다."
     ),
 }
 
@@ -80,11 +87,11 @@ def get_demo_default_answer(category_name: str, order: int) -> str:
 
 
 def pick_demo_domain_category_name(exclude_common: bool = True) -> Optional[str]:
-    """데모에서 추천할 도메인: settings.DEMO_DOMAIN_CATEGORY(기본 startup), 없으면 common 제외 첫 카테고리."""
+    """데모 추천 도메인: settings.DEMO_DOMAIN_CATEGORY(기본 physical_therapist)."""
     from django.conf import settings
     from questionnaire.models.models import Category
 
-    preferred = getattr(settings, "DEMO_DOMAIN_CATEGORY", "startup")
+    preferred = getattr(settings, "DEMO_DOMAIN_CATEGORY", "physical_therapist")
     if Category.objects.filter(name=preferred).exists():
         return preferred
 

@@ -1,0 +1,38 @@
+{
+  "EFF_001": {
+    "label": "비효율 원인",
+    "synonyms": ["왜 느린지", "병목", "문제", "낭비", "반복 작업", "시간이 많이 걸리는"],
+    "depth": 0.90,
+    "category": "problem"
+  },
+  "EFF_002": {
+    "label": "자동화 대상",
+    "synonyms": ["자동화", "반복", "매번 하는", "자동으로", "시스템화"],
+    "depth": 0.90,
+    "category": "solution"
+  },
+  "EFF_003": {
+    "label": "업무 프로세스",
+    "synonyms": ["프로세스", "절차", "순서", "워크플로우", "단계"],
+    "depth": 0.85,
+    "category": "process"
+  },
+  "EFF_004": {
+    "label": "사용 툴 / 시스템",
+    "synonyms": ["툴", "도구", "소프트웨어", "사용하는 것", "시스템", "앱"],
+    "depth": 0.80,
+    "category": "resource"
+  },
+  "EFF_005": {
+    "label": "시간 절감 목표",
+    "synonyms": ["얼마나 줄이고", "시간 절약", "목표", "기대 효과"],
+    "depth": 0.85,
+    "category": "objective"
+  },
+  "EFF_006": {
+    "label": "팀 / 조직 규모",
+    "synonyms": ["팀원", "몇 명", "규모", "조직", "혼자"],
+    "depth": 0.70,
+    "category": "context"
+  }
+}

@@ -1,128 +1,322 @@
-//http://127.0.0.1:8000/questionnaire/tree/35/
+{% extends "base_demo.html" %}
 
-<div id="tree-info">
-    <h2 id="tree-title"></h2>
-    <p id="tree-owner"></p>
+{% block page_title %}{{ braintree.title }} · 트리 뷰 — Sage Pontus{% endblock %}
+
+{% block container_class %}max-w-7xl{% endblock %}
+
+{% block main %}
+
+<!-- Page header -->
+<div class="mb-5 flex items-center justify-between">
+  <div>
+    <h1 class="text-xl font-bold text-foreground">{{ braintree.title }}</h1>
+    <p class="text-xs text-muted-foreground mt-0.5">노드를 클릭하면 오른쪽 패널에서 질문·답변을 확인할 수 있습니다 · 스크롤로 줌 · 드래그로 이동</p>
+  </div>
+  <a href="{% url 'questionnaire:demo_session_list' %}"
+     class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground px-4 h-9 rounded-lg border border-border hover:bg-muted transition-colors">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
+    </svg>
+    세션 목록
+  </a>
 </div>
 
-<div id="tree-container"></div>
+<!-- Legend -->
+<div class="mb-4 flex items-center gap-4 text-xs text-muted-foreground">
+  <span class="flex items-center gap-1.5">
+    <span class="w-3 h-3 rounded-full inline-block" style="background:#0f1a2e"></span>
+    세션 루트
+  </span>
+  <span class="flex items-center gap-1.5">
+    <span class="w-3 h-3 rounded-full inline-block" style="background:#5b5ef4"></span>
+    공통 질문 블록
+  </span>
+  <span class="flex items-center gap-1.5">
+    <span class="w-3 h-3 rounded-full inline-block" style="background:#1db887"></span>
+    도메인 블록
+  </span>
+  <span class="flex items-center gap-1.5">
+    <span class="w-3 h-3 rounded-full border border-border inline-block" style="background:#eef0f5"></span>
+    질문 노드 (클릭)
+  </span>
+</div>
 
-<style>
-#tree-info {
-    margin-bottom: 20px;
-}
+<!-- Main layout: tree + side panel -->
+<div class="flex gap-4 items-start">
 
-#tree-container svg {
-    border: 1px solid #ccc;
-    display: block;
-    background: #f9f9f9;
-}
-text {
-    font: 12px sans-serif;
-}
-</style>
+  <!-- Tree canvas -->
+  <div class="flex-1 min-w-0 bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+    <div id="tree-container" style="min-height: 520px; cursor: grab;"></div>
+  </div>
 
+  <!-- Side panel (hidden until node click) -->
+  <div id="side-panel"
+       class="hidden w-80 flex-shrink-0 bg-card rounded-2xl border border-border shadow-sm"
+       style="min-height: 520px;">
+    <div class="px-5 py-4 border-b border-border flex items-center justify-between">
+      <h2 class="text-sm font-semibold text-foreground">질문 · 답변</h2>
+      <button id="panel-close"
+              class="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <div id="panel-content" class="p-5 space-y-4 overflow-y-auto" style="max-height: 600px;">
+      <p class="text-sm text-muted-foreground text-center mt-8">트리에서 질문 노드를 클릭하세요</p>
+    </div>
+  </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script>
-fetch("{% url 'questionnaire:brainblock_tree_json' braintree.id %}")
-.then(response => response.json())
-.then(data => {
-    // Set title and owner
-    document.getElementById('tree-title').textContent = data.tree_title;
-    document.getElementById('tree-owner').textContent = "Owner: " + data.tree_owner;
+(function () {
 
-    // Transform data: BrainNodes and Answers as children
-    function transformNode(block) {
-        let children = [];
-        if(block.brainnodes && block.brainnodes.length > 0){
-            children = block.brainnodes.map(bn => ({
-                title: bn.question,
-                children: bn.answers.map(a => ({title: `${a.user}: ${a.answer}`, children: []}))
-            }));
-        }
-        if(block.children){
-            children = children.concat(block.children.map(transformNode));
-        }
-        return {...block, children};
-    }
+const API_URL = "{% url 'questionnaire:brainblock_tree_json' braintree.id %}";
 
-    const rootData = {title: data.tree_title, children: data.nodes.map(transformNode)};
+const COLOR = {
+  root:    '#0f1a2e',
+  common:  '#5b5ef4',
+  domain:  '#1db887',
+  question:'#eef0f5',
+  qStroke: '#dde1ea',
+  link:    '#dde1ea',
+  text:    '#0f1a2e',
+  textMuted: '#637087',
+};
+
+/* ── data transform ────────────────────────────────────────── */
+function transformBlock(block) {
+  const children = [];
+  (block.brainnodes || []).forEach(bn => {
+    const label = bn.purpose_label
+      ? `Q${bn.order} · ${bn.purpose_label}`
+      : `Q${bn.order}`;
+    children.push({
+      nodeType: 'question',
+      id: 'bn-' + bn.id,
+      title: label,
+      fullQuestion: bn.question,
+      order: bn.order,
+      answers: bn.answers || [],
+    });
+  });
+  (block.children || []).forEach(child => children.push(transformBlock(child)));
+  return {
+    nodeType: block.type || 'common',
+    id: 'block-' + block.id,
+    title: block.title,
+    children: children.length ? children : null,
+  };
+}
+
+/* ── helpers ───────────────────────────────────────────────── */
+function truncate(str, n) {
+  return str && str.length > n ? str.slice(0, n) + '…' : (str || '');
+}
+function escHtml(s) {
+  return (s || '')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/\n/g,'<br>');
+}
+
+/* ── side panel ────────────────────────────────────────────── */
+function showPanel(data) {
+  const panel   = document.getElementById('side-panel');
+  const content = document.getElementById('panel-content');
+  panel.classList.remove('hidden');
+
+  const answersHtml = data.answers && data.answers.length
+    ? data.answers.map(a => `
+        <div class="rounded-xl border border-border bg-muted/40 p-4">
+          <p class="text-xs font-medium text-muted-foreground mb-2">${escHtml(a.user)}</p>
+          <p class="text-sm text-foreground leading-relaxed">${escHtml(a.answer)}</p>
+        </div>`).join('')
+    : '<p class="text-sm text-muted-foreground italic">저장된 답변이 없습니다.</p>';
+
+  content.innerHTML = `
+    <div class="rounded-xl border border-secondary/20 bg-secondary/5 p-4">
+      <p class="text-xs font-medium text-secondary mb-1.5">${escHtml(data.title)}</p>
+      <p class="text-sm font-semibold text-foreground leading-snug">${escHtml(data.fullQuestion || data.title)}</p>
+    </div>
+    <div>
+      <p class="text-xs font-medium text-muted-foreground mb-2">답변</p>
+      ${answersHtml}
+    </div>`;
+}
+
+document.getElementById('panel-close').addEventListener('click', () => {
+  document.getElementById('side-panel').classList.add('hidden');
+});
+
+/* ── D3 tree ───────────────────────────────────────────────── */
+fetch(API_URL)
+  .then(r => r.json())
+  .then(data => {
+
+    const rootData = {
+      nodeType: 'root',
+      id: 'root',
+      title: data.tree_title,
+      children: (data.nodes || []).map(transformBlock),
+    };
+
     const root = d3.hierarchy(rootData, d => d.children);
 
-    // Dynamic SVG sizing
-    //const maxDepth = root.height + 1;
-    //const levelWidth = 200;  // horizontal space per level
-    //const svgWidth = Math.max(1200, maxDepth * levelWidth);
-    //const svgHeight = Math.max(600, root.descendants().length * 50); // vertical space
+    /* sizing */
+    const NODE_H   = 52;
+    const NODE_W   = 280;
+    const nNodes   = root.descendants().length;
+    const svgH     = Math.max(520, nNodes * NODE_H);
+    const svgW     = Math.max(800, (root.height + 1) * NODE_W + 80);
 
+    const treeLayout = d3.tree()
+      .size([svgH - 80, svgW - 200])
+      .separation((a, b) => a.parent === b.parent ? 1.3 : 1.8);
 
-    const maxDepth = root.height + 1;
-    const totalNodes = root.descendants().length;
-    
-    // Horizontal spacing
-    const levelWidth = 300; // width per depth level
-    const svgWidth = Math.max(1600, maxDepth * levelWidth);
-    
-    // Vertical spacing
-    const nodeSpacing = 60; // vertical space per node
-    const svgHeight = Math.max(800, totalNodes * nodeSpacing);
-
-    
-
-    const svg = d3.select("#tree-container")
-        .append("svg")
-        .attr("width", svgWidth)
-        .attr("height", svgHeight)
-        .append("g")
-        .attr("transform", "translate(50,50)");
-    
-
-    // Horizontal tree layout (root on left)
-    //const treeLayout = d3.tree().size([svgHeight - 100, svgWidth - 150]);
-    const treeLayout = d3.tree().size([svgHeight - 100, svgWidth - 200]); // 
     treeLayout(root);
 
-    // Draw links
-    svg.selectAll('line')
-        .data(root.links())
-        .enter()
-        .append('line')
-        .attr('x1', d => d.source.y)
-        .attr('y1', d => d.source.x)
-        .attr('x2', d => d.target.y)
-        .attr('y2', d => d.target.x)
-        .attr('stroke', '#555');
+    /* SVG */
+    const container = document.getElementById('tree-container');
+    const svg = d3.select(container)
+      .append('svg')
+      .attr('width', '100%')
+      .attr('height', svgH)
+      .attr('viewBox', `0 0 ${svgW} ${svgH}`)
+      .style('font-family', 'Inter, system-ui, sans-serif');
 
-    // Draw nodes
-    const nodes = svg.selectAll('g.node')
-        .data(root.descendants())
-        .enter()
-        .append('g')
-        .attr('transform', d => `translate(${d.y},${d.x})`);
-
-    // Node circles: color by type
-    nodes.append('circle')
-        .attr('r', 12)
-        .attr('fill', d => {
-            if(d.children) return 'lightblue';       // BrainBlockNode
-            else if(d.depth === 2) return 'lightgreen'; // BrainNode
-            else return 'orange';                     // Answer
+    /* zoom/pan */
+    const g = svg.append('g').attr('transform', 'translate(60,40)');
+    svg.call(
+      d3.zoom()
+        .scaleExtent([0.25, 3])
+        .on('zoom', e => {
+          g.attr('transform', e.transform);
+          container.style.cursor = 'grabbing';
         })
-        .style('cursor', 'pointer');
+        .on('end', () => { container.style.cursor = 'grab'; })
+    );
 
-    // Node labels
-    nodes.append('text')
-        .attr('x', 15)
-        .attr('y', 4)
-        .text(d => d.data.title);
+    /* links */
+    g.selectAll('path.link')
+      .data(root.links())
+      .enter().append('path')
+      .attr('class', 'link')
+      .attr('fill', 'none')
+      .attr('stroke', COLOR.link)
+      .attr('stroke-width', 1.5)
+      .attr('d', d3.linkHorizontal().x(d => d.y).y(d => d.x));
 
-    // Click to show answers for BrainNodes
-    nodes.on('click', (event, d) => {
-        if(d.depth === 2 && d.children && d.children.length > 0){ // BrainNode
-            let msg = "";
-            d.children.forEach(a => msg += ` - ${a.data.title}\n`);
-            if(msg) alert(`Q: ${d.data.title}\n${msg}`);
-        }
+    /* node groups */
+    const node = g.selectAll('g.node')
+      .data(root.descendants())
+      .enter().append('g')
+      .attr('class', 'node')
+      .attr('transform', d => `translate(${d.y},${d.x})`);
+
+    /* circle */
+    const radius = d => {
+      if (d.data.nodeType === 'root')     return 18;
+      if (d.data.nodeType === 'question') return 11;
+      return 14;
+    };
+    const fillColor = d => {
+      if (d.data.nodeType === 'root')     return COLOR.root;
+      if (d.data.nodeType === 'common')   return COLOR.common;
+      if (d.data.nodeType === 'domain')   return COLOR.domain;
+      return COLOR.question;
+    };
+
+    node.append('circle')
+      .attr('r', radius)
+      .attr('fill', fillColor)
+      .attr('stroke', d => d.data.nodeType === 'question' ? COLOR.qStroke : 'none')
+      .attr('stroke-width', 1.5)
+      .style('cursor', d => d.data.nodeType === 'question' ? 'pointer' : 'default')
+      .style('filter', d => d.data.nodeType === 'question'
+        ? 'drop-shadow(0 1px 2px rgba(0,0,0,.06))'
+        : 'drop-shadow(0 2px 4px rgba(0,0,0,.12))');
+
+    /* icon inside circle */
+    node.filter(d => d.data.nodeType !== 'question')
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('fill', '#fff')
+      .attr('font-size', d => d.data.nodeType === 'root' ? '9px' : '8px')
+      .attr('font-weight', 'bold')
+      .text(d => {
+        if (d.data.nodeType === 'root')   return 'SP';
+        if (d.data.nodeType === 'common') return '공통';
+        return '도메인';
+      });
+
+    node.filter(d => d.data.nodeType === 'question')
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .attr('fill', COLOR.textMuted)
+      .attr('font-size', '8px')
+      .attr('font-weight', '600')
+      .text('Q');
+
+    /* label */
+    node.append('text')
+      .attr('x', d => radius(d) + 7)
+      .attr('y', 1)
+      .attr('dominant-baseline', 'central')
+      .attr('fill', d => d.data.nodeType === 'question' ? COLOR.textMuted : COLOR.text)
+      .attr('font-size', d => d.data.nodeType === 'question' ? '11px' : '12px')
+      .attr('font-weight', d => d.data.nodeType === 'question' ? '400' : '600')
+      .text(d => {
+        const max = d.data.nodeType === 'question' ? 32 : 22;
+        return truncate(d.data.title, max);
+      });
+
+    /* hover + click on question nodes */
+    node.filter(d => d.data.nodeType === 'question')
+      .on('mouseover', function (event, d) {
+        d3.select(this).select('circle')
+          .transition().duration(120)
+          .attr('fill', '#d4d5fb')
+          .attr('r', 13);
+      })
+      .on('mouseout', function (event, d) {
+        d3.select(this).select('circle')
+          .transition().duration(120)
+          .attr('fill', COLOR.question)
+          .attr('r', radius(d));
+      })
+      .on('click', (event, d) => {
+        event.stopPropagation();
+        showPanel(d.data);
+        /* highlight selected */
+        g.selectAll('circle').attr('stroke-width', d2 =>
+          d2.data.nodeType === 'question' ? 1.5 : 0
+        );
+        d3.select(event.currentTarget).select('circle')
+          .attr('stroke', '#5b5ef4')
+          .attr('stroke-width', 2.5);
+      });
+
+    /* click on blank = deselect */
+    svg.on('click', () => {
+      g.selectAll('circle[data-type=question]').attr('stroke', COLOR.qStroke).attr('stroke-width', 1.5);
     });
-});
+
+  })
+  .catch(err => {
+    document.getElementById('tree-container').innerHTML =
+      '<p class="p-8 text-sm text-muted-foreground text-center">트리 데이터를 불러올 수 없습니다.</p>';
+    console.error(err);
+  });
+
+})();
 </script>
+{% endblock %}

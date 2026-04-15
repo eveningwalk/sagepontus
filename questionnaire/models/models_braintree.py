@@ -48,6 +48,11 @@ class BrainBlockNode(MPTTModel):
     )
     order = models.PositiveIntegerField(default=0)
 
+    # 프롬프트 생성 결과 캐시 — 최초 1회 AI 호출 후 저장, 이후 재사용
+    cached_result_1 = models.TextField(blank=True, default="")        # 실행 전략 요약
+    cached_result_2 = models.TextField(blank=True, default="")        # 복사용 프롬프트
+    cached_cra      = models.JSONField(null=True, blank=True, default=None)  # CRA 파이프라인 결과
+
     class MPTTMeta:
         order_insertion_by = ["order"]
 
@@ -141,3 +146,28 @@ class PromptArtifact(models.Model):
 
     def __str__(self):
         return f"Artifact node={self.node_id} v={self.version}"
+
+
+class CRAAsset(models.Model):
+    """
+    CRA Call 2 결과를 세션 단위로 저장.
+    다음 세션 Call 1 프롬프트에 previous_context로 주입되어
+    '저번에 말한 그 주제'를 즉시 불러오는 컨텍스트 연속성을 제공한다.
+    """
+    user       = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cra_assets")
+    braintree  = models.ForeignKey(BrainTree, on_delete=models.CASCADE, related_name="cra_assets", null=True, blank=True)
+    domain     = models.CharField(max_length=64, blank=True, default="")
+    context    = models.JSONField(default=dict)        # call2_result.context 전체
+    depth_summary = models.JSONField(default=dict)     # call2_result.depth_summary
+    expert_state  = models.CharField(max_length=64, blank=True, default="")
+    tags       = models.JSONField(default=list)        # 검색용 태그 (peak tokens)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["user", "domain"]),
+        ]
+
+    def __str__(self):
+        return f"CRAAsset user={self.user_id} domain={self.domain} {self.created_at:%Y-%m-%d}"

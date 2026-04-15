@@ -1,0 +1,62 @@
+{
+  "STP_001": {
+    "label": "문제 정의 (Problem Statement)",
+    "synonyms": ["해결하고 싶은 문제", "불편함", "페인포인트", "사회 문제", "시장 문제"],
+    "depth": 0.95,
+    "category": "core_concept"
+  },
+  "STP_002": {
+    "label": "핵심 가치 제안 (Value Proposition)",
+    "synonyms": ["핵심 가치", "차별점", "왜 우리", "강점", "우리만의"],
+    "depth": 0.95,
+    "category": "core_concept"
+  },
+  "STP_003": {
+    "label": "타겟 고객 (Target Customer)",
+    "synonyms": ["주요 고객", "타겟", "고객", "사용자", "누가 쓸", "대상"],
+    "depth": 0.90,
+    "category": "market"
+  },
+  "STP_004": {
+    "label": "수익 모델 (Revenue Model)",
+    "synonyms": ["돈 버는 방법", "수익", "과금", "비즈니스 모델", "BM", "어떻게 돈을"],
+    "depth": 0.90,
+    "category": "business"
+  },
+  "STP_005": {
+    "label": "초기 자본 / 리소스",
+    "synonyms": ["자금", "투자금", "초기 비용", "리소스", "팀원", "갖고 있는 것"],
+    "depth": 0.85,
+    "category": "resource"
+  },
+  "STP_006": {
+    "label": "MVP (최소 기능 제품)",
+    "synonyms": ["우선 만들 것", "첫 버전", "작게 시작", "프로토타입", "데모", "MVP", "mvp"],
+    "depth": 0.90,
+    "category": "execution"
+  },
+  "STP_007": {
+    "label": "경쟁사 / 대안",
+    "synonyms": ["경쟁자", "비슷한 것", "기존 해결책", "시장에 있는", "대체재"],
+    "depth": 0.85,
+    "category": "market"
+  },
+  "STP_008": {
+    "label": "성공 지표 (KPI)",
+    "synonyms": ["성공 기준", "목표 수치", "KPI", "달성 조건", "언제 성공"],
+    "depth": 0.85,
+    "category": "execution"
+  },
+  "STP_009": {
+    "label": "실행 타임라인",
+    "synonyms": ["기간", "언제까지", "타임라인", "일정", "로드맵"],
+    "depth": 0.80,
+    "category": "execution"
+  },
+  "STP_010": {
+    "label": "제약 조건",
+    "synonyms": ["피해야 할", "피해야", "피해야 합니다", "반드시 지켜야", "조건", "한계", "안 되는 것", "하면 안", "금지"],
+    "depth": 0.80,
+    "category": "constraint"
+  }
+}

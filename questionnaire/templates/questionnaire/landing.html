@@ -1,24 +1,715 @@
-{% extends "index.html" %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sage Pontus | Vertical AI Orchestration OS</title>
+  <meta name="description" content="Transform your corporate strategy into actionable results with question-flow based prompts. The AI orchestration platform that bridges strategy and execution.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231db887'/><text y='.9em' font-size='70' x='10' fill='white' font-family='Arial' font-weight='bold'>SP</text></svg>">
 
-{% block page_title %}시작 — Sage Pontus 데모{% endblock %}
+  <!-- Tailwind CSS v3 CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            background: '#f7f8fc',
+            foreground: '#0f1a2e',
+            card: '#ffffff',
+            'card-foreground': '#0f1a2e',
+            muted: '#eef0f5',
+            'muted-foreground': '#637087',
+            primary: {
+              DEFAULT: '#1db887',
+              foreground: '#ffffff',
+            },
+            secondary: {
+              DEFAULT: '#5b5ef4',
+              foreground: '#ffffff',
+            },
+            border: '#dde1ea',
+            input: '#dde1ea',
+            destructive: {
+              DEFAULT: '#e55a2b',
+              foreground: '#ffffff',
+            },
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          borderRadius: {
+            lg: '0.625rem',
+            xl: '0.875rem',
+            '2xl': '1.25rem',
+          },
+        }
+      }
+    }
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; background-color: #f7f8fc; color: #0f1a2e; }
+    .text-balance { text-wrap: balance; }
+    .text-pretty { text-wrap: pretty; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
+    .animate-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    /* Smooth scroll */
+    html { scroll-behavior: smooth; }
+  </style>
+</head>
+<body class="antialiased">
 
-{% block nav_landing_active %}app-sidebar__link--active{% endblock %}
+<!-- ================================================================
+     HEADER
+================================================================ -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-border">
+  <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="flex h-16 items-center justify-between">
+      <!-- Logo -->
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+          <span class="text-white font-bold text-sm">SP</span>
+        </div>
+        <span class="font-semibold text-lg text-foreground">Sage Pontus</span>
+      </div>
 
-{% block main %}
-<div class="flow-page">
-  <article class="flow-card">
-    <span class="flow-card__step">데모</span>
-    <h1 class="flow-card__title">Sage Pontus 데모 시작</h1>
-    <p class="flow-card__lead">
-      설문 답변을 바탕으로 다른 AI에 붙여 넣을 <strong>맞춤 프롬프트</strong>를 만드는 흐름을,
-      로그인 없이 체험할 수 있습니다.
-    </p>
-    <p class="flow-card__lead" style="margin-top:0.75rem;font-size:0.92rem;opacity:0.92;">
-      아래 버튼을 누르면 데모 전용 세션이 시작되고 질문 화면으로 이동합니다.
-    </p>
-    <div class="flow-actions" style="margin-top:1.25rem;">
-      <a class="flow-btn flow-btn--primary" href="{% url 'demo' %}">데모 시작하기</a>
+      <!-- Desktop nav links -->
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#features" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
+        <a href="#demo" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Demo</a>
+        <a href="#team" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Team</a>
+      </div>
+
+      <!-- Desktop action buttons -->
+      <div class="hidden md:flex items-center gap-4">
+        <a href="{% url 'accounts:login' %}"
+           class="text-sm font-medium text-foreground hover:text-primary px-4 py-2 rounded-lg hover:bg-muted transition-colors">
+          Log in
+        </a>
+        <a href="{% url 'demo' %}"
+           class="text-sm font-semibold bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg shadow-sm hover:shadow-md transition-all ring-2 ring-primary/20 hover:ring-primary/40">
+          Get Early Access
+        </a>
+      </div>
+
+      <!-- Mobile hamburger -->
+      <button id="mobile-menu-btn" class="md:hidden p-2 rounded-lg hover:bg-muted transition-colors" aria-label="Toggle menu">
+        <!-- Menu icon -->
+        <svg id="icon-menu" class="h-6 w-6 text-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+        <!-- X icon -->
+        <svg id="icon-close" class="h-6 w-6 text-foreground hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
     </div>
-  </article>
-</div>
-{% endblock %}
+
+    <!-- Mobile dropdown -->
+    <div id="mobile-menu" class="hidden md:hidden py-4 border-t border-border">
+      <div class="flex flex-col gap-4">
+        <a href="#features" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a>
+        <a href="#demo" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Demo</a>
+        <a href="#team" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Team</a>
+        <div class="flex flex-col gap-2 pt-4 border-t border-border">
+          <a href="{% url 'accounts:login' %}"
+             class="text-sm font-medium text-foreground hover:text-primary px-4 py-2 rounded-lg hover:bg-muted transition-colors text-left">
+            Log in
+          </a>
+          <a href="{% url 'demo' %}"
+             class="text-sm font-semibold bg-primary hover:bg-primary/90 text-white px-5 py-2 rounded-lg shadow-sm hover:shadow-md transition-all ring-2 ring-primary/20 hover:ring-primary/40 text-center">
+            Get Early Access
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- ================================================================
+     HERO SECTION
+================================================================ -->
+<section class="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
+  <!-- Background blobs -->
+  <div class="absolute inset-0 -z-10 pointer-events-none">
+    <div class="absolute top-20 left-1/4 w-72 h-72 rounded-full blur-3xl" style="background:rgba(29,184,135,0.1)"></div>
+    <div class="absolute bottom-20 right-1/4 w-96 h-96 rounded-full blur-3xl" style="background:rgba(91,94,244,0.1)"></div>
+  </div>
+
+  <div class="mx-auto max-w-4xl text-center">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted border border-border mb-8">
+      <!-- Sparkles icon -->
+      <svg class="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M5 3l1.5 4.5L11 9l-4.5 1.5L5 15l-1.5-4.5L-1 9l4.5-1.5L5 3z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 3l1 3 3 1-3 1-1 3-1-3-3-1 3-1 1-3z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" d="M18 13l.8 2.4 2.4.8-2.4.8-.8 2.4-.8-2.4-2.4-.8 2.4-.8.8-2.4z"/>
+      </svg>
+      <span class="text-sm font-medium text-muted-foreground">Vertical AI Orchestration OS</span>
+    </div>
+
+    <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground mb-6 text-balance">
+      전략을 실무 결과로<br>
+      <span class="text-primary">연결하는 AI</span>
+    </h1>
+
+    <p class="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10 leading-relaxed text-pretty">
+      질문 플로우 기반 프롬프트로 기업의 전략적 비전을 구체적인 실행 결과물로 전환합니다.
+      복잡한 비즈니스 의사결정을 명확한 액션으로 만들어 드립니다.
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="{% url 'demo' %}"
+         class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-8 h-12 rounded-lg text-base shadow-md hover:shadow-lg transition-all ring-2 ring-primary/20 hover:ring-primary/40">
+        Get Early Access
+        <svg class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+      </a>
+      <a href="#demo"
+         class="inline-flex items-center font-medium px-8 h-12 rounded-lg text-base border border-border text-foreground hover:bg-muted transition-colors">
+        Watch Demo
+      </a>
+    </div>
+
+    <!-- Trust indicators -->
+    <div class="mt-16 flex flex-wrap items-center justify-center gap-8 text-muted-foreground">
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-primary"></div>
+        <span class="text-sm">SOC 2 Compliant</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-primary"></div>
+        <span class="text-sm">Enterprise Ready</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full bg-primary"></div>
+        <span class="text-sm">No-Code Setup</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     PROBLEM / SOLUTION SECTION
+================================================================ -->
+<section class="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+  <div class="mx-auto max-w-6xl">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-foreground mb-4">Why Sage Pontus?</h2>
+      <p class="text-lg text-muted-foreground max-w-2xl mx-auto">전략과 실행 사이의 간극을 AI로 연결합니다</p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-6 lg:gap-8 items-start">
+      <!-- Before card -->
+      <div class="bg-card rounded-xl border border-red-100 shadow-sm p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+            <!-- X icon -->
+            <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-foreground">Before Sage Pontus</h3>
+        </div>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <div class="mt-1 w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </div>
+            <span class="text-muted-foreground">전략 문서가 실행으로 이어지지 않음</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="mt-1 w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </div>
+            <span class="text-muted-foreground">팀 간 커뮤니케이션 단절</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="mt-1 w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </div>
+            <span class="text-muted-foreground">반복적인 수작업 프로세스</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="mt-1 w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </div>
+            <span class="text-muted-foreground">데이터 기반 의사결정의 어려움</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- After card -->
+      <div class="bg-card rounded-xl border border-primary/20 shadow-sm p-6 relative">
+        <!-- Arrow connector (desktop) -->
+        <div class="absolute -left-3 top-1/2 -translate-y-1/2 hidden lg:flex">
+          <div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center shadow">
+            <svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+            </svg>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <!-- Check icon -->
+            <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold text-foreground">After Sage Pontus</h3>
+        </div>
+        <ul class="space-y-4">
+          <li class="flex items-start gap-3">
+            <div class="mt-1 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <span class="text-foreground">질문 플로우로 전략 → 실행 자동 연결</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="mt-1 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <span class="text-foreground">AI가 팀 간 컨텍스트 자동 공유</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="mt-1 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <span class="text-foreground">반복 업무 자동화로 시간 절약</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <div class="mt-1 w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <svg class="w-3 h-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+              </svg>
+            </div>
+            <span class="text-foreground">실시간 인사이트로 빠른 의사결정</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="text-center p-6 rounded-xl bg-card border border-border">
+        <div class="text-3xl sm:text-4xl font-bold text-primary mb-2">80%</div>
+        <div class="text-sm text-muted-foreground">시간 절약</div>
+      </div>
+      <div class="text-center p-6 rounded-xl bg-card border border-border">
+        <div class="text-3xl sm:text-4xl font-bold text-primary mb-2">3x</div>
+        <div class="text-sm text-muted-foreground">생산성 향상</div>
+      </div>
+      <div class="text-center p-6 rounded-xl bg-card border border-border">
+        <div class="text-3xl sm:text-4xl font-bold text-primary mb-2">95%</div>
+        <div class="text-sm text-muted-foreground">정확도</div>
+      </div>
+      <div class="text-center p-6 rounded-xl bg-card border border-border">
+        <div class="text-3xl sm:text-4xl font-bold text-primary mb-2">24/7</div>
+        <div class="text-sm text-muted-foreground">운영 지원</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     DEMO SECTION
+================================================================ -->
+<section id="demo" class="py-24 px-4 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-5xl">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl sm:text-4xl font-bold text-foreground mb-4">See Sage Pontus in Action</h2>
+      <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+        질문 플로우 기반 AI가 어떻게 전략을 실행으로 전환하는지 확인하세요
+      </p>
+    </div>
+
+    <!-- Video placeholder -->
+    <div class="relative aspect-video rounded-2xl overflow-hidden bg-card border border-border shadow-2xl">
+      <div class="absolute inset-0" style="background: linear-gradient(135deg, rgba(29,184,135,0.05) 0%, rgba(91,94,244,0.05) 100%)"></div>
+
+      <div class="absolute inset-0 flex flex-col items-center justify-center">
+        <div class="relative mb-6">
+          <div class="absolute inset-0 rounded-full animate-pulse" style="background:rgba(29,184,135,0.2); filter:blur(16px)"></div>
+          <a href="{% url 'demo' %}"
+             class="relative w-20 h-20 rounded-full bg-primary hover:bg-primary/90 text-white shadow-lg flex items-center justify-center transition-colors">
+            <!-- Play icon -->
+            <svg class="w-8 h-8 ml-1" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          </a>
+        </div>
+        <p class="text-muted-foreground text-sm">Click to watch the product demo</p>
+      </div>
+
+      <div class="absolute bottom-0 left-0 right-0 p-6" style="background: linear-gradient(to top, rgba(247,248,252,0.8), transparent)">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-4">
+            <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <span class="text-primary font-bold text-sm">SP</span>
+            </div>
+            <div>
+              <p class="font-medium text-foreground text-sm">Sage Pontus Demo</p>
+              <p class="text-xs text-muted-foreground">3:45</p>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
+            <span class="text-xs text-muted-foreground">HD Quality</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step indicators -->
+    <div class="mt-12 grid sm:grid-cols-3 gap-6 text-center">
+      <div class="p-6">
+        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+          <span class="text-secondary font-bold">01</span>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">질문 입력</h3>
+        <p class="text-sm text-muted-foreground">비즈니스 목표와 컨텍스트를 자연어로 입력</p>
+      </div>
+      <div class="p-6">
+        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+          <span class="text-secondary font-bold">02</span>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">AI 분석</h3>
+        <p class="text-sm text-muted-foreground">플로우 기반으로 전략적 인사이트 도출</p>
+      </div>
+      <div class="p-6">
+        <div class="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+          <span class="text-secondary font-bold">03</span>
+        </div>
+        <h3 class="font-semibold text-foreground mb-2">실행 결과물</h3>
+        <p class="text-sm text-muted-foreground">즉시 활용 가능한 액션 아이템 생성</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     FEATURES SECTION
+================================================================ -->
+<section id="features" class="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+  <div class="mx-auto max-w-6xl">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-foreground mb-4">Key Features</h2>
+      <p class="text-lg text-muted-foreground max-w-2xl mx-auto">전략과 실행의 간극을 메우는 핵심 기능들</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-6">
+      <!-- Feature 1 -->
+      <div class="bg-card rounded-xl border border-border hover:border-primary/30 transition-colors group p-6">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+          <!-- MessageSquareText icon -->
+          <svg class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-foreground mb-3">질문 플로우 엔진</h3>
+        <p class="text-base text-muted-foreground leading-relaxed">
+          자연어 기반 질문-응답 체인으로 복잡한 비즈니스 요구사항을 구조화된 실행 계획으로 전환합니다.
+        </p>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="bg-card rounded-xl border border-border hover:border-primary/30 transition-colors group p-6">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+          <!-- Workflow icon -->
+          <svg class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="6" height="6" rx="1"/>
+            <rect x="15" y="3" width="6" height="6" rx="1"/>
+            <rect x="9" y="15" width="6" height="6" rx="1"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 9v3a3 3 0 003 3h6a3 3 0 003-3V9"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-foreground mb-3">Vertical AI 오케스트레이션</h3>
+        <p class="text-base text-muted-foreground leading-relaxed">
+          산업별 맞춤 AI 에이전트가 협업하여 도메인 특화된 고품질 결과물을 생성합니다.
+        </p>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="bg-card rounded-xl border border-border hover:border-primary/30 transition-colors group p-6">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+          <!-- BarChart3 icon -->
+          <svg class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-foreground mb-3">실시간 인사이트 대시보드</h3>
+        <p class="text-base text-muted-foreground leading-relaxed">
+          전략 실행 현황을 실시간으로 모니터링하고 데이터 기반 의사결정을 지원합니다.
+        </p>
+      </div>
+
+      <!-- Feature 4 -->
+      <div class="bg-card rounded-xl border border-border hover:border-primary/30 transition-colors group p-6">
+        <div class="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
+          <!-- Shield icon -->
+          <svg class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <h3 class="text-xl font-semibold text-foreground mb-3">엔터프라이즈 보안</h3>
+        <p class="text-base text-muted-foreground leading-relaxed">
+          SOC 2 인증, 데이터 암호화, SSO 지원으로 기업 환경에 최적화된 보안을 제공합니다.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     TEAM / SOCIAL PROOF SECTION
+================================================================ -->
+<section id="team" class="py-24 px-4 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl">
+    <div class="text-center mb-16">
+      <h2 class="text-3xl sm:text-4xl font-bold text-foreground mb-4">Trusted by Industry Leaders</h2>
+      <p class="text-lg text-muted-foreground max-w-2xl mx-auto">
+        기업의 디지털 전환을 함께하는 신뢰할 수 있는 파트너
+      </p>
+    </div>
+
+    <!-- Credential cards -->
+    <div class="grid sm:grid-cols-3 gap-6 mb-16">
+      <!-- Card 1 -->
+      <div class="bg-card rounded-xl border border-border text-center p-8">
+        <div class="w-14 h-14 rounded-2xl bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+          <!-- Building2 icon -->
+          <svg class="w-7 h-7 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-foreground text-lg mb-2">전문 경험</h3>
+        <p class="text-muted-foreground text-sm leading-relaxed">
+          글로벌 컨설팅 펌과 테크 기업 출신 전문가들이 만들었습니다.
+        </p>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bg-card rounded-xl border border-border text-center p-8">
+        <div class="w-14 h-14 rounded-2xl bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+          <!-- Award icon -->
+          <svg class="w-7 h-7 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="6"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-foreground text-lg mb-2">검증된 기술력</h3>
+        <p class="text-muted-foreground text-sm leading-relaxed">
+          AI/ML 분야 10년 이상의 연구개발 경험을 보유하고 있습니다.
+        </p>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="bg-card rounded-xl border border-border text-center p-8">
+        <div class="w-14 h-14 rounded-2xl bg-secondary/10 flex items-center justify-center mx-auto mb-4">
+          <!-- Users icon -->
+          <svg class="w-7 h-7 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+          </svg>
+        </div>
+        <h3 class="font-semibold text-foreground text-lg mb-2">고객 중심</h3>
+        <p class="text-muted-foreground text-sm leading-relaxed">
+          50+ 기업 고객과 함께 실제 비즈니스 문제를 해결해왔습니다.
+        </p>
+      </div>
+    </div>
+
+    <!-- Testimonial + Stats -->
+    <div class="bg-card rounded-2xl border border-border p-8 lg:p-12">
+      <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-12">
+        <div class="flex-1 text-center lg:text-left">
+          <blockquote class="text-xl lg:text-2xl text-foreground font-medium mb-6 leading-relaxed">
+            "Sage Pontus는 우리 팀의 전략 실행 방식을 완전히 바꿔놓았습니다.
+            이제 아이디어에서 실행까지의 시간이 절반으로 줄었습니다."
+          </blockquote>
+          <div class="flex items-center justify-center lg:justify-start gap-4">
+            <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+              <span class="text-primary font-bold">KL</span>
+            </div>
+            <div class="text-left">
+              <p class="font-semibold text-foreground">김리더</p>
+              <p class="text-sm text-muted-foreground">전략기획팀장, 테크 스타트업</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="hidden lg:block w-px h-32 bg-border"></div>
+
+        <div class="grid grid-cols-2 gap-8">
+          <div class="text-center">
+            <p class="text-4xl font-bold text-primary mb-1">50+</p>
+            <p class="text-sm text-muted-foreground">Enterprise Clients</p>
+          </div>
+          <div class="text-center">
+            <p class="text-4xl font-bold text-secondary mb-1">99%</p>
+            <p class="text-sm text-muted-foreground">Customer Satisfaction</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================================================================
+     CTA SECTION
+================================================================ -->
+<section class="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
+  <div class="mx-auto max-w-4xl text-center">
+    <h2 class="text-3xl sm:text-4xl font-bold text-foreground mb-6">
+      Ready to Transform Your Strategy Execution?
+    </h2>
+    <p class="text-lg text-muted-foreground mb-10 max-w-2xl mx-auto">
+      지금 바로 Sage Pontus와 함께 전략을 실행으로 전환하세요.
+      Early Access 신청 시 특별 혜택을 제공해 드립니다.
+    </p>
+
+    <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+      <a href="{% url 'demo' %}"
+         class="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-white font-semibold px-8 h-12 rounded-lg text-base shadow-md hover:shadow-lg transition-all ring-2 ring-primary/20 hover:ring-primary/40">
+        Get Early Access
+        <svg class="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+      </a>
+      <a href="#demo"
+         class="inline-flex items-center font-medium px-8 h-12 rounded-lg text-base border border-border text-foreground hover:bg-muted transition-colors">
+        Schedule a Demo
+      </a>
+    </div>
+
+    <p class="mt-6 text-sm text-muted-foreground">
+      No credit card required • 14-day free trial • Cancel anytime
+    </p>
+  </div>
+</section>
+
+<!-- ================================================================
+     FOOTER
+================================================================ -->
+<footer class="bg-card border-t border-border">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+      <!-- Brand -->
+      <div class="col-span-2 md:col-span-1">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <span class="text-white font-bold text-sm">SP</span>
+          </div>
+          <span class="font-semibold text-lg text-foreground">Sage Pontus</span>
+        </div>
+        <p class="text-sm text-muted-foreground leading-relaxed">
+          Vertical AI Orchestration OS<br>
+          전략을 실무 결과로 연결합니다.
+        </p>
+      </div>
+
+      <!-- Product links -->
+      <div>
+        <h3 class="font-semibold text-foreground mb-4">Product</h3>
+        <ul class="space-y-3">
+          <li><a href="#features" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Features</a></li>
+          <li><a href="#demo" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Demo</a></li>
+          <li><a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Pricing</a></li>
+          <li><a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Changelog</a></li>
+        </ul>
+      </div>
+
+      <!-- Company links -->
+      <div>
+        <h3 class="font-semibold text-foreground mb-4">Company</h3>
+        <ul class="space-y-3">
+          <li><a href="#team" class="text-sm text-muted-foreground hover:text-foreground transition-colors">About</a></li>
+          <li><a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Blog</a></li>
+          <li><a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Careers</a></li>
+          <li><a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Contact</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal links -->
+      <div>
+        <h3 class="font-semibold text-foreground mb-4">Legal</h3>
+        <ul class="space-y-3">
+          <li><a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Privacy</a></li>
+          <li><a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Terms</a></li>
+          <li><a href="#" class="text-sm text-muted-foreground hover:text-foreground transition-colors">Security</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Bottom bar -->
+    <div class="mt-12 pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4">
+      <p class="text-sm text-muted-foreground">© 2026 Sage Pontus. All rights reserved.</p>
+      <div class="flex items-center gap-4">
+        <!-- LinkedIn -->
+        <a href="#" class="text-muted-foreground hover:text-foreground transition-colors">
+          <span class="sr-only">LinkedIn</span>
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+          </svg>
+        </a>
+        <!-- Twitter/X -->
+        <a href="#" class="text-muted-foreground hover:text-foreground transition-colors">
+          <span class="sr-only">Twitter</span>
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+        </a>
+        <!-- GitHub -->
+        <a href="#" class="text-muted-foreground hover:text-foreground transition-colors">
+          <span class="sr-only">GitHub</span>
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- Mobile menu toggle script -->
+<script>
+  const btn = document.getElementById('mobile-menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  const iconMenu = document.getElementById('icon-menu');
+  const iconClose = document.getElementById('icon-close');
+
+  btn.addEventListener('click', () => {
+    const isOpen = !menu.classList.contains('hidden');
+    menu.classList.toggle('hidden', isOpen);
+    iconMenu.classList.toggle('hidden', !isOpen);
+    iconClose.classList.toggle('hidden', isOpen);
+  });
+
+  // Close mobile menu on anchor link click
+  menu.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', () => {
+      menu.classList.add('hidden');
+      iconMenu.classList.remove('hidden');
+      iconClose.classList.add('hidden');
+    });
+  });
+</script>
+
+</body>
+</html>

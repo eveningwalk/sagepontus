@@ -1,0 +1,122 @@
+{
+  "PT_001": {
+    "label": "주요 호소 증상 (Chief Complaint)",
+    "synonyms": ["주요 증상", "불편 부위", "아픈 곳", "주訴", "주증상"],
+    "depth": 0.90,
+    "category": "symptom"
+  },
+  "PT_002": {
+    "label": "진단명 (Diagnosis)",
+    "synonyms": ["진단", "진단명", "병명", "의심 질환", "확인된 질환"],
+    "depth": 0.95,
+    "category": "diagnosis"
+  },
+  "PT_003": {
+    "label": "요추 (Lumbar spine)",
+    "synonyms": ["허리", "요추", "허리 부위", "요부"],
+    "depth": 0.30,
+    "category": "location"
+  },
+  "PT_004": {
+    "label": "경추 (Cervical spine)",
+    "synonyms": ["목", "경추", "목 부위", "경부"],
+    "depth": 0.30,
+    "category": "location"
+  },
+  "PT_005": {
+    "label": "방사통 (Radiculopathy)",
+    "synonyms": ["저리다", "저린", "찌릿", "방사통", "다리로 내려가는 통증", "팔로 내려가는"],
+    "depth": 0.85,
+    "category": "symptom"
+  },
+  "PT_006": {
+    "label": "추간판 탈출증 (HNP)",
+    "synonyms": ["디스크", "목 디스크", "허리 디스크", "추간판 탈출", "HNP"],
+    "depth": 0.95,
+    "category": "diagnosis"
+  },
+  "PT_007": {
+    "label": "근력 약화 (Motor weakness)",
+    "synonyms": ["힘이 빠지는", "힘 빠짐", "근력 저하", "무력감"],
+    "depth": 0.88,
+    "category": "symptom"
+  },
+  "PT_008": {
+    "label": "관절가동범위 제한 (Limited ROM)",
+    "synonyms": ["뻣뻣", "굳어있는", "잘 안 움직이는", "가동범위 제한", "ROM 제한"],
+    "depth": 0.82,
+    "category": "symptom"
+  },
+  "PT_009": {
+    "label": "도수치료 (Manual therapy)",
+    "synonyms": ["도수치료", "도수", "손으로 하는 치료", "마사지 치료"],
+    "depth": 0.92,
+    "category": "intervention"
+  },
+  "PT_010": {
+    "label": "전기치료 (Electrical stimulation)",
+    "synonyms": ["전기치료", "전기 자극", "TENS", "EST", "전기"],
+    "depth": 0.90,
+    "category": "intervention"
+  },
+  "PT_011": {
+    "label": "운동치료 (Therapeutic exercise)",
+    "synonyms": ["운동치료", "재활 운동", "스트레칭", "코어 운동", "강화 운동"],
+    "depth": 0.92,
+    "category": "intervention"
+  },
+  "PT_012": {
+    "label": "온열치료 (Thermotherapy)",
+    "synonyms": ["찜질", "핫팩", "온열", "온찜질"],
+    "depth": 0.88,
+    "category": "intervention"
+  },
+  "PT_013": {
+    "label": "기왕력 (Medical history)",
+    "synonyms": ["기왕력", "수술력", "이전 치료", "과거 병력", "만성질환"],
+    "depth": 0.80,
+    "category": "context"
+  },
+  "PT_014": {
+    "label": "치료 목표 (Treatment goal)",
+    "synonyms": ["치료 목표", "목표", "통증 감소", "기능 회복", "일상 복귀", "재활 목표"],
+    "depth": 0.90,
+    "category": "objective"
+  },
+  "PT_015": {
+    "label": "금기증 (Contraindication)",
+    "synonyms": ["금기", "금기증", "피해야 할", "하면 안 되는", "제한 사항"],
+    "depth": 0.88,
+    "category": "constraint"
+  },
+  "PT_016": {
+    "label": "SOAP 노트 (Clinical documentation)",
+    "synonyms": ["SOAP", "임상 기록", "치료 기록", "차트", "치료 계획서"],
+    "depth": 0.85,
+    "category": "output_spec"
+  },
+  "PT_017": {
+    "label": "급성기 (Acute phase)",
+    "synonyms": ["급성", "갑자기", "어제부터", "갑작스럽게", "최근 발생"],
+    "depth": 0.75,
+    "category": "temporal"
+  },
+  "PT_018": {
+    "label": "만성기 (Chronic phase)",
+    "synonyms": ["만성", "오래된", "오랫동안", "몇 달째", "몇 년째"],
+    "depth": 0.75,
+    "category": "temporal"
+  },
+  "PT_019": {
+    "label": "척추관 협착증 (Spinal stenosis)",
+    "synonyms": ["협착증", "척추 협착", "좁아진", "걸으면 다리 저림"],
+    "depth": 0.93,
+    "category": "diagnosis"
+  },
+  "PT_020": {
+    "label": "회전근개 파열 (Rotator cuff tear)",
+    "synonyms": ["회전근개", "어깨 힘줄", "어깨 파열", "어깨 들기 힘든"],
+    "depth": 0.93,
+    "category": "diagnosis"
+  }
+}

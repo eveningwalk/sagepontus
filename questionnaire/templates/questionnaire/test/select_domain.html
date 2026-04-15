@@ -1,67 +1,66 @@
-{% extends "index.html" %}
+{% extends "base_demo.html" %}
 
 {% block page_title %}도메인 선택 — Sage Pontus{% endblock %}
 
 {% block main %}
-<div class="question-page">
-  <article class="domain-card">
-    <div class="domain-card__badges">
-      <span class="question-card__scope question-card__scope--common">공통 질문 완료</span>
-      <span class="question-card__scope question-card__scope--domain">다음 단계</span>
-    </div>
 
-    <h1 class="domain-card__title">도메인을 선택해주세요</h1>
-    <p class="domain-card__lead">
-      공통 질문을 마쳤습니다. 이어서 다룰 <strong>역할·도메인</strong>을 골라 주세요.
-      {% if tree.title %}
-        <span class="domain-card__tree">(트리: {{ tree.title }})</span>
-      {% endif %}
-    </p>
+<article class="bg-card rounded-2xl border border-border shadow-sm p-8">
 
-    {% if demo_mode and demo_default_domain and demo_default_domain == allowed_domain %}
-    <div class="domain-card__demo" role="region" aria-label="데모 안내">
-      <strong class="domain-card__demo-title">데모 시연</strong>
-      <p class="domain-card__demo-text">
-        추천 도메인 <em>{{ demo_default_domain }}</em>으로 바로 이어갈 수 있습니다.
-      </p>
-      <form method="post" class="domain-card__demo-form">
-        {% csrf_token %}
-        <button type="submit" name="domain" value="{{ demo_default_domain }}" class="domain-card__btn domain-card__btn--primary">
-          추천 도메인으로 계속 → {{ demo_default_domain }}
-        </button>
-      </form>
-    </div>
+  <!-- Badges -->
+  <div class="flex items-center gap-2 mb-6">
+    <span class="inline-flex items-center text-xs font-medium bg-secondary/10 text-secondary px-3 py-1 rounded-full">공통 질문 완료</span>
+    <span class="inline-flex items-center text-xs font-medium bg-primary/10 text-primary px-3 py-1 rounded-full">다음 단계</span>
+  </div>
+
+  <h1 class="text-2xl font-bold text-foreground mb-3">도메인을 선택해주세요</h1>
+  <p class="text-muted-foreground leading-relaxed mb-8">
+    공통 질문을 마쳤습니다. 이어서 다룰 <strong class="text-foreground">역할·도메인</strong>을 골라 주세요.
+    {% if tree.title %}
+    <span class="ml-1 text-sm text-muted-foreground">(트리: {{ tree.title }})</span>
     {% endif %}
+  </p>
 
-    <form method="post" class="domain-card__form">
+  <!-- Demo shortcut -->
+  {% if demo_mode and demo_default_domain and demo_default_domain == allowed_domain %}
+  <div class="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
+    <p class="text-sm font-semibold text-primary mb-1">데모 시연</p>
+    <p class="text-sm text-muted-foreground mb-4">
+      추천 도메인 <em class="text-foreground font-medium">{{ demo_default_domain }}</em>으로 바로 이어갈 수 있습니다.
+    </p>
+    <form method="post">
       {% csrf_token %}
-      <p class="domain-card__label">도메인 목록</p>
-      <div class="domain-card__grid">
-        {% for category in categories %}
-          {% if category.name == allowed_domain %}
-          <button
-            type="submit"
-            name="domain"
-            value="{{ category.name }}"
-            class="domain-card__btn"
-            title="{{ category.description|default:category.name }}"
-          >
-            {{ category.name }}
-          </button>
-          {% else %}
-          <button
-            type="button"
-            class="domain-card__btn domain-card__btn--disabled"
-            disabled
-            aria-disabled="true"
-            title="준비 중입니다"
-          >
-            {{ category.name }}
-          </button>
-          {% endif %}
-        {% endfor %}
-      </div>
+      <button type="submit" name="domain" value="{{ demo_default_domain }}"
+              class="inline-flex items-center gap-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white px-5 h-10 rounded-lg shadow-sm hover:shadow-md transition-all ring-2 ring-primary/20 hover:ring-primary/40">
+        추천 도메인으로 계속 → {{ demo_default_domain }}
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+        </svg>
+      </button>
     </form>
-  </article>
-</div>
+  </div>
+  {% endif %}
+
+  <!-- Domain grid -->
+  <form method="post">
+    {% csrf_token %}
+    <p class="text-sm font-medium text-muted-foreground mb-3">도메인 목록</p>
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {% for category in categories %}
+        {% if category.name == allowed_domain %}
+        <button type="submit" name="domain" value="{{ category.name }}"
+                title="{{ category.description|default:category.name }}"
+                class="flex items-center justify-center h-12 rounded-xl border-2 border-primary/30 bg-primary/5 text-primary font-semibold text-sm hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm hover:shadow-md">
+          {{ category.name }}
+        </button>
+        {% else %}
+        <button type="button" disabled aria-disabled="true" title="준비 중입니다"
+                class="flex items-center justify-center h-12 rounded-xl border border-border bg-muted text-muted-foreground text-sm cursor-not-allowed opacity-50">
+          {{ category.name }}
+        </button>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </form>
+
+</article>
 {% endblock %}

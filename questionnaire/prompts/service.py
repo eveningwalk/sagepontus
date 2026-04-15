@@ -1,8 +1,13 @@
-"""버전 디렉터리의 manifest + Jinja 템플릿으로 프롬프트를 만들고 HF API로 생성."""
+"""버전 디렉터리의 manifest + Jinja 템플릿으로 프롬프트를 만들고 AI API로 생성.
+
+GEMINI_API_KEY 환경 변수가 설정된 경우 Gemini를 사용하고,
+그렇지 않으면 기존 Hugging Face Inference API를 사용한다.
+"""
 
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +15,21 @@ import yaml
 from django.conf import settings
 from jinja2 import Environment, FileSystemLoader
 
-from questionnaire.prompts.hf_client import chat_completion_generate
+
+def _chat_generate():
+    """ANTHROPIC_API_KEY → GEMINI_API_KEY → HF 순서로 클라이언트를 선택한다."""
+    if os.environ.get("ANTHROPIC_API_KEY", "").strip():
+        from questionnaire.prompts.claude_client import chat_completion_generate
+    elif os.environ.get("GEMINI_API_KEY", "").strip():
+        from questionnaire.prompts.gemini_client import chat_completion_generate
+    else:
+        from questionnaire.prompts.hf_client import chat_completion_generate
+    return chat_completion_generate
+
+
+# 하위 호환: 직접 임포트한 곳이 있을 경우를 위해 모듈 수준 참조 유지
+def chat_completion_generate(model_id, user, generation, *, system=None):
+    return _chat_generate()(model_id, user, generation, system=system)
 
 logger = logging.getLogger(__name__)
 
@@ -77,11 +96,102 @@ def _domain_focus(answers) -> str:
     return last
 
 
-def _build_context(answers) -> dict[str, Any]:
+def _format_extra_qa(extra_qa: list[dict]) -> str:
+    """AI 보완 질문 답변을 포맷."""
+    parts: list[str] = []
+    for i, item in enumerate(extra_qa, 1):
+        q = (item.get("q") or "").strip()
+        a = (item.get("a") or "").strip()
+        if q and a:
+            parts.append(f"[AI보완-{i}] 분류: AI보완질문\n질문: {q}\n답변: {a}")
+    return "\n\n".join(parts)
+
+
+def _build_context(answers, extra_qa: list[dict] | None = None) -> dict[str, Any]:
+    base = _format_qa_pairs(answers)
+    if extra_qa:
+        extra = _format_extra_qa(extra_qa)
+        if extra:
+            base += "\n\n" + extra
+
+    domain = _domain_focus(answers) or None
+
+    # CRA 전처리: 구어 → KB 표준 용어 인라인 주석 추가
+    try:
+        from questionnaire.prompts.cra_engine import enrich_qa_text
+        base = enrich_qa_text(base, domain=domain)
+    except Exception:
+        logger.debug("CRA enrich 실패 — 원본 qa_pairs 사용", exc_info=True)
+
     return {
-        "qa_pairs": _format_qa_pairs(answers),
-        "domain_focus": _domain_focus(answers),
+        "qa_pairs": base,
+        "domain_focus": domain or "",
     }
+
+
+_FOLLOWUP_SYSTEM = """당신은 AI 프롬프트 설계 전문가입니다.
+사용자가 제공한 질문-답변을 분석하여, 최종 AI 프롬프트 생성에 꼭 필요하지만 아직 파악되지 않은 정보를 찾아내세요.
+반드시 JSON 배열만 반환하고 다른 텍스트는 절대 포함하지 마세요."""
+
+_FOLLOWUP_USER_TMPL = """아래는 사용자가 응답한 질문-답변 목록입니다:
+
+{qa_pairs}
+
+위 답변을 분석하여, 고품질 AI 프롬프트 생성을 위해 추가로 필요한 핵심 정보를 {count}개의 질문으로 만들어주세요.
+각 질문은 앞선 답변에서 명확히 드러나지 않은 부분을 다뤄야 합니다.
+
+아래 JSON 형식만 반환하세요 (마크다운 코드블록 없이):
+[
+  {{"text": "질문 내용", "hint": "답변 방향 힌트"}},
+  {{"text": "질문 내용", "hint": "답변 방향 힌트"}},
+  {{"text": "질문 내용", "hint": "답변 방향 힌트"}}
+]"""
+
+
+def generate_ai_followup_questions(answers, count: int = 3) -> list[dict]:
+    """
+    공통+도메인 답변을 분석해 AI 보완 질문 `count`개를 생성한다.
+    반환: [{"order": 1, "text": "...", "hint": "..."}, ...]
+    실패 시 빈 리스트 반환 (플로우 중단 없이 스킵).
+    """
+    import json as _json
+
+    qa_pairs = _format_qa_pairs(answers)
+    user_prompt = _FOLLOWUP_USER_TMPL.format(qa_pairs=qa_pairs, count=count)
+    gen = {"max_tokens": 800, "temperature": 0.5}
+
+    try:
+        raw = _chat_generate()(
+            "gemini-2.0-flash",
+            user_prompt,
+            gen,
+            system=_FOLLOWUP_SYSTEM,
+        )
+    except Exception as e:
+        logger.exception("AI 보완 질문 생성 실패")
+        return []
+
+    # JSON 추출 (코드블록 감싸인 경우 처리)
+    text = raw.strip()
+    if "```" in text:
+        text = text.split("```")[-2] if text.count("```") >= 2 else text
+        text = text.lstrip("json").strip()
+
+    try:
+        items = _json.loads(text)
+        if not isinstance(items, list):
+            raise ValueError("list 형식이 아닙니다")
+        result = []
+        for i, item in enumerate(items[:count], 1):
+            result.append({
+                "order": i,
+                "text": str(item.get("text") or "").strip(),
+                "hint": str(item.get("hint") or "").strip(),
+            })
+        return result
+    except Exception as e:
+        logger.warning("AI 보완 질문 JSON 파싱 실패: %s\n원문: %s", e, raw[:300])
+        return []
 
 
 def _render_task(env: Environment, filename: str, ctx: dict[str, Any]) -> str:
@@ -117,10 +227,10 @@ def _run_task(
     task_gen = spec.get("generation")
     if isinstance(task_gen, dict):
         gen.update(task_gen)
-    return chat_completion_generate(model_id, user, gen, system=system)
+    return _chat_generate()(model_id, user, gen, system=system)
 
 
-def run_prompt_generation_pair(answers) -> tuple[str, str]:
+def run_prompt_generation_pair(answers, extra_qa: list[dict] | None = None) -> tuple[str, str]:
     """
     설문 답변을 바탕으로 (실행 관점 요약, 다른 LLM에 붙여 넣을 프롬프트 본문)을 생성한다.
     HF 또는 템플릿 오류 시 사용자에게 보일 한국어 메시지로 대체.
@@ -138,16 +248,16 @@ def run_prompt_generation_pair(answers) -> tuple[str, str]:
         err = "[설정 오류] manifest.model 또는 설정 HF_MODEL_ID 가 필요합니다."
         return err, err
 
-    ctx = _build_context(answers)
+    ctx = _build_context(answers, extra_qa=extra_qa)
 
     def safe_task(key: str) -> str:
         try:
             return _run_task(version, manifest, key, ctx, model_id)
         except Exception as e:
-            logger.exception("HF 생성 실패 task=%s", key)
+            provider = "Gemini" if os.environ.get("GEMINI_API_KEY", "").strip() else "Hugging Face"
+            logger.exception("%s 생성 실패 task=%s", provider, key)
             return (
-                f"[AI 생성 실패] Hugging Face API 호출 중 오류가 났습니다. "
-                f"네트워크·모델 ID·HF_TOKEN(필요 시)을 확인하세요.\n상세: {e!s}"
+                f"[AI 생성 실패] {provider} API 호출 중 오류가 났습니다.\n상세: {e!s}"
             )
 
     return safe_task("strategy"), safe_task("prompt_builder")

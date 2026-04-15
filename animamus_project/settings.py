@@ -104,8 +104,9 @@ if not _demo_flag:
     _demo_flag = "1" if DEBUG else "0"
 DEMO_ENABLED = _demo_flag == "1"
 DEMO_USER_USERNAME = os.environ.get("DEMO_USER_USERNAME", "demo_gov_evaluator")
-# 데모 도메인 선택 화면의 추천 도메인 (DB Category.name 과 일치, 현재는 startup 질문만 시드됨)
-DEMO_DOMAIN_CATEGORY = os.environ.get("DEMO_DOMAIN_CATEGORY", "startup")
+# 데모 도메인 선택 화면의 추천 도메인 (DB Category.name 과 일치)
+# 경진대회: physical_therapist / 기존: startup
+DEMO_DOMAIN_CATEGORY = os.environ.get("DEMO_DOMAIN_CATEGORY", "physical_therapist")
 
 # questionnaire/prompts/versions/<PROMPT_VERSION>/manifest.yaml
 PROMPT_VERSION = os.environ.get("PROMPT_VERSION", "v1")

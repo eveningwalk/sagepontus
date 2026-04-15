@@ -1,0 +1,50 @@
+## Previous Step Output (Call 1 Result)
+{{ call1_result }}
+
+## Instruction
+Execute CRA Steps 2–4 on the tokenized data above.
+
+Step 2 (Semantic Mapping):
+- Replace each matched raw token with its standard domain term from domain_hits.
+- Tokens not in domain_hits: keep as-is but flag as [AMBIGUOUS:{token}] if they carry meaning.
+- Strip noise: filler words, emotional qualifiers, discourse markers (e.g., "좀", "것 같아", "일단").
+
+Step 3 (Depth Weighting):
+Assign depth_score per token category:
+  - core_concept / diagnosis:  0.85 – 1.0
+  - execution / intervention:  0.85 – 0.95
+  - market / strategy:         0.80 – 0.90
+  - symptom / problem:         0.70 – 0.85
+  - method / process:          0.65 – 0.80
+  - context / baseline:        0.50 – 0.70
+  - output_spec / format:      0.40 – 0.65
+  - location / surface:        0.20 – 0.35
+
+Step 4 (Context Orchestration):
+Reconstruct a structured context object. Use domain_hits categories to infer the fields.
+For business/startup domains, map:
+  primary_focus     ← core_concept hits
+  inferred_goal     ← objective + execution hits
+  constraint_cluster← constraint + resource hits
+  temporal_pattern  ← execution timeline if present ("immediate" | "short_term_<3m" | "mid_term_3-12m" | "long_term_>12m" | "unknown")
+  expert_state      ← infer cognitive stage: "problem_scoping" | "solution_design" | "execution_planning" | "growth_optimization" | "unknown"
+
+Return ONLY valid JSON, no prose, no markdown:
+{
+  "refined_tokens": [
+    { "original": "원문 표현", "standard": "표준 용어", "kb_id": "STP_001", "depth_score": 0.95, "category": "core_concept" }
+  ],
+  "noise_removed": ["제거된 표현1", "제거된 표현2"],
+  "context": {
+    "primary_focus": "핵심 주제",
+    "inferred_goal": ["목표1", "목표2"],
+    "constraint_cluster": ["제약1", "제약2"],
+    "temporal_pattern": "short_term_<3m",
+    "expert_state": "solution_design"
+  },
+  "depth_summary": {
+    "peak_token": "가장 높은 depth_score 토큰",
+    "peak_score": 0.95,
+    "avg_score": 0.78
+  }
+}

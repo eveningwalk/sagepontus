@@ -1,0 +1,38 @@
+{
+  "REL_001": {
+    "label": "관계 유형",
+    "synonyms": ["연인", "친구", "가족", "동료", "상사", "부하", "파트너"],
+    "depth": 0.85,
+    "category": "context"
+  },
+  "REL_002": {
+    "label": "갈등 / 문제 상황",
+    "synonyms": ["싸움", "갈등", "문제", "오해", "불편한", "힘든 상황"],
+    "depth": 0.90,
+    "category": "problem"
+  },
+  "REL_003": {
+    "label": "원하는 변화",
+    "synonyms": ["바라는 것", "원하는 것", "개선", "달라졌으면", "목표"],
+    "depth": 0.90,
+    "category": "objective"
+  },
+  "REL_004": {
+    "label": "커뮤니케이션 방식",
+    "synonyms": ["말하는 방식", "대화", "소통", "표현", "어떻게 말할"],
+    "depth": 0.85,
+    "category": "method"
+  },
+  "REL_005": {
+    "label": "감정 상태",
+    "synonyms": ["감정", "기분", "느낌", "화가", "슬픔", "불안", "외로움"],
+    "depth": 0.80,
+    "category": "emotional"
+  },
+  "REL_006": {
+    "label": "상대방 관점",
+    "synonyms": ["상대방 입장", "상대 생각", "왜 그럴까", "이해"],
+    "depth": 0.85,
+    "category": "perspective"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "CMN_001": {
+    "label": "목표 정의",
+    "synonyms": ["하고 싶은 것", "원하는 것", "이루고 싶은 것", "목적", "바라는 것"],
+    "depth": 0.8,
+    "category": "concept"
+  },
+  "CMN_002": {
+    "label": "핵심 문제",
+    "synonyms": ["어려움", "문제", "고민", "막히는 것", "힘든 점", "걸림돌"],
+    "depth": 0.85,
+    "category": "concept"
+  },
+  "CMN_003": {
+    "label": "결과물 형식",
+    "synonyms": ["어떤 형태", "스타일", "형식", "포맷", "어떻게 나왔으면"],
+    "depth": 0.7,
+    "category": "output_spec"
+  },
+  "CMN_004": {
+    "label": "강조 요소",
+    "synonyms": ["포함하고 싶은", "강조하고 싶은", "꼭 넣어야 할", "중요한 부분"],
+    "depth": 0.75,
+    "category": "constraint"
+  },
+  "CMN_005": {
+    "label": "동기 / 이유",
+    "synonyms": ["이유", "왜냐하면", "때문에", "하고 싶은 이유", "계기"],
+    "depth": 0.7,
+    "category": "context"
+  },
+  "CMN_006": {
+    "label": "톤 앤 매너",
+    "synonyms": ["톤", "말투", "분위기", "느낌", "스타일", "전문적으로", "친근하게", "공식적으로"],
+    "depth": 0.65,
+    "category": "output_spec"
+  },
+  "CMN_007": {
+    "label": "참고 자료",
+    "synonyms": ["참고", "레퍼런스", "자료", "이미 갖고 있는", "첨부"],
+    "depth": 0.6,
+    "category": "context"
+  }
+}

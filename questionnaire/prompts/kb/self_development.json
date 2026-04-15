@@ -1,0 +1,38 @@
+{
+  "SDF_001": {
+    "label": "개발 목표 역량",
+    "synonyms": ["키우고 싶은", "배우고 싶은", "능력", "스킬", "역량"],
+    "depth": 0.90,
+    "category": "goal"
+  },
+  "SDF_002": {
+    "label": "현재 수준",
+    "synonyms": ["지금 수준", "현재", "어느 정도", "초보", "경험"],
+    "depth": 0.80,
+    "category": "baseline"
+  },
+  "SDF_003": {
+    "label": "학습 방법",
+    "synonyms": ["어떻게 배울", "방법", "수단", "독학", "강의", "멘토"],
+    "depth": 0.85,
+    "category": "method"
+  },
+  "SDF_004": {
+    "label": "동기 / 계기",
+    "synonyms": ["왜", "이유", "계기", "동기", "하게 된 이유"],
+    "depth": 0.75,
+    "category": "context"
+  },
+  "SDF_005": {
+    "label": "실행 습관",
+    "synonyms": ["매일", "루틴", "습관", "꾸준히", "규칙적으로"],
+    "depth": 0.80,
+    "category": "execution"
+  },
+  "SDF_006": {
+    "label": "장애물",
+    "synonyms": ["방해", "어려움", "못 하는 이유", "막히는 것", "한계"],
+    "depth": 0.85,
+    "category": "problem"
+  }
+}

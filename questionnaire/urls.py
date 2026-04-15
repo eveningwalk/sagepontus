@@ -14,6 +14,9 @@ urlpatterns = [
     path('edit-answer/<int:answer_id>/', views.edit_answer, name='edit_answer'),
     path('select-domain/<int:parent_block_id>/', views.select_domain, name='select_domain'),
     path('summary/<int:block_id>', views.summary, name='summary'),
+    path('ai-questions/<int:block_id>/start/', views.ai_question_start, name='ai_question_start'),
+    path('ai-questions/<int:block_id>/step/<int:order>/', views.ai_question_step, name='ai_question_step'),
+    path('demo/sessions/', views.demo_session_list, name='demo_session_list'),
     path(
         'prompt-flow/<int:block_id>/results/',
         views.prompt_flow_results,
@@ -41,6 +44,7 @@ urlpatterns = [
 
     path('api/brainblock_tree/<int:braintree_id>/', views.brainblock_tree_json, name='brainblock_tree_json'),
     path('api/brainnode_tree/<int:block_id>/', views.brainnode_tree_json, name='brainnode_tree_json'),
+    path('api/cra/process/', views.cra_process, name='cra_process'),
 
 
 ]

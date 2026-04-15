@@ -1,0 +1,38 @@
+{
+  "BGW_001": {
+    "label": "성장 목표",
+    "synonyms": ["성장", "확장", "키우고 싶은", "목표 매출", "목표 수치"],
+    "depth": 0.90,
+    "category": "objective"
+  },
+  "BGW_002": {
+    "label": "현재 성과 기준선",
+    "synonyms": ["지금 매출", "현재 상태", "현재 수치", "현황", "기준"],
+    "depth": 0.85,
+    "category": "baseline"
+  },
+  "BGW_003": {
+    "label": "신규 시장 / 채널",
+    "synonyms": ["새로운 시장", "신규", "확장할 곳", "진출", "새 채널"],
+    "depth": 0.90,
+    "category": "strategy"
+  },
+  "BGW_004": {
+    "label": "고객 유지율",
+    "synonyms": ["리텐션", "재구매", "단골", "유지", "이탈"],
+    "depth": 0.85,
+    "category": "metric"
+  },
+  "BGW_005": {
+    "label": "파트너십 / 협업",
+    "synonyms": ["파트너", "협업", "제휴", "함께할", "콜라보"],
+    "depth": 0.80,
+    "category": "strategy"
+  },
+  "BGW_006": {
+    "label": "투자 유치",
+    "synonyms": ["투자", "펀딩", "IR", "투자자", "시드", "시리즈"],
+    "depth": 0.90,
+    "category": "finance"
+  }
+}

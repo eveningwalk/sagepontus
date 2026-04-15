@@ -1,0 +1,128 @@
+{% extends "base_demo.html" %}
+
+{% block page_title %}세션 목록 · Sage Pontus{% endblock %}
+
+{% block header_extra %}
+<a href="{% url 'demo' %}"
+   class="inline-flex items-center gap-1.5 text-xs font-medium text-foreground bg-muted hover:bg-muted/70 px-3 py-1.5 rounded-lg border border-border transition-colors">
+  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+  </svg>
+  새 세션
+</a>
+{% endblock %}
+
+{% block main %}
+
+<!-- Page header -->
+<div class="mb-8">
+  <h1 class="text-2xl font-bold text-foreground mb-1">데모 세션 목록</h1>
+  <p class="text-sm text-muted-foreground">지금까지 진행한 질문 세션과 생성된 맞춤 프롬프트를 확인할 수 있습니다.</p>
+</div>
+
+{% if sessions %}
+<div class="space-y-3">
+  {% for s in sessions %}
+  <article class="bg-card rounded-2xl border border-border shadow-sm p-5 hover:shadow-md transition-shadow">
+    <div class="flex items-start justify-between gap-4">
+
+      <!-- Left: info -->
+      <div class="min-w-0 flex-1">
+        <div class="flex items-center gap-2 mb-1.5">
+          {% if s.domain_block %}
+          <span class="inline-flex items-center gap-1 text-xs font-medium bg-primary/10 text-primary px-2.5 py-0.5 rounded-full">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+            </svg>
+            완료
+          </span>
+          {% else %}
+          <span class="inline-flex items-center gap-1 text-xs font-medium bg-muted text-muted-foreground px-2.5 py-0.5 rounded-full">
+            <span class="w-1.5 h-1.5 rounded-full bg-muted-foreground inline-block"></span>
+            미완료
+          </span>
+          {% endif %}
+          <span class="text-xs text-muted-foreground">{{ s.tree.created_at|date:"Y년 m월 d일 H:i" }}</span>
+        </div>
+
+        <p class="text-sm font-semibold text-foreground truncate">{{ s.tree.title }}</p>
+
+        {% if s.domain_block %}
+        <p class="text-xs text-muted-foreground mt-0.5">
+          도메인: <span class="font-medium text-foreground">{{ s.domain_block.title }}</span>
+        </p>
+        {% endif %}
+      </div>
+
+      <!-- Right: action -->
+      <div class="flex-shrink-0 flex flex-col items-end gap-2">
+        {% if s.domain_block %}
+        <a href="{% url 'questionnaire:prompt_flow_results' block_id=s.domain_block.id %}"
+           class="inline-flex items-center gap-1.5 text-xs font-semibold bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all ring-1 ring-primary/20 hover:ring-primary/40">
+          결과 보기
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+          </svg>
+        </a>
+        <a href="{% url 'questionnaire:tree_view' s.tree.id %}"
+           class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">
+          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+          </svg>
+          트리 보기
+        </a>
+        <a href="{% url 'questionnaire:summary' block_id=s.domain_block.id %}"
+           class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg border border-border hover:bg-muted transition-colors">
+          답변 수정
+        </a>
+        {% else %}
+        <span class="text-xs text-muted-foreground px-3 py-2">질문 미완료</span>
+        {% endif %}
+      </div>
+
+    </div>
+  </article>
+  {% endfor %}
+</div>
+
+{% else %}
+<!-- Empty state -->
+<div class="bg-card rounded-2xl border border-border shadow-sm p-12 text-center">
+  <div class="w-14 h-14 rounded-xl bg-muted flex items-center justify-center mx-auto mb-4">
+    <svg class="w-7 h-7 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+    </svg>
+  </div>
+  <h2 class="text-lg font-semibold text-foreground mb-2">아직 세션이 없습니다</h2>
+  <p class="text-sm text-muted-foreground mb-6">첫 번째 데모 세션을 시작해 맞춤 프롬프트를 만들어 보세요.</p>
+  <a href="{% url 'demo' %}"
+     class="inline-flex items-center gap-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white px-6 h-10 rounded-lg shadow-sm hover:shadow-md transition-all ring-2 ring-primary/20 hover:ring-primary/40">
+    데모 시작하기
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+    </svg>
+  </a>
+</div>
+{% endif %}
+
+<!-- Bottom actions -->
+{% if sessions %}
+<div class="mt-8 flex items-center justify-between">
+  <a href="{% url 'landing' %}"
+     class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground px-5 h-10 rounded-lg border border-border hover:bg-muted transition-colors">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+    </svg>
+    첫 화면으로
+  </a>
+  <a href="{% url 'demo' %}"
+     class="inline-flex items-center gap-2 text-sm font-semibold bg-primary hover:bg-primary/90 text-white px-6 h-10 rounded-lg shadow-sm hover:shadow-md transition-all ring-2 ring-primary/20 hover:ring-primary/40">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    새 세션 시작
+  </a>
+</div>
+{% endif %}
+
+{% endblock %}

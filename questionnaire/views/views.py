@@ -1,12 +1,17 @@
+import json
+
 from django.conf import settings
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
+from django.views.decorators.csrf import csrf_exempt
 from questionnaire.models.models import Question,Category, Answer
 from django.contrib.auth.decorators import login_required
 
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
 from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_category_name
 from questionnaire.prompts import run_prompt_generation_pair
+from questionnaire.prompts.service import generate_ai_followup_questions
 from questionnaire.device import landing_template_name
 
 
@@ -28,12 +33,22 @@ def _demo_flow_template(request, base_name: str) -> str:
 
 def root(request):
     """
-    루트 URL(/). 비로그인 + 데모 ON → /landing/ 과 동일한 데모 랜딩(리다이렉트 없이 표시).
+    루트 URL(/). 비로그인 + 데모 ON → 랜딩 페이지.
+    데모 유저 로그인 중 → 항상 /demo/ (새 세션 시작)으로 이동.
     """
     if request.user.is_authenticated:
+        demo_username = getattr(settings, "DEMO_USER_USERNAME", "")
+        if getattr(settings, "DEMO_ENABLED", False) and demo_username and request.user.get_username() == demo_username:
+            response = redirect("demo")
+            response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            response["Pragma"] = "no-cache"
+            return response
         return home(request)
     if getattr(settings, "DEMO_ENABLED", False):
-        return render(request, landing_template_name(request), {})
+        response = render(request, landing_template_name(request), {})
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response["Pragma"] = "no-cache"
+        return response
     return redirect("accounts:login")
 
 
@@ -143,7 +158,7 @@ def show_question_step(request, category, order, block_id):
                 if category == 'common':
                     return redirect('questionnaire:select_domain', parent_block_id=block_node.id)
                 else:
-                    return redirect('questionnaire:summary', block_id=block_node.id)
+                    return redirect('questionnaire:ai_question_start', block_id=block_node.id)
 
     
     demo_default_answer = ""
@@ -261,17 +276,39 @@ def answers_review(request, block_id):
     """
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
 
+    # 세션에서 AI 보완 질문 답변 로드
+    a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
+    raw_ai = request.session.get(a_key, {})
+    # order 순서대로 정렬된 리스트: [{"order": 1, "q": "...", "a": "..."}]
+    ai_qa_list = sorted(
+        [{"order": int(k), **v} for k, v in raw_ai.items()],
+        key=lambda x: x["order"]
+    )
+
     if request.method == 'POST':
         for a in answers:
             key = f'answer_{a.id}'
             if key in request.POST:
-                text = request.POST.get(key, '').strip()
-                a.answer_text = text
+                a.answer_text = request.POST.get(key, '').strip()
                 a.save()
+        # AI 보완 답변 수정 반영 (세션 업데이트)
+        updated_ai = dict(raw_ai)
+        for item in ai_qa_list:
+            field_key = f'ai_answer_{item["order"]}'
+            if field_key in request.POST:
+                updated_ai[str(item["order"])]["a"] = request.POST.get(field_key, '').strip()
+        request.session[a_key] = updated_ai
+        request.session.modified = True
+        # 답변이 바뀌었으므로 캐시 전체 무효화
+        current_block.cached_result_1 = ""
+        current_block.cached_result_2 = ""
+        current_block.cached_cra = None
+        current_block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
         return redirect('questionnaire:prompt_flow_results', block_id=block_id)
 
     return render(request, _demo_flow_template(request, "answers_review"), {
         'answers': answers,
+        'ai_qa_list': ai_qa_list,
         'block_id': block_id,
         'tree': current_block.braintree,
     })
@@ -282,7 +319,91 @@ def prompt_flow_results(request, block_id):
     """2단계: 답변을 바탕으로 맞춤 프롬프트(및 실행 요약) 생성."""
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
 
-    result_1, result_2 = run_prompt_generation_pair(answers)
+    # AI 보완 질문 답변을 세션에서 가져와 함께 전달
+    a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
+    raw_ai = request.session.get(a_key, {})
+    extra_qa = list(raw_ai.values()) if raw_ai else []
+
+    # 캐시된 결과가 있으면 AI 재호출 없이 바로 사용
+    if current_block.cached_result_1 and current_block.cached_result_2:
+        result_1 = current_block.cached_result_1
+        result_2 = current_block.cached_result_2
+    else:
+        result_1, result_2 = run_prompt_generation_pair(answers, extra_qa=extra_qa)
+        current_block.cached_result_1 = result_1
+        current_block.cached_result_2 = result_2
+        current_block.save(update_fields=["cached_result_1", "cached_result_2"])
+
+    # CRA 파이프라인 + 실제 Before/After — 최초 1회만 AI 호출, 이후 cached_cra 재사용
+    cra_tokens = []
+    cra_call3 = {}
+    continuity_hint = None
+    real_generic_result = ""
+    real_sp_result = ""
+    try:
+        cached = current_block.cached_cra or {}
+
+        # ── 캐시에 실제 결과까지 있으면 바로 사용 ──
+        if cached.get("status") == "OK" and cached.get("real_generic_result"):
+            pipeline_result = cached
+            real_generic_result = cached.get("real_generic_result", "")
+            real_sp_result = cached.get("real_sp_result", "")
+        else:
+            # ── 최초 호출 ──
+            from questionnaire.prompts.cra_engine import run_cra_pipeline
+            from questionnaire.prompts.service import _chat_generate
+            from pathlib import Path
+
+            combined_text = " ".join(
+                a.answer_text for a in answers if a.answer_text and a.answer_text.strip()
+            )
+            kb_names = [p.stem for p in (Path(__file__).resolve().parent.parent / "prompts" / "kb").glob("*.json")]
+            block_title = (current_block.title or "").lower().replace(" ", "_")
+            domain = next((k for k in kb_names if k in block_title), None)
+            if not domain:
+                for a in answers:
+                    cat_name = getattr(getattr(a, 'question', None), 'category', None)
+                    cat_name = getattr(cat_name, 'name', '') or ''
+                    if cat_name in kb_names and cat_name != 'common':
+                        domain = cat_name
+                        break
+
+            # CRA 파이프라인
+            pipeline_result = run_cra_pipeline(
+                combined_text,
+                domain=domain,
+                use_ai=True,
+                user=request.user,
+                braintree=current_block.braintree,
+            )
+
+            gen = {"max_tokens": 800, "temperature": 0.5}
+            call = _chat_generate()
+
+            # ① 일반 AI: raw 답변 그대로 전송
+            raw_prompt = (
+                "아래는 사용자가 입력한 답변입니다. 이를 바탕으로 실행 가능한 조언을 해주세요.\n\n"
+                + combined_text
+            )
+            real_generic_result = call("gemini-2.0-flash", raw_prompt, gen)
+
+            # ② Sage Pontus: CRA 정제 프롬프트(result_2) 전송
+            sp_prompt = result_2 if result_2 else combined_text
+            real_sp_result = call("gemini-2.0-flash", sp_prompt, gen)
+
+            # 전체 캐시 저장
+            if pipeline_result.get("status") == "OK":
+                pipeline_result["real_generic_result"] = real_generic_result
+                pipeline_result["real_sp_result"] = real_sp_result
+                current_block.cached_cra = pipeline_result
+                current_block.save(update_fields=["cached_cra"])
+
+        if pipeline_result.get("status") == "OK":
+            cra_tokens = (pipeline_result.get("call1") or {}).get("domain_hits", [])
+            cra_call3 = pipeline_result.get("call3") or {}
+            continuity_hint = pipeline_result.get("continuity_hint")
+    except Exception:
+        logger.exception("CRA 파이프라인 실패 — 결과 페이지는 정상 표시")
 
     return render(request, _demo_flow_template(request, "prompt_results"), {
         'answers': answers,
@@ -290,6 +411,11 @@ def prompt_flow_results(request, block_id):
         'result_2': result_2,
         'tree': current_block.braintree,
         'block_id': block_id,
+        'cra_tokens': cra_tokens,
+        'cra_call3': cra_call3,
+        'continuity_hint': continuity_hint,
+        'real_generic_result': real_generic_result,
+        'real_sp_result': real_sp_result,
     })
 
 
@@ -312,6 +438,15 @@ def edit_answer(request, answer_id):
             answer.save()
         bid = answer.brainnode.block_id
         if bid:
+            # 개별 답변 수정 시 캐시 무효화
+            try:
+                block = BrainBlockNode.objects.get(id=bid)
+                block.cached_result_1 = ""
+                block.cached_result_2 = ""
+                block.cached_cra = None
+                block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
+            except BrainBlockNode.DoesNotExist:
+                pass
             return redirect('questionnaire:summary', block_id=bid)
         return redirect('home')
 
@@ -340,3 +475,156 @@ def dashboard(request):
     return render(request, 'questionnaire/dashboard.html', {
         'braintrees': braintrees
     })
+
+# ─── 데모 세션 목록 ──────────────────────────────────────────────
+
+@login_required
+def demo_session_list(request):
+    """
+    데모 사용자의 전체 세션(BrainTree) 목록.
+    도메인 블록이 있으면 결과 페이지 링크를 제공한다.
+    """
+    if not _is_demo_session(request):
+        return redirect('landing')
+
+    trees = BrainTree.objects.filter(user=request.user).order_by('-created_at')
+
+    sessions = []
+    for tree in trees:
+        domain_block = (
+            BrainBlockNode.objects.filter(braintree=tree, type='domain')
+            .order_by('id')
+            .last()
+        )
+        sessions.append({
+            'tree': tree,
+            'domain_block': domain_block,
+        })
+
+    return render(request, _demo_flow_template(request, 'demo_session_list'), {
+        'sessions': sessions,
+    })
+
+
+# ─── AI 보완 질문 플로우 ───────────────────────────────────────────
+
+_AI_Q_SESSION_KEY = "ai_questions_{block_id}"
+_AI_A_SESSION_KEY = "ai_answers_{block_id}"
+AI_FOLLOWUP_COUNT = 3
+
+
+@login_required
+def ai_question_start(request, block_id):
+    """
+    공통+도메인 답변을 Gemini에 보내 보완 질문 AI_FOLLOWUP_COUNT개를 생성한 후
+    첫 번째 질문 화면으로 이동한다.
+    생성 실패 시 answers_review로 스킵.
+    """
+    current_block, answers = _get_prompt_flow_answers(request.user, block_id)
+
+    questions = generate_ai_followup_questions(list(answers), count=AI_FOLLOWUP_COUNT)
+
+    if not questions:
+        # 생성 실패 → 기존 요약 단계로 스킵
+        return redirect('questionnaire:summary', block_id=block_id)
+
+    # 세션에 저장
+    q_key = _AI_Q_SESSION_KEY.format(block_id=block_id)
+    a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
+    request.session[q_key] = questions
+    request.session[a_key] = {}
+    request.session.modified = True
+
+    return redirect('questionnaire:ai_question_step', block_id=block_id, order=1)
+
+
+@login_required
+def ai_question_step(request, block_id, order):
+    """
+    AI 생성 보완 질문을 order 순서로 보여주고 답변을 세션에 저장한다.
+    마지막 질문 후 answers_review로 이동.
+    """
+    q_key = _AI_Q_SESSION_KEY.format(block_id=block_id)
+    a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
+
+    questions = request.session.get(q_key)
+    if not questions:
+        return redirect('questionnaire:summary', block_id=block_id)
+
+    total = len(questions)
+    if order < 1 or order > total:
+        return redirect('questionnaire:summary', block_id=block_id)
+
+    current_q = questions[order - 1]
+
+    if request.method == 'POST':
+        answer_text = request.POST.get('answer', '').strip()
+        if not answer_text and _is_demo_session(request):
+            answer_text = f"(데모 답변 {order})"
+
+        if answer_text:
+            ai_answers = request.session.get(a_key, {})
+            ai_answers[str(order)] = {"q": current_q["text"], "a": answer_text}
+            request.session[a_key] = ai_answers
+            request.session.modified = True
+
+        if order < total:
+            return redirect('questionnaire:ai_question_step', block_id=block_id, order=order + 1)
+        return redirect('questionnaire:summary', block_id=block_id)
+
+    current_block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
+    return render(request, _demo_flow_template(request, "ai_question_step"), {
+        'question': current_q,
+        'order': order,
+        'total': total,
+        'block_id': block_id,
+        'tree': current_block.braintree,
+        'is_last': order == total,
+    })
+
+
+# ---------------------------------------------------------------------------
+# CRA API endpoint
+# POST /api/cra/process/   { "text": "..." }
+# GET  /api/cra/process/?text=...
+# ---------------------------------------------------------------------------
+@csrf_exempt
+def cra_process(request):
+    """
+    CRA 엔진 테스트용 API 엔드포인트.
+
+    파라미터:
+      text    (필수) 처리할 원문 텍스트
+      domain  (선택) startup | marketing | content_creation | efficiency |
+                     business_growth | self_development | relationship
+      pipeline (선택) true면 Call1+Call2 전체 파이프라인 실행 (기본: false)
+      use_ai  (선택) true면 AI 호출 (기본: false, 규칙 기반)
+    """
+    from questionnaire.prompts.cra_engine import process_cra, run_cra_pipeline
+
+    if request.method == "POST":
+        try:
+            body = json.loads(request.body)
+            text    = body.get("text", "").strip()
+            domain  = body.get("domain", "").strip() or None
+            pipeline = str(body.get("pipeline", "false")).lower() == "true"
+            use_ai  = str(body.get("use_ai", "false")).lower() == "true"
+        except (json.JSONDecodeError, AttributeError):
+            return JsonResponse({"error": "JSON body with 'text' field required."}, status=400)
+    elif request.method == "GET":
+        text    = request.GET.get("text", "").strip()
+        domain  = request.GET.get("domain", "").strip() or None
+        pipeline = request.GET.get("pipeline", "false").lower() == "true"
+        use_ai  = request.GET.get("use_ai", "false").lower() == "true"
+    else:
+        return JsonResponse({"error": "GET or POST only."}, status=405)
+
+    if not text:
+        return JsonResponse({"error": "'text' must not be empty."}, status=400)
+
+    if pipeline:
+        result = run_cra_pipeline(text, domain=domain, use_ai=use_ai)
+    else:
+        result = process_cra(text, domain=domain, use_ai=use_ai)
+
+    return JsonResponse(result, json_dumps_params={"ensure_ascii": False})

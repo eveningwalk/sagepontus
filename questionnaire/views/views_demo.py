@@ -34,12 +34,21 @@ def _get_or_create_demo_user() -> User:
 
 def landing(request):
     """
-    GET /landing/ — 데모 전용 랜딩(시작) 페이지. 로그인 없음.
-    「데모 시작하기」→ /demo/ 진입.
+    GET /landing/ — 데모 전용 랜딩(시작) 페이지.
+    데모 유저가 이미 로그인된 경우에도 항상 /demo/로 보내 새 세션을 시작한다.
     """
     if not getattr(settings, "DEMO_ENABLED", False):
         raise Http404("Demo is disabled.")
-    return render(request, landing_template_name(request), {})
+    demo_username = getattr(settings, "DEMO_USER_USERNAME", "")
+    if demo_username and request.user.is_authenticated and request.user.get_username() == demo_username:
+        response = redirect("demo")
+        response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+        response["Pragma"] = "no-cache"
+        return response
+    response = render(request, landing_template_name(request), {})
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    response["Pragma"] = "no-cache"
+    return response
 
 
 def demo_entry(request):

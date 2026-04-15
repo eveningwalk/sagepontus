@@ -1,0 +1,44 @@
+{
+  "CNT_001": {
+    "label": "콘텐츠 목적",
+    "synonyms": ["왜 만드는지", "목적", "이유", "무엇을 위해", "용도"],
+    "depth": 0.90,
+    "category": "objective"
+  },
+  "CNT_002": {
+    "label": "콘텐츠 형식",
+    "synonyms": ["블로그", "유튜브", "숏폼", "릴스", "카드뉴스", "뉴스레터", "포스팅"],
+    "depth": 0.85,
+    "category": "format"
+  },
+  "CNT_003": {
+    "label": "주제 / 토픽",
+    "synonyms": ["주제", "토픽", "내용", "무엇에 대해", "소재"],
+    "depth": 0.90,
+    "category": "topic"
+  },
+  "CNT_004": {
+    "label": "타겟 독자",
+    "synonyms": ["독자", "시청자", "누가 볼", "대상", "타겟"],
+    "depth": 0.85,
+    "category": "audience"
+  },
+  "CNT_005": {
+    "label": "SEO 키워드",
+    "synonyms": ["키워드", "검색어", "SEO", "검색 최적화"],
+    "depth": 0.80,
+    "category": "seo"
+  },
+  "CNT_006": {
+    "label": "콘텐츠 톤",
+    "synonyms": ["말투", "톤", "친근하게", "전문적으로", "유머", "감성적"],
+    "depth": 0.75,
+    "category": "style"
+  },
+  "CNT_007": {
+    "label": "CTA (행동 유도)",
+    "synonyms": ["구독", "공유", "댓글", "클릭", "방문", "행동 유도"],
+    "depth": 0.85,
+    "category": "objective"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "MKT_001": {
+    "label": "타겟 오디언스",
+    "synonyms": ["타겟", "대상", "주요 고객", "누구에게", "독자", "소비자"],
+    "depth": 0.90,
+    "category": "audience"
+  },
+  "MKT_002": {
+    "label": "핵심 메시지",
+    "synonyms": ["전달하고 싶은 것", "메인 메시지", "포인트", "핵심", "말하고 싶은"],
+    "depth": 0.90,
+    "category": "message"
+  },
+  "MKT_003": {
+    "label": "마케팅 채널",
+    "synonyms": ["SNS", "인스타", "유튜브", "블로그", "이메일", "광고", "어디서"],
+    "depth": 0.85,
+    "category": "channel"
+  },
+  "MKT_004": {
+    "label": "전환 목표 (Conversion Goal)",
+    "synonyms": ["구매", "가입", "문의", "클릭", "다운로드", "전환"],
+    "depth": 0.90,
+    "category": "objective"
+  },
+  "MKT_005": {
+    "label": "브랜드 보이스",
+    "synonyms": ["톤", "말투", "브랜드 느낌", "이미지", "퍼소나"],
+    "depth": 0.80,
+    "category": "brand"
+  },
+  "MKT_006": {
+    "label": "경쟁 포지셔닝",
+    "synonyms": ["경쟁사 대비", "차별화", "우리만의", "포지션", "강점"],
+    "depth": 0.85,
+    "category": "strategy"
+  },
+  "MKT_007": {
+    "label": "캠페인 예산",
+    "synonyms": ["예산", "비용", "광고비", "얼마로"],
+    "depth": 0.75,
+    "category": "resource"
+  }
+}

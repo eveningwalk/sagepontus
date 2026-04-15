@@ -1,0 +1,37 @@
+## Domain Knowledge Base (Session Scope)
+{{ domain_kb }}
+{% if previous_context %}
+
+## Previous Session Context
+{{ previous_context }}
+// 위는 이 사용자의 직전 세션에서 추출된 컨텍스트입니다.
+// 현재 입력과 연결되는 부분이 있으면 continuity_hint 필드에 명시하세요.
+{% endif %}
+
+## Raw Input
+{{ raw_input }}
+
+## Instruction
+Parse the raw input using the domain knowledge base above.
+Perform Step 1 (tokenization) only at this stage.
+
+Rules:
+- Match raw tokens to KB entries using label AND synonyms.
+- Assign confidence: 1.0 = exact synonym match, 0.7~0.9 = semantic match, <0.7 = uncertain.
+- If any token confidence < 0.7, add it to ambiguities with a clarifying question.
+- If ambiguities exist, set status to "AMBIGUITY_HALT".
+- raw_tokens: every meaningful word/phrase extracted from raw input (Korean OK).
+- domain_hits: only tokens that matched KB entries.
+
+Return ONLY valid JSON, no prose, no markdown:
+{
+  "status": "TOKENIZED" | "AMBIGUITY_HALT",
+  "raw_tokens": ["token1", "token2"],
+  "domain_hits": [
+    { "raw": "원문 표현", "kb_id": "STP_001", "label": "표준 용어", "confidence": 0.92, "depth": 0.95, "category": "core_concept" }
+  ],
+  "ambiguities": [
+    { "token": "불명확한 표현", "question": "이 표현이 [A]를 의미하는지 [B]를 의미하는지 확인이 필요합니다." }
+  ],
+  "continuity_hint": "이전 세션과 연결되는 맥락 한 줄 요약 (없으면 null)"
+}
