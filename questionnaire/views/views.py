@@ -1,4 +1,5 @@
 import json
+import logging
 
 from django.conf import settings
 from django.contrib import messages
@@ -13,6 +14,8 @@ from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_
 from questionnaire.prompts import run_prompt_generation_pair
 from questionnaire.prompts.service import generate_ai_followup_questions
 from questionnaire.device import landing_template_name
+
+logger = logging.getLogger(__name__)
 
 
 def _is_demo_session(request) -> bool:
