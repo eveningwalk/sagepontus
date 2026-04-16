@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
 from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_category_name
 from questionnaire.prompts import run_prompt_generation_pair
-from questionnaire.prompts.service import generate_ai_followup_questions
+from questionnaire.prompts.service import generate_ai_followup_questions, _chat_generate_with_usage
 from questionnaire.device import landing_template_name
 
 logger = logging.getLogger(__name__)
@@ -343,6 +343,8 @@ def prompt_flow_results(request, block_id):
     continuity_hint = None
     real_generic_result = ""
     real_sp_result = ""
+    token_before = {}
+    token_after = {}
     try:
         cached = current_block.cached_cra or {}
 
@@ -351,10 +353,11 @@ def prompt_flow_results(request, block_id):
             pipeline_result = cached
             real_generic_result = cached.get("real_generic_result", "")
             real_sp_result = cached.get("real_sp_result", "")
+            token_before = cached.get("token_before") or {}
+            token_after = cached.get("token_after") or {}
         else:
             # ── 최초 호출 ──
             from questionnaire.prompts.cra_engine import run_cra_pipeline
-            from questionnaire.prompts.service import _chat_generate
             from pathlib import Path
 
             combined_text = " ".join(
@@ -381,23 +384,25 @@ def prompt_flow_results(request, block_id):
             )
 
             gen = {"max_tokens": 800, "temperature": 0.5}
-            call = _chat_generate()
+            call = _chat_generate_with_usage()
 
-            # ① 일반 AI: raw 답변 그대로 전송
+            # ① 일반 AI (Before): raw 답변 그대로 전송
             raw_prompt = (
                 "아래는 사용자가 입력한 답변입니다. 이를 바탕으로 실행 가능한 조언을 해주세요.\n\n"
                 + combined_text
             )
-            real_generic_result = call("gemini-2.0-flash", raw_prompt, gen)
+            real_generic_result, token_before = call("gemini-2.0-flash", raw_prompt, gen)
 
-            # ② Sage Pontus: CRA 정제 프롬프트(result_2) 전송
+            # ② Sage Pontus (After): CRA 정제 프롬프트(result_2) 전송
             sp_prompt = result_2 if result_2 else combined_text
-            real_sp_result = call("gemini-2.0-flash", sp_prompt, gen)
+            real_sp_result, token_after = call("gemini-2.0-flash", sp_prompt, gen)
 
             # 전체 캐시 저장
             if pipeline_result.get("status") == "OK":
                 pipeline_result["real_generic_result"] = real_generic_result
                 pipeline_result["real_sp_result"] = real_sp_result
+                pipeline_result["token_before"] = token_before
+                pipeline_result["token_after"] = token_after
                 current_block.cached_cra = pipeline_result
                 current_block.save(update_fields=["cached_cra"])
 
@@ -419,6 +424,8 @@ def prompt_flow_results(request, block_id):
         'continuity_hint': continuity_hint,
         'real_generic_result': real_generic_result,
         'real_sp_result': real_sp_result,
+        'token_before': token_before,
+        'token_after': token_after,
     })
 
 
@@ -516,20 +523,43 @@ _AI_A_SESSION_KEY = "ai_answers_{block_id}"
 AI_FOLLOWUP_COUNT = 3
 
 
+_DEMO_FALLBACK_QUESTIONS = [
+    {
+        "order": 1,
+        "text": "목표 고객이 현재 이 문제를 어떻게 해결하고 있나요? 기존 대안의 가장 큰 불편함은 무엇인가요?",
+        "hint": "현재 시장의 대안(경쟁사, 수동 방법 등)과 그 한계를 구체적으로 적어주세요.",
+    },
+    {
+        "order": 2,
+        "text": "6개월 후 핵심 성과 지표(KPI) 목표치는 어떻게 설정하셨나요?",
+        "hint": "MAU, 매출, 고객 수 등 측정 가능한 수치로 적어주세요.",
+    },
+    {
+        "order": 3,
+        "text": "팀이 이 문제를 해결하기에 가장 적합한 이유는 무엇인가요?",
+        "hint": "창업팀의 도메인 경험, 기술력, 네트워크 등 강점을 적어주세요.",
+    },
+]
+
+
 @login_required
 def ai_question_start(request, block_id):
     """
     공통+도메인 답변을 Gemini에 보내 보완 질문 AI_FOLLOWUP_COUNT개를 생성한 후
     첫 번째 질문 화면으로 이동한다.
-    생성 실패 시 answers_review로 스킵.
+    생성 실패 시: 데모 세션이면 fallback 질문 사용, 일반 세션이면 answers_review로 스킵.
     """
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
 
     questions = generate_ai_followup_questions(list(answers), count=AI_FOLLOWUP_COUNT)
 
     if not questions:
-        # 생성 실패 → 기존 요약 단계로 스킵
-        return redirect('questionnaire:summary', block_id=block_id)
+        if _is_demo_session(request):
+            # 데모에서 AI 생성 실패 시 fallback 질문으로 단계를 보여줌
+            questions = _DEMO_FALLBACK_QUESTIONS
+        else:
+            # 일반 세션은 기존대로 요약 단계로 스킵
+            return redirect('questionnaire:summary', block_id=block_id)
 
     # 세션에 저장
     q_key = _AI_Q_SESSION_KEY.format(block_id=block_id)

@@ -27,6 +27,25 @@ def _chat_generate():
     return chat_completion_generate
 
 
+def _chat_generate_with_usage():
+    """(text, usage) 튜플을 반환하는 클라이언트를 선택한다.
+    HF 클라이언트는 usage를 지원하지 않으므로 fallback으로 빈 usage를 반환하는 래퍼를 사용한다.
+    """
+    if os.environ.get("ANTHROPIC_API_KEY", "").strip():
+        from questionnaire.prompts.claude_client import chat_completion_generate_with_usage
+        return chat_completion_generate_with_usage
+    if os.environ.get("GEMINI_API_KEY", "").strip():
+        from questionnaire.prompts.gemini_client import chat_completion_generate_with_usage
+        return chat_completion_generate_with_usage
+
+    # HF fallback: usage 없이 텍스트만 반환하는 래퍼
+    from questionnaire.prompts.hf_client import chat_completion_generate as _hf
+    def _hf_with_usage(model_id, user, generation, *, system=None):
+        text = _hf(model_id, user, generation, system=system)
+        return text, {"input_tokens": 0, "output_tokens": 0, "total_tokens": 0}
+    return _hf_with_usage
+
+
 # 하위 호환: 직접 임포트한 곳이 있을 경우를 위해 모듈 수준 참조 유지
 def chat_completion_generate(model_id, user, generation, *, system=None):
     return _chat_generate()(model_id, user, generation, system=system)
