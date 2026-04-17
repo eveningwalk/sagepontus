@@ -9,7 +9,8 @@ from django.views.decorators.csrf import csrf_exempt
 from questionnaire.models.models import Question,Category, Answer
 from django.contrib.auth.decorators import login_required
 
-from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
+from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode, UserCustomBlock
+from django.db.models import Max
 from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_category_name
 from questionnaire.prompts import run_prompt_generation_pair
 from questionnaire.prompts.service import generate_ai_followup_questions, _chat_generate_with_usage
@@ -282,19 +283,20 @@ def answers_review(request, block_id):
     # 세션에서 AI 보완 질문 답변 로드
     a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
     raw_ai = request.session.get(a_key, {})
-    # order 순서대로 정렬된 리스트: [{"order": 1, "q": "...", "a": "..."}]
     ai_qa_list = sorted(
         [{"order": int(k), **v} for k, v in raw_ai.items()],
         key=lambda x: x["order"]
     )
 
     if request.method == 'POST':
+        # ── 기존 답변 수정 ──
         for a in answers:
             key = f'answer_{a.id}'
             if key in request.POST:
                 a.answer_text = request.POST.get(key, '').strip()
                 a.save()
-        # AI 보완 답변 수정 반영 (세션 업데이트)
+
+        # ── AI 보완 답변 수정 ──
         updated_ai = dict(raw_ai)
         for item in ai_qa_list:
             field_key = f'ai_answer_{item["order"]}'
@@ -302,16 +304,50 @@ def answers_review(request, block_id):
                 updated_ai[str(item["order"])]["a"] = request.POST.get(field_key, '').strip()
         request.session[a_key] = updated_ai
         request.session.modified = True
-        # 답변이 바뀌었으므로 캐시 전체 무효화
+
+        # ── 사용자 추가 항목: 기존 항목 수정/삭제 ──
+        for cb in UserCustomBlock.objects.filter(block_node=current_block):
+            if request.POST.get(f'delete_custom_{cb.id}') == '1':
+                cb.delete()
+            else:
+                q = request.POST.get(f'custom_question_{cb.id}', '').strip()
+                a_text = request.POST.get(f'custom_answer_{cb.id}', '').strip()
+                if q:
+                    cb.question_text = q
+                    cb.answer_text = a_text
+                    cb.save()
+
+        # ── 사용자 추가 항목: 새 항목 생성 ──
+        new_count = int(request.POST.get('new_custom_count', '0') or '0')
+        if new_count > 0:
+            max_order = UserCustomBlock.objects.filter(
+                block_node=current_block
+            ).aggregate(m=Max('order'))['m'] or 0
+            for i in range(1, new_count + 1):
+                q = request.POST.get(f'new_custom_question_{i}', '').strip()
+                a_text = request.POST.get(f'new_custom_answer_{i}', '').strip()
+                if q:
+                    max_order += 1
+                    UserCustomBlock.objects.create(
+                        block_node=current_block,
+                        question_text=q,
+                        answer_text=a_text,
+                        order=max_order,
+                    )
+
+        # ── 캐시 무효화 ──
         current_block.cached_result_1 = ""
         current_block.cached_result_2 = ""
         current_block.cached_cra = None
         current_block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
         return redirect('questionnaire:prompt_flow_results', block_id=block_id)
 
+    custom_blocks = list(UserCustomBlock.objects.filter(block_node=current_block))
+
     return render(request, _demo_flow_template(request, "answers_review"), {
         'answers': answers,
         'ai_qa_list': ai_qa_list,
+        'custom_blocks': custom_blocks,
         'block_id': block_id,
         'tree': current_block.braintree,
     })
@@ -322,10 +358,18 @@ def prompt_flow_results(request, block_id):
     """2단계: 답변을 바탕으로 맞춤 프롬프트(및 실행 요약) 생성."""
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
 
+    # 사용자 직접 추가 항목
+    custom_blocks = list(UserCustomBlock.objects.filter(block_node=current_block))
+
     # AI 보완 질문 답변을 세션에서 가져와 함께 전달
     a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
     raw_ai = request.session.get(a_key, {})
     extra_qa = list(raw_ai.values()) if raw_ai else []
+
+    # 커스텀 블록을 extra_qa 형태로 변환하여 프롬프트에 포함
+    for cb in custom_blocks:
+        if cb.question_text.strip() and cb.answer_text.strip():
+            extra_qa.append({"q": cb.question_text.strip(), "a": cb.answer_text.strip()})
 
     # 캐시된 결과가 있으면 AI 재호출 없이 바로 사용
     if current_block.cached_result_1 and current_block.cached_result_2:
@@ -363,6 +407,10 @@ def prompt_flow_results(request, block_id):
             combined_text = " ".join(
                 a.answer_text for a in answers if a.answer_text and a.answer_text.strip()
             )
+            # 사용자 추가 항목도 combined_text에 포함
+            for cb in custom_blocks:
+                if cb.question_text.strip() and cb.answer_text.strip():
+                    combined_text += f" [추가정보] {cb.question_text}: {cb.answer_text}"
             kb_names = [p.stem for p in (Path(__file__).resolve().parent.parent / "prompts" / "kb").glob("*.json")]
             block_title = (current_block.title or "").lower().replace(" ", "_")
             domain = next((k for k in kb_names if k in block_title), None)
@@ -415,6 +463,7 @@ def prompt_flow_results(request, block_id):
 
     return render(request, _demo_flow_template(request, "prompt_results"), {
         'answers': answers,
+        'custom_blocks': custom_blocks,
         'result_1': result_1,
         'result_2': result_2,
         'tree': current_block.braintree,
@@ -554,12 +603,8 @@ def ai_question_start(request, block_id):
     questions = generate_ai_followup_questions(list(answers), count=AI_FOLLOWUP_COUNT)
 
     if not questions:
-        if _is_demo_session(request):
-            # 데모에서 AI 생성 실패 시 fallback 질문으로 단계를 보여줌
-            questions = _DEMO_FALLBACK_QUESTIONS
-        else:
-            # 일반 세션은 기존대로 요약 단계로 스킵
-            return redirect('questionnaire:summary', block_id=block_id)
+        logger.warning("AI 보완 질문 생성 실패 (block_id=%s) — fallback 질문 사용", block_id)
+        questions = _DEMO_FALLBACK_QUESTIONS
 
     # 세션에 저장
     q_key = _AI_Q_SESSION_KEY.format(block_id=block_id)

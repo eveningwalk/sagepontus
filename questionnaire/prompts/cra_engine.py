@@ -130,6 +130,8 @@ def _extract_json(raw: str) -> str:
     if start == -1:
         return text
     text = text[start:]
+    # 후행 쉼표 제거 (LLM이 생성하는 흔한 비표준 패턴)
+    text = re.sub(r",\s*([}\]])", r"\1", text)
     # 닫히지 않은 JSON 복원 시도
     try:
         json.loads(text)
@@ -165,8 +167,11 @@ def _extract_json(raw: str) -> str:
             last_good = i + 1
             break
     else:
-        # 잘린 경우: 열린 것을 모두 닫는다
-        close = "]" * depth_bracket + "}" * depth_brace
+        # 잘린 경우: 문자열 내부에서 잘렸으면 먼저 닫고, 그 뒤 괄호를 닫는다
+        close = ""
+        if in_string:
+            close += '"'
+        close += "]" * depth_bracket + "}" * depth_brace
         return text + close
     return text[:last_good]
 
@@ -370,7 +375,7 @@ def _ai_call2(call1_result: dict) -> dict | None:
         raw_response = _chat_generate()(
             "gemini-2.0-flash",
             prompt,
-            {"max_tokens": 1500, "temperature": 0.1},
+            {"max_tokens": 2500, "temperature": 0.1},
         )
     except Exception as e:
         logger.warning("CRA Call2 AI 호출 실패: %s", e)
