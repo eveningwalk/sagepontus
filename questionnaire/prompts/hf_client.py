@@ -17,6 +17,25 @@ _HF_TOKEN_HELP = (
 )
 
 
+_HF_DEFAULT_MODEL = "Qwen/Qwen2.5-72B-Instruct"
+
+
+def _resolve_model_id(model_id: str) -> str:
+    """HF_MODEL_ID 환경변수 우선. 없으면 '/' 없는 non-HF 모델명(gemini 등)은 기본 모델로 교체."""
+    env = os.environ.get("HF_MODEL_ID", "").strip()
+    if env:
+        return env
+    if "/" not in model_id:
+        logger.warning(
+            "HF fallback: '%s'는 HuggingFace 모델이 아닙니다 → %s 사용. "
+            "GEMINI_API_KEY 또는 HF_MODEL_ID를 설정하세요.",
+            model_id,
+            _HF_DEFAULT_MODEL,
+        )
+        return _HF_DEFAULT_MODEL
+    return model_id
+
+
 def _inference_provider() -> str:
     """
     Hub가 모델별 Inference Provider를 고릅니다(기본 auto).
@@ -51,7 +70,8 @@ def chat_completion_generate(
         ) from e
 
     token = os.environ.get("HF_TOKEN") or os.environ.get("HUGGINGFACE_HUB_TOKEN") or None
-    client = InferenceClient(model=model_id, token=token, provider=_inference_provider())
+    resolved = _resolve_model_id(model_id)
+    client = InferenceClient(model=resolved, token=token, provider=_inference_provider())
 
     messages: list[dict[str, str]] = []
     if system and system.strip():
