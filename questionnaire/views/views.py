@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
 from questionnaire.models.models import Question,Category, Answer
 from django.contrib.auth.decorators import login_required
 
@@ -272,6 +273,7 @@ def _get_prompt_flow_answers(user, block_id):
     return current_block, answers
 
 
+@never_cache
 @login_required
 def answers_review(request, block_id):
     """
@@ -353,6 +355,7 @@ def answers_review(request, block_id):
     })
 
 
+@never_cache
 @login_required
 def prompt_flow_results(request, block_id):
     """2단계: 답변을 바탕으로 맞춤 프롬프트(및 실행 요약) 생성."""
@@ -591,6 +594,7 @@ _DEMO_FALLBACK_QUESTIONS = [
 ]
 
 
+@never_cache
 @login_required
 def ai_question_start(request, block_id):
     """
@@ -616,6 +620,7 @@ def ai_question_start(request, block_id):
     return redirect('questionnaire:ai_question_step', block_id=block_id, order=1)
 
 
+@never_cache
 @login_required
 def ai_question_step(request, block_id, order):
     """
