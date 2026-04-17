@@ -136,6 +136,10 @@ def brainblock_tree_json(request, braintree_id):
                 answers_data.append({"user": a.user.username, "answer": a.answer_text})
                 if not purpose_label and a.question_id:
                     purpose_label = PURPOSE_LABELS.get(a.question.purpose, "")
+                # AI 보완·직접 추가 BrainNode는 answer_text에 직접 저장
+            if not answers_data and bn.answer_text:
+                answers_data.append({"user": "사용자", "answer": bn.answer_text})
+
             brainnodes_data.append({
                 "id": bn.id,
                 "order": bn.order,

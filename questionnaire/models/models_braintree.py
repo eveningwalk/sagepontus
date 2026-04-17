@@ -43,7 +43,13 @@ class BrainBlockNode(MPTTModel):
     description = models.TextField(blank=True, null=True)
     type = models.CharField(
         max_length=20,
-        choices=(("common", "공통"), ("domain", "도메인"), ("ai", "AI 생성형")),
+        choices=(
+            ("common", "공통"),
+            ("domain", "도메인"),
+            ("ai", "AI 생성형"),
+            ("ai_followup", "AI 보완 질문"),
+            ("user_custom", "직접 추가"),
+        ),
         default="common"
     )
     order = models.PositiveIntegerField(default=0)
@@ -147,27 +153,6 @@ class PromptArtifact(models.Model):
     def __str__(self):
         return f"Artifact node={self.node_id} v={self.version}"
 
-
-class UserCustomBlock(models.Model):
-    """
-    사용자가 answers_review 화면에서 직접 추가한 질문·답변 항목.
-    기존 Question 모델과 무관하게 자유롭게 입력할 수 있다.
-    """
-    block_node = models.ForeignKey(
-        BrainBlockNode,
-        on_delete=models.CASCADE,
-        related_name="custom_blocks",
-    )
-    question_text = models.TextField()
-    answer_text = models.TextField(blank=True, default="")
-    order = models.PositiveIntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ["order", "created_at"]
-
-    def __str__(self):
-        return f"CustomBlock#{self.id} [{self.block_node_id}] {self.question_text[:40]}"
 
 
 class CRAAsset(models.Model):

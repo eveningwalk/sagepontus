@@ -36,6 +36,14 @@
     도메인 블록
   </span>
   <span class="flex items-center gap-1.5">
+    <span class="w-3 h-3 rounded-full inline-block" style="background:#f59e0b"></span>
+    AI 보완 블록
+  </span>
+  <span class="flex items-center gap-1.5">
+    <span class="w-3 h-3 rounded-full inline-block" style="background:#10b981"></span>
+    직접 추가 블록
+  </span>
+  <span class="flex items-center gap-1.5">
     <span class="w-3 h-3 rounded-full border border-border inline-block" style="background:#eef0f5"></span>
     질문 노드 (클릭)
   </span>
@@ -79,14 +87,16 @@
 const API_URL = "{% url 'questionnaire:brainblock_tree_json' braintree.id %}";
 
 const COLOR = {
-  root:    '#0f1a2e',
-  common:  '#5b5ef4',
-  domain:  '#1db887',
-  question:'#eef0f5',
-  qStroke: '#dde1ea',
-  link:    '#dde1ea',
-  text:    '#0f1a2e',
-  textMuted: '#637087',
+  root:       '#0f1a2e',
+  common:     '#5b5ef4',
+  domain:     '#1db887',
+  ai_followup:'#f59e0b',
+  user_custom:'#10b981',
+  question:   '#eef0f5',
+  qStroke:    '#dde1ea',
+  link:       '#dde1ea',
+  text:       '#0f1a2e',
+  textMuted:  '#637087',
 };
 
 /* ── data transform ────────────────────────────────────────── */
@@ -227,9 +237,11 @@ fetch(API_URL)
       return 14;
     };
     const fillColor = d => {
-      if (d.data.nodeType === 'root')     return COLOR.root;
-      if (d.data.nodeType === 'common')   return COLOR.common;
-      if (d.data.nodeType === 'domain')   return COLOR.domain;
+      if (d.data.nodeType === 'root')        return COLOR.root;
+      if (d.data.nodeType === 'common')      return COLOR.common;
+      if (d.data.nodeType === 'domain')      return COLOR.domain;
+      if (d.data.nodeType === 'ai_followup') return COLOR.ai_followup;
+      if (d.data.nodeType === 'user_custom') return COLOR.user_custom;
       return COLOR.question;
     };
 
@@ -252,8 +264,10 @@ fetch(API_URL)
       .attr('font-size', d => d.data.nodeType === 'root' ? '9px' : '8px')
       .attr('font-weight', 'bold')
       .text(d => {
-        if (d.data.nodeType === 'root')   return 'SP';
-        if (d.data.nodeType === 'common') return '공통';
+        if (d.data.nodeType === 'root')        return 'SP';
+        if (d.data.nodeType === 'common')      return '공통';
+        if (d.data.nodeType === 'ai_followup') return 'AI';
+        if (d.data.nodeType === 'user_custom') return '+';
         return '도메인';
       });
 

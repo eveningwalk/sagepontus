@@ -53,7 +53,7 @@
     </div>
 
     <!-- AI 보완 질문 답변 -->
-    {% if ai_qa_list %}
+    {% if ai_brainnodes %}
     <div class="mt-6 mb-4">
       <div class="flex items-center gap-2 mb-3">
         <span class="inline-flex items-center gap-1.5 text-xs font-medium bg-secondary/10 text-secondary px-3 py-1 rounded-full">
@@ -65,19 +65,19 @@
         <span class="text-xs text-muted-foreground">— AI가 추가로 확인한 내용</span>
       </div>
       <div class="space-y-4">
-        {% for item in ai_qa_list %}
+        {% for bn in ai_brainnodes %}
         <div class="p-4 rounded-xl border border-secondary/20 bg-secondary/5">
           <p class="text-sm font-semibold text-foreground mb-2 flex items-start gap-2">
             <span class="flex-shrink-0 w-6 h-6 rounded bg-secondary/20 flex items-center justify-center text-xs font-bold text-secondary">
               AI
             </span>
-            <span>{{ item.q }}</span>
+            <span>{{ bn.question_text }}</span>
           </p>
           <textarea
             class="w-full rounded-lg border border-secondary/20 bg-card text-foreground px-3 py-2 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-secondary/30 focus:border-secondary transition-colors mt-2"
-            name="ai_answer_{{ item.order }}"
+            name="ai_answer_{{ bn.order }}"
             rows="3"
-          >{{ item.a }}</textarea>
+          >{{ bn.answer_text }}</textarea>
         </div>
         {% endfor %}
       </div>
@@ -105,32 +105,32 @@
         </button>
       </div>
 
-      <!-- 기존 커스텀 항목 -->
+      <!-- 기존 직접 추가 항목 (BrainNode) -->
       <div id="custom-blocks-list" class="space-y-3">
-        {% for cb in custom_blocks %}
-        <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 relative" data-custom-id="{{ cb.id }}">
-          <input type="hidden" name="delete_custom_{{ cb.id }}" value="0" id="del_flag_{{ cb.id }}">
+        {% for bn in user_brainnodes %}
+        <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 relative" data-custom-id="{{ bn.id }}">
+          <input type="hidden" name="delete_custom_{{ bn.id }}" value="0" id="del_flag_{{ bn.id }}">
           <div class="flex items-start gap-2 mb-2">
             <span class="flex-shrink-0 w-6 h-6 rounded bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">+</span>
             <div class="flex-1 min-w-0">
               <input type="text"
-                     name="custom_question_{{ cb.id }}"
-                     value="{{ cb.question_text }}"
+                     name="custom_question_{{ bn.id }}"
+                     value="{{ bn.question_text }}"
                      placeholder="질문 / 제목"
                      class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors">
             </div>
             <button type="button"
-                    onclick="deleteCustomBlock({{ cb.id }})"
+                    onclick="deleteCustomBlock({{ bn.id }})"
                     class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
               </svg>
             </button>
           </div>
-          <textarea name="custom_answer_{{ cb.id }}"
+          <textarea name="custom_answer_{{ bn.id }}"
                     rows="3"
                     placeholder="답변 내용"
-                    class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors ml-8">{{ cb.answer_text }}</textarea>
+                    class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors ml-8">{{ bn.answer_text }}</textarea>
         </div>
         {% empty %}
         <p class="text-xs text-muted-foreground pl-1" id="custom-empty-hint">아직 추가한 항목이 없습니다. 위 버튼으로 자유롭게 추가해 보세요.</p>

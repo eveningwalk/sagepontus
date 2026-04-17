@@ -10,8 +10,7 @@ from django.views.decorators.cache import never_cache
 from questionnaire.models.models import Question,Category, Answer
 from django.contrib.auth.decorators import login_required
 
-from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode, UserCustomBlock
-from django.db.models import Max
+from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
 from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_category_name
 from questionnaire.prompts import run_prompt_generation_pair
 from questionnaire.prompts.service import generate_ai_followup_questions, _chat_generate_with_usage
@@ -273,6 +272,22 @@ def _get_prompt_flow_answers(user, block_id):
     return current_block, answers
 
 
+def _get_ai_block(domain_block):
+    return BrainBlockNode.objects.filter(parent=domain_block, type='ai_followup').first()
+
+def _get_user_block(domain_block):
+    return BrainBlockNode.objects.filter(parent=domain_block, type='user_custom').first()
+
+def _get_or_create_user_block(domain_block):
+    block, _ = BrainBlockNode.objects.get_or_create(
+        braintree=domain_block.braintree,
+        parent=domain_block,
+        type='user_custom',
+        defaults={'title': '직접 추가', 'order': 20},
+    )
+    return block
+
+
 @never_cache
 @login_required
 def answers_review(request, block_id):
@@ -282,13 +297,11 @@ def answers_review(request, block_id):
     """
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
 
-    # 세션에서 AI 보완 질문 답변 로드
-    a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
-    raw_ai = request.session.get(a_key, {})
-    ai_qa_list = sorted(
-        [{"order": int(k), **v} for k, v in raw_ai.items()],
-        key=lambda x: x["order"]
-    )
+    ai_block = _get_ai_block(current_block)
+    ai_brainnodes = list(ai_block.brainnodes.order_by('order')) if ai_block else []
+
+    user_block = _get_user_block(current_block)
+    user_brainnodes = list(user_block.brainnodes.order_by('order')) if user_block else []
 
     if request.method == 'POST':
         # ── 기존 답변 수정 ──
@@ -298,40 +311,37 @@ def answers_review(request, block_id):
                 a.answer_text = request.POST.get(key, '').strip()
                 a.save()
 
-        # ── AI 보완 답변 수정 ──
-        updated_ai = dict(raw_ai)
-        for item in ai_qa_list:
-            field_key = f'ai_answer_{item["order"]}'
+        # ── AI 보완 답변 수정 (DB) ──
+        for bn in ai_brainnodes:
+            field_key = f'ai_answer_{bn.order}'
             if field_key in request.POST:
-                updated_ai[str(item["order"])]["a"] = request.POST.get(field_key, '').strip()
-        request.session[a_key] = updated_ai
-        request.session.modified = True
+                bn.answer_text = request.POST.get(field_key, '').strip()
+                bn.save()
 
         # ── 사용자 추가 항목: 기존 항목 수정/삭제 ──
-        for cb in UserCustomBlock.objects.filter(block_node=current_block):
-            if request.POST.get(f'delete_custom_{cb.id}') == '1':
-                cb.delete()
+        for bn in user_brainnodes:
+            if request.POST.get(f'delete_custom_{bn.id}') == '1':
+                bn.delete()
             else:
-                q = request.POST.get(f'custom_question_{cb.id}', '').strip()
-                a_text = request.POST.get(f'custom_answer_{cb.id}', '').strip()
+                q = request.POST.get(f'custom_question_{bn.id}', '').strip()
+                a_text = request.POST.get(f'custom_answer_{bn.id}', '').strip()
                 if q:
-                    cb.question_text = q
-                    cb.answer_text = a_text
-                    cb.save()
+                    bn.question_text = q
+                    bn.answer_text = a_text
+                    bn.save()
 
         # ── 사용자 추가 항목: 새 항목 생성 ──
         new_count = int(request.POST.get('new_custom_count', '0') or '0')
         if new_count > 0:
-            max_order = UserCustomBlock.objects.filter(
-                block_node=current_block
-            ).aggregate(m=Max('order'))['m'] or 0
+            ub = _get_or_create_user_block(current_block)
+            max_order = ub.brainnodes.count()
             for i in range(1, new_count + 1):
                 q = request.POST.get(f'new_custom_question_{i}', '').strip()
                 a_text = request.POST.get(f'new_custom_answer_{i}', '').strip()
                 if q:
                     max_order += 1
-                    UserCustomBlock.objects.create(
-                        block_node=current_block,
+                    BrainNode.objects.create(
+                        block=ub,
                         question_text=q,
                         answer_text=a_text,
                         order=max_order,
@@ -344,12 +354,10 @@ def answers_review(request, block_id):
         current_block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
         return redirect('questionnaire:prompt_flow_results', block_id=block_id)
 
-    custom_blocks = list(UserCustomBlock.objects.filter(block_node=current_block))
-
     return render(request, _demo_flow_template(request, "answers_review"), {
         'answers': answers,
-        'ai_qa_list': ai_qa_list,
-        'custom_blocks': custom_blocks,
+        'ai_brainnodes': ai_brainnodes,
+        'user_brainnodes': user_brainnodes,
         'block_id': block_id,
         'tree': current_block.braintree,
     })
@@ -361,18 +369,19 @@ def prompt_flow_results(request, block_id):
     """2단계: 답변을 바탕으로 맞춤 프롬프트(및 실행 요약) 생성."""
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
 
-    # 사용자 직접 추가 항목
-    custom_blocks = list(UserCustomBlock.objects.filter(block_node=current_block))
+    # AI 보완 + 사용자 추가 extra_qa (DB에서 로드)
+    extra_qa = []
+    ai_block = _get_ai_block(current_block)
+    if ai_block:
+        for bn in ai_block.brainnodes.order_by('order'):
+            if bn.question_text and bn.answer_text:
+                extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
 
-    # AI 보완 질문 답변을 세션에서 가져와 함께 전달
-    a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
-    raw_ai = request.session.get(a_key, {})
-    extra_qa = list(raw_ai.values()) if raw_ai else []
-
-    # 커스텀 블록을 extra_qa 형태로 변환하여 프롬프트에 포함
-    for cb in custom_blocks:
-        if cb.question_text.strip() and cb.answer_text.strip():
-            extra_qa.append({"q": cb.question_text.strip(), "a": cb.answer_text.strip()})
+    user_block = _get_user_block(current_block)
+    user_brainnodes = list(user_block.brainnodes.order_by('order')) if user_block else []
+    for bn in user_brainnodes:
+        if bn.question_text and bn.answer_text:
+            extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
 
     # 캐시된 결과가 있으면 AI 재호출 없이 바로 사용
     if current_block.cached_result_1 and current_block.cached_result_2:
@@ -410,10 +419,8 @@ def prompt_flow_results(request, block_id):
             combined_text = " ".join(
                 a.answer_text for a in answers if a.answer_text and a.answer_text.strip()
             )
-            # 사용자 추가 항목도 combined_text에 포함
-            for cb in custom_blocks:
-                if cb.question_text.strip() and cb.answer_text.strip():
-                    combined_text += f" [추가정보] {cb.question_text}: {cb.answer_text}"
+            for item in extra_qa:
+                combined_text += f" [추가정보] {item['q']}: {item['a']}"
             kb_names = [p.stem for p in (Path(__file__).resolve().parent.parent / "prompts" / "kb").glob("*.json")]
             block_title = (current_block.title or "").lower().replace(" ", "_")
             domain = next((k for k in kb_names if k in block_title), None)
@@ -466,7 +473,7 @@ def prompt_flow_results(request, block_id):
 
     return render(request, _demo_flow_template(request, "prompt_results"), {
         'answers': answers,
-        'custom_blocks': custom_blocks,
+        'user_brainnodes': user_brainnodes,
         'result_1': result_1,
         'result_2': result_2,
         'tree': current_block.braintree,
@@ -598,23 +605,28 @@ _DEMO_FALLBACK_QUESTIONS = [
 @login_required
 def ai_question_start(request, block_id):
     """
-    공통+도메인 답변을 Gemini에 보내 보완 질문 AI_FOLLOWUP_COUNT개를 생성한 후
-    첫 번째 질문 화면으로 이동한다.
-    생성 실패 시: 데모 세션이면 fallback 질문 사용, 일반 세션이면 answers_review로 스킵.
+    공통+도메인 답변 → AI 보완 질문 생성 → BrainBlockNode(ai_followup) + 세션에 질문 목록 저장.
     """
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
 
     questions = generate_ai_followup_questions(list(answers), count=AI_FOLLOWUP_COUNT)
-
     if not questions:
         logger.warning("AI 보완 질문 생성 실패 (block_id=%s) — fallback 질문 사용", block_id)
         questions = _DEMO_FALLBACK_QUESTIONS
 
-    # 세션에 저장
+    # AI 보완 블록 생성 (재시작 시 기존 BrainNode 초기화)
+    ai_block, created = BrainBlockNode.objects.get_or_create(
+        braintree=current_block.braintree,
+        parent=current_block,
+        type='ai_followup',
+        defaults={'title': 'AI 보완 질문', 'order': 10},
+    )
+    if not created:
+        ai_block.brainnodes.all().delete()
+
+    # 세션에 질문 목록만 저장 (step 화면 표시용)
     q_key = _AI_Q_SESSION_KEY.format(block_id=block_id)
-    a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
     request.session[q_key] = questions
-    request.session[a_key] = {}
     request.session.modified = True
 
     return redirect('questionnaire:ai_question_step', block_id=block_id, order=1)
@@ -624,12 +636,9 @@ def ai_question_start(request, block_id):
 @login_required
 def ai_question_step(request, block_id, order):
     """
-    AI 생성 보완 질문을 order 순서로 보여주고 답변을 세션에 저장한다.
-    마지막 질문 후 answers_review로 이동.
+    AI 보완 질문을 순서대로 보여주고 답변을 BrainNode(DB)에 저장한다.
     """
     q_key = _AI_Q_SESSION_KEY.format(block_id=block_id)
-    a_key = _AI_A_SESSION_KEY.format(block_id=block_id)
-
     questions = request.session.get(q_key)
     if not questions:
         return redirect('questionnaire:summary', block_id=block_id)
@@ -646,10 +655,18 @@ def ai_question_step(request, block_id, order):
             answer_text = f"(데모 답변 {order})"
 
         if answer_text:
-            ai_answers = request.session.get(a_key, {})
-            ai_answers[str(order)] = {"q": current_q["text"], "a": answer_text}
-            request.session[a_key] = ai_answers
-            request.session.modified = True
+            ai_block = BrainBlockNode.objects.filter(
+                parent_id=block_id, type='ai_followup'
+            ).first()
+            if ai_block:
+                BrainNode.objects.update_or_create(
+                    block=ai_block,
+                    order=order,
+                    defaults={
+                        'question_text': current_q["text"],
+                        'answer_text': answer_text,
+                    },
+                )
 
         if order < total:
             return redirect('questionnaire:ai_question_step', block_id=block_id, order=order + 1)
