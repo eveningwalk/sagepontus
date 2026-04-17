@@ -89,6 +89,18 @@
       {% empty %}
       <p class="px-5 py-4 text-sm text-muted-foreground">답변이 없습니다.</p>
       {% endfor %}
+      {% for cb in custom_blocks %}
+      <div class="px-5 py-4 bg-emerald-50/40">
+        <p class="text-sm font-semibold text-foreground mb-1 flex items-start gap-2">
+          <span class="flex-shrink-0 w-5 h-5 rounded bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">+</span>
+          <span>
+            {{ cb.question_text }}
+            <span class="ml-1 text-xs font-medium text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">직접 추가</span>
+          </span>
+        </p>
+        <p class="text-sm text-muted-foreground leading-relaxed ml-7">{{ cb.answer_text|linebreaksbr }}</p>
+      </div>
+      {% endfor %}
     </div>
   </details>
 

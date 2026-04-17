@@ -84,6 +84,64 @@
     </div>
     {% endif %}
 
+    <!-- 사용자 추가 항목 섹션 -->
+    <div class="mt-6 mb-4">
+      <div class="flex items-center justify-between mb-3">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+            </svg>
+            직접 추가 항목
+          </span>
+          <span class="text-xs text-muted-foreground">— 빠진 내용을 자유롭게 보충하세요</span>
+        </div>
+        <button type="button" id="add-custom-btn"
+                class="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg transition-colors">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+          </svg>
+          항목 추가
+        </button>
+      </div>
+
+      <!-- 기존 커스텀 항목 -->
+      <div id="custom-blocks-list" class="space-y-3">
+        {% for cb in custom_blocks %}
+        <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 relative" data-custom-id="{{ cb.id }}">
+          <input type="hidden" name="delete_custom_{{ cb.id }}" value="0" id="del_flag_{{ cb.id }}">
+          <div class="flex items-start gap-2 mb-2">
+            <span class="flex-shrink-0 w-6 h-6 rounded bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">+</span>
+            <div class="flex-1 min-w-0">
+              <input type="text"
+                     name="custom_question_{{ cb.id }}"
+                     value="{{ cb.question_text }}"
+                     placeholder="질문 / 제목"
+                     class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors">
+            </div>
+            <button type="button"
+                    onclick="deleteCustomBlock({{ cb.id }})"
+                    class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <textarea name="custom_answer_{{ cb.id }}"
+                    rows="3"
+                    placeholder="답변 내용"
+                    class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors ml-8">{{ cb.answer_text }}</textarea>
+        </div>
+        {% empty %}
+        <p class="text-xs text-muted-foreground pl-1" id="custom-empty-hint">아직 추가한 항목이 없습니다. 위 버튼으로 자유롭게 추가해 보세요.</p>
+        {% endfor %}
+      </div>
+
+      <!-- 새 항목 추가 영역 (JS로 동적 생성) -->
+      <div id="new-custom-items" class="space-y-3 mt-3"></div>
+      <input type="hidden" name="new_custom_count" id="new_custom_count" value="0">
+    </div>
+
     <div class="flex items-center justify-between pt-4 border-t border-border">
       <a href="{% url 'home' %}"
          class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground px-5 h-10 rounded-lg border border-border hover:bg-muted transition-colors">
@@ -120,5 +178,76 @@
     btn.innerHTML = '<svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path></svg> 결과 가져오는 중…';
   });
 })();
+
+// ── 사용자 추가 항목 JS ──────────────────────────────────
+var newItemCount = 0;
+
+function addCustomItem() {
+  newItemCount++;
+  var countInput = document.getElementById('new_custom_count');
+  countInput.value = newItemCount;
+
+  var emptyHint = document.getElementById('custom-empty-hint');
+  if (emptyHint) emptyHint.style.display = 'none';
+
+  var container = document.getElementById('new-custom-items');
+  var idx = newItemCount;
+
+  var div = document.createElement('div');
+  div.className = 'p-4 rounded-xl border border-emerald-200 bg-emerald-50/50';
+  div.id = 'new-custom-item-' + idx;
+  div.innerHTML = `
+    <div class="flex items-start gap-2 mb-2">
+      <span class="flex-shrink-0 w-6 h-6 rounded bg-emerald-100 flex items-center justify-center text-xs font-bold text-emerald-700">+</span>
+      <div class="flex-1 min-w-0">
+        <input type="text"
+               name="new_custom_question_${idx}"
+               placeholder="질문 / 제목을 입력하세요"
+               class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors"
+               autofocus>
+      </div>
+      <button type="button"
+              onclick="removeNewItem(${idx})"
+              class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <textarea name="new_custom_answer_${idx}"
+              rows="3"
+              placeholder="답변 내용을 입력하세요"
+              class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors ml-8"></textarea>
+  `;
+  container.appendChild(div);
+
+  // 새로 생긴 input에 포커스
+  div.querySelector('input[type="text"]').focus();
+}
+
+function removeNewItem(idx) {
+  var el = document.getElementById('new-custom-item-' + idx);
+  if (el) el.remove();
+  // 남은 new 아이템 수 재계산
+  var remaining = document.querySelectorAll('#new-custom-items > div').length;
+  document.getElementById('new_custom_count').value = remaining;
+}
+
+function deleteCustomBlock(id) {
+  var flagInput = document.getElementById('del_flag_' + id);
+  if (flagInput) flagInput.value = '1';
+  var row = document.querySelector('[data-custom-id="' + id + '"]');
+  if (row) {
+    row.style.opacity = '0.4';
+    row.style.pointerEvents = 'none';
+    var badge = document.createElement('span');
+    badge.className = 'absolute top-2 right-10 text-xs text-red-500 font-medium';
+    badge.textContent = '삭제 예정';
+    row.style.position = 'relative';
+    row.appendChild(badge);
+  }
+}
+
+document.getElementById('add-custom-btn').addEventListener('click', addCustomItem);
 </script>
 {% endblock %}

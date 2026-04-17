@@ -148,6 +148,28 @@ class PromptArtifact(models.Model):
         return f"Artifact node={self.node_id} v={self.version}"
 
 
+class UserCustomBlock(models.Model):
+    """
+    사용자가 answers_review 화면에서 직접 추가한 질문·답변 항목.
+    기존 Question 모델과 무관하게 자유롭게 입력할 수 있다.
+    """
+    block_node = models.ForeignKey(
+        BrainBlockNode,
+        on_delete=models.CASCADE,
+        related_name="custom_blocks",
+    )
+    question_text = models.TextField()
+    answer_text = models.TextField(blank=True, default="")
+    order = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["order", "created_at"]
+
+    def __str__(self):
+        return f"CustomBlock#{self.id} [{self.block_node_id}] {self.question_text[:40]}"
+
+
 class CRAAsset(models.Model):
     """
     CRA Call 2 결과를 세션 단위로 저장.
