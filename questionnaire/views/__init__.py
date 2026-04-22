@@ -13,6 +13,7 @@ from .views import (
     summary,
     answers_review,
     prompt_flow_results,
+    prompt_flow_stream,
     ai_question_start,
     ai_question_step,
     demo_session_list,

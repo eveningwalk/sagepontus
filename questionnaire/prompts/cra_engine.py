@@ -167,13 +167,52 @@ def _extract_json(raw: str) -> str:
             last_good = i + 1
             break
     else:
-        # 잘린 경우: 문자열 내부에서 잘렸으면 먼저 닫고, 그 뒤 괄호를 닫는다
-        close = ""
-        if in_string:
-            close += '"'
-        close += "]" * depth_bracket + "}" * depth_brace
-        return text + close
+        # 잘린 경우: 마지막 쉼표를 기준으로 후퇴하면서 유효한 JSON을 찾는다
+        # 각 후보마다 해당 위치의 depth를 재계산해 올바른 close를 붙인다
+        idx = len(text)
+        while idx > 0:
+            comma_pos = text.rfind(",", 0, idx)
+            if comma_pos < 0:
+                break
+            sub = re.sub(r",\s*$", "", text[:comma_pos].rstrip())
+            b, k = _count_open(sub)
+            candidate = sub + "]" * k + "}" * b
+            try:
+                json.loads(candidate)
+                return candidate
+            except json.JSONDecodeError:
+                pass
+            idx = comma_pos
+        # 쉼표 없거나 모두 실패 — 전체 텍스트에 original depth로 강제 닫기
+        return re.sub(r",\s*$", "", text.rstrip()) + "]" * depth_bracket + "}" * depth_brace
     return text[:last_good]
+
+
+def _count_open(text: str) -> tuple[int, int]:
+    """문자열에서 닫히지 않은 { 와 [ 의 수를 반환한다."""
+    b = k = 0
+    in_str = esc = False
+    for ch in text:
+        if esc:
+            esc = False
+            continue
+        if ch == "\\" and in_str:
+            esc = True
+            continue
+        if ch == '"' and not esc:
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if ch == "{":
+            b += 1
+        elif ch == "}":
+            b -= 1
+        elif ch == "[":
+            k += 1
+        elif ch == "]":
+            k -= 1
+    return max(b, 0), max(k, 0)
 
 
 def _ai_tokenize(raw_input: str, kb: dict, previous_context: str | None = None) -> dict | None:
@@ -200,9 +239,9 @@ def _ai_tokenize(raw_input: str, kb: dict, previous_context: str | None = None) 
     try:
         from questionnaire.prompts.service import _chat_generate
         raw_response = _chat_generate()(
-            "gemini-2.0-flash",
+            "gemini-2.5-flash",
             prompt,
-            {"max_tokens": 3000, "temperature": 0.1},
+            {"max_tokens": 6000, "temperature": 0.1},
         )
     except Exception as e:
         logger.warning("CRA AI 호출 실패: %s", e)
@@ -255,9 +294,11 @@ def process_cra(
         status == "AMBIGUITY_HALT" → 신뢰도 미달, question 포함
     """
     kb = load_kb(domain)
+    logger.info("CRA process_cra: domain=%s kb_size=%d use_ai=%s", domain, len(kb), use_ai)
 
     if use_ai:
         ai_result = _ai_tokenize(raw_input, kb, previous_context=previous_context)
+        logger.info("CRA call1 AI result: %s", "None (폴백)" if ai_result is None else f"status={ai_result.get('status')} hits={len(ai_result.get('domain_hits') or [])}")
         if ai_result:
             # AI 결과를 그대로 사용 (AMBIGUITY_HALT 포함)
             ai_result["source"] = "ai"
@@ -266,6 +307,7 @@ def process_cra(
 
     # 규칙 기반 처리
     hits = _rule_based_match(raw_input, kb)
+    logger.info("CRA call1 rule-based hits=%d", len(hits))
     low_confidence = [h for h in hits if h["confidence"] < _AMBIGUITY_THRESHOLD]
 
     if low_confidence:
@@ -373,9 +415,9 @@ def _ai_call2(call1_result: dict) -> dict | None:
     try:
         from questionnaire.prompts.service import _chat_generate
         raw_response = _chat_generate()(
-            "gemini-2.0-flash",
+            "gemini-2.5-flash-lite",
             prompt,
-            {"max_tokens": 2500, "temperature": 0.1},
+            {"max_tokens": 4096, "temperature": 0.1},
         )
     except Exception as e:
         logger.warning("CRA Call2 AI 호출 실패: %s", e)
@@ -508,9 +550,9 @@ def _ai_call3(call2_result: dict) -> dict | None:
     try:
         from questionnaire.prompts.service import _chat_generate
         raw_response = _chat_generate()(
-            "gemini-2.0-flash",
+            "gemini-2.5-flash-lite",
             prompt,
-            {"max_tokens": 2000, "temperature": 0.3},
+            {"max_tokens": 4096, "temperature": 0.3},
         )
     except Exception as e:
         logger.warning("CRA Call3 AI 호출 실패: %s", e)
@@ -526,9 +568,16 @@ def _ai_call3(call2_result: dict) -> dict | None:
         result = json.loads(text)
         result["source"] = "ai"
         return result
-    except json.JSONDecodeError as e:
-        logger.warning("CRA Call3 JSON 파싱 실패: %s\n원문: %.200s", e, raw_response)
-        return None
+    except json.JSONDecodeError:
+        # 잘린 경우 _extract_json으로 복구 시도
+        try:
+            result = json.loads(_extract_json(text))
+            result["source"] = "ai"
+            logger.info("CRA Call3 JSON 복구 성공")
+            return result
+        except (json.JSONDecodeError, Exception) as e:
+            logger.warning("CRA Call3 JSON 파싱 실패: %s\n원문: %.200s", e, raw_response)
+            return None
 
 
 def _load_previous_context(user, domain: str | None) -> str | None:
@@ -622,13 +671,22 @@ def run_cra_pipeline(
         return {"call1": call1, "call2": None, "call3": None, "status": "AMBIGUITY_HALT"}
 
     # Call 2
-    call2 = (_ai_call2(call1) if use_ai else None) or _rule_based_call2(call1)
+    call2_ai = _ai_call2(call1) if use_ai else None
+    call2 = call2_ai or _rule_based_call2(call1)
+    logger.info("CRA call2: source=%s expert_state=%s refined_tokens=%d",
+                "ai" if call2_ai else "rule",
+                (call2.get("context") or {}).get("expert_state", "?"),
+                len(call2.get("refined_tokens") or []))
 
     # Call 2 결과 저장
     _save_cra_asset(user, braintree, domain, call2)
 
     # Call 3
-    call3 = (_ai_call3(call2) if use_ai else None) or _rule_based_call3(call2, raw_input)
+    call3_ai = _ai_call3(call2) if use_ai else None
+    call3 = call3_ai or _rule_based_call3(call2, raw_input)
+    logger.info("CRA call3: source=%s expert_output_len=%d",
+                "ai" if call3_ai else "rule",
+                len((call3 or {}).get("expert_output") or ""))
 
     result: dict[str, Any] = {
         "call1": call1,

@@ -4,6 +4,120 @@
 
 {% block main %}
 
+{% if loading %}
+<article class="bg-card rounded-2xl border border-border shadow-sm p-8 text-center">
+  <div class="mb-6">
+    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
+      <svg id="loading-icon" class="w-8 h-8 text-primary animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      </svg>
+    </div>
+    <h1 class="text-xl font-bold text-foreground mb-2">AI 분석 중...</h1>
+    <p id="loading-label" class="text-sm text-muted-foreground mb-6">답변 분석 준비 중...</p>
+  </div>
+
+  <!-- 진행 바 -->
+  <div class="w-full max-w-md mx-auto bg-muted rounded-full h-2 mb-2 overflow-hidden">
+    <div id="progress-bar" class="h-full rounded-full bg-primary transition-all duration-500" style="width: 5%"></div>
+  </div>
+  <p id="progress-pct" class="text-xs text-muted-foreground mb-8">5%</p>
+
+  <!-- 단계 표시 -->
+  <div id="step-list" class="text-left max-w-md mx-auto space-y-2 mb-8">
+    <div id="step-1" class="flex items-center gap-3 text-sm text-muted-foreground opacity-40">
+      <span class="w-5 h-5 rounded-full border-2 border-current flex-shrink-0 flex items-center justify-center text-xs">1</span>
+      답변 분석 준비
+    </div>
+    <div id="step-2" class="flex items-center gap-3 text-sm text-muted-foreground opacity-40">
+      <span class="w-5 h-5 rounded-full border-2 border-current flex-shrink-0 flex items-center justify-center text-xs">2</span>
+      전략 방향 도출
+    </div>
+    <div id="step-3" class="flex items-center gap-3 text-sm text-muted-foreground opacity-40">
+      <span class="w-5 h-5 rounded-full border-2 border-current flex-shrink-0 flex items-center justify-center text-xs">3</span>
+      맞춤 프롬프트 생성
+    </div>
+    <div id="step-4" class="flex items-center gap-3 text-sm text-muted-foreground opacity-40">
+      <span class="w-5 h-5 rounded-full border-2 border-current flex-shrink-0 flex items-center justify-center text-xs">4</span>
+      CRA 핵심 개념 추출
+    </div>
+    <div id="step-5" class="flex items-center gap-3 text-sm text-muted-foreground opacity-40">
+      <span class="w-5 h-5 rounded-full border-2 border-current flex-shrink-0 flex items-center justify-center text-xs">5</span>
+      일반 AI 응답 생성
+    </div>
+    <div id="step-6" class="flex items-center gap-3 text-sm text-muted-foreground opacity-40">
+      <span class="w-5 h-5 rounded-full border-2 border-current flex-shrink-0 flex items-center justify-center text-xs">6</span>
+      Sage Pontus 심층 분석
+    </div>
+  </div>
+
+  <div id="error-box" class="hidden rounded-lg bg-destructive/10 border border-destructive/20 px-5 py-4 text-sm text-destructive mb-4"></div>
+</article>
+
+<script>
+(function () {
+  const streamUrl = "{% url 'questionnaire:prompt_flow_stream' block_id=block_id %}";
+  const resultsUrl = window.location.href;
+  const bar = document.getElementById('progress-bar');
+  const pct = document.getElementById('progress-pct');
+  const label = document.getElementById('loading-label');
+  const errorBox = document.getElementById('error-box');
+
+  function markStep(n) {
+    const el = document.getElementById('step-' + n);
+    if (!el) return;
+    el.classList.remove('opacity-40');
+    el.classList.add('text-primary', 'font-medium');
+    el.querySelector('span').classList.add('bg-primary', 'text-white', 'border-primary');
+  }
+
+  // 무한 reload 방지: sessionStorage로 재시도 횟수 추적
+  const reloadKey = 'sp_stream_reloads_{{ block_id }}';
+  const reloads = parseInt(sessionStorage.getItem(reloadKey) || '0');
+  if (reloads >= 3) {
+    sessionStorage.removeItem(reloadKey);
+    errorBox.textContent = '결과 생성에 반복 실패했습니다. 잠시 후 다시 시도해 주세요.';
+    errorBox.classList.remove('hidden');
+    document.getElementById('loading-icon').classList.remove('animate-spin');
+    return;
+  }
+
+  const es = new EventSource(streamUrl);
+  es.onmessage = function (e) {
+    try {
+      const d = JSON.parse(e.data);
+      if (d.error) {
+        es.close();
+        errorBox.textContent = 'AI 생성 오류: ' + d.error;
+        errorBox.classList.remove('hidden');
+        document.getElementById('loading-icon').classList.remove('animate-spin');
+        return;
+      }
+      if (d.done) {
+        es.close();
+        sessionStorage.setItem(reloadKey, reloads + 1);
+        window.location.reload();
+        return;
+      }
+      if (d.progress !== undefined) {
+        bar.style.width = d.progress + '%';
+        pct.textContent = d.progress + '%';
+      }
+      if (d.label) label.textContent = d.label;
+      if (d.step) markStep(d.step);
+    } catch (_) {}
+  };
+  es.onerror = function () {
+    es.close();
+    errorBox.textContent = '연결이 끊겼습니다. 잠시 후 새로고침해 주세요.';
+    errorBox.classList.remove('hidden');
+  };
+})();
+</script>
+
+{% else %}
+<script>sessionStorage.removeItem('sp_stream_reloads_{{ block_id }}');</script>
+
 <article class="bg-card rounded-2xl border border-border shadow-sm p-8">
 
   <!-- 이전 세션 연속성 힌트 -->
@@ -315,6 +429,7 @@
   </div>
 
 </article>
+{% endif %}
 {% endblock %}
 
 {% block extra_js %}

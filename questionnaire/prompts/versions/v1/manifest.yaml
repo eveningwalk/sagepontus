@@ -4,7 +4,7 @@
 # 라우팅: HF_INFERENCE_PROVIDER(기본 auto; hf-inference 고정 시 해당 라우트에 배포된 모델만).
 version: v1
 description: "실행 중심 사용자용 기본 전략·프롬프트 생성"
-model: "Qwen/Qwen2.5-1.5B-Instruct"
+model: "gemini-2.5-flash-lite"
 api: chat
 generation:
   max_tokens: 512
@@ -19,4 +19,4 @@ tasks:
     # 설문 형식 출력 억제: 약간 낮은 temperature·여유 토큰
     generation:
       temperature: 0.4
-      max_tokens: 640
+      max_tokens: 2048

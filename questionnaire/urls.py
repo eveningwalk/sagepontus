@@ -22,6 +22,11 @@ urlpatterns = [
         views.prompt_flow_results,
         name='prompt_flow_results',
     ),
+    path(
+        'prompt-flow/<int:block_id>/stream/',
+        views.prompt_flow_stream,
+        name='prompt_flow_stream',
+    ),
     
     path("check-title/", views.check_braintree_title, name="check_braintree_title"),
     path('<int:tree_id>/resume/', views.resume_tree, name='resume_tree'),

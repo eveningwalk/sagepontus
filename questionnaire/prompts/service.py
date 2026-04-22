@@ -181,7 +181,7 @@ def generate_ai_followup_questions(answers, count: int = 3) -> list[dict]:
 
     try:
         raw = _chat_generate()(
-            "gemini-2.0-flash",
+            "gemini-2.5-flash-lite",
             user_prompt,
             gen,
             system=_FOLLOWUP_SYSTEM,
@@ -280,3 +280,22 @@ def run_prompt_generation_pair(answers, extra_qa: list[dict] | None = None) -> t
             )
 
     return safe_task("strategy"), safe_task("prompt_builder")
+
+
+def run_single_task(task_key: str, answers, extra_qa: list[dict] | None = None) -> str:
+    """strategy 또는 prompt_builder 태스크를 단독 실행 (SSE 스트림용)."""
+    version = _resolve_version(getattr(settings, "PROMPT_VERSION", None))
+    try:
+        manifest = _load_manifest(version)
+    except Exception as e:
+        return f"[프롬프트 설정 오류] manifest 를 읽을 수 없습니다: {e}"
+    model_id = (getattr(settings, "HF_MODEL_ID", None) or "").strip() or (manifest.get("model") or "").strip()
+    if not model_id:
+        return "[설정 오류] manifest.model 또는 설정 HF_MODEL_ID 가 필요합니다."
+    ctx = _build_context(answers, extra_qa=extra_qa)
+    try:
+        return _run_task(version, manifest, task_key, ctx, model_id)
+    except Exception as e:
+        provider = "Gemini" if os.environ.get("GEMINI_API_KEY", "").strip() else "Hugging Face"
+        logger.exception("%s 생성 실패 task=%s", provider, task_key)
+        return f"[AI 생성 실패] {provider} API 호출 중 오류가 났습니다.\n상세: {e!s}"

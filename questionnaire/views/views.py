@@ -3,7 +3,8 @@ import logging
 
 from django.conf import settings
 from django.contrib import messages
-from django.http import JsonResponse
+import json as _json
+from django.http import JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
@@ -272,6 +273,10 @@ def _get_prompt_flow_answers(user, block_id):
     return current_block, answers
 
 
+def _session_key(block_id: int) -> str:
+    return f"pf_results_{block_id}"
+
+
 def _get_ai_block(domain_block):
     return BrainBlockNode.objects.filter(parent=domain_block, type='ai_followup').first()
 
@@ -347,11 +352,8 @@ def answers_review(request, block_id):
                         order=max_order,
                     )
 
-        # ── 캐시 무효화 ──
-        current_block.cached_result_1 = ""
-        current_block.cached_result_2 = ""
-        current_block.cached_cra = None
-        current_block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
+        # ── 세션 캐시 초기화 ──
+        request.session.pop(_session_key(block_id), None)
         return redirect('questionnaire:prompt_flow_results', block_id=block_id)
 
     return render(request, _demo_flow_template(request, "answers_review"), {
@@ -366,62 +368,76 @@ def answers_review(request, block_id):
 @never_cache
 @login_required
 def prompt_flow_results(request, block_id):
-    """2단계: 답변을 바탕으로 맞춤 프롬프트(및 실행 요약) 생성."""
+    """결과 페이지: 세션에 데이터 있으면 즉시 렌더, 없으면 로딩 화면."""
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
-
-    # AI 보완 + 사용자 추가 extra_qa (DB에서 로드)
-    extra_qa = []
-    ai_block = _get_ai_block(current_block)
-    if ai_block:
-        for bn in ai_block.brainnodes.order_by('order'):
-            if bn.question_text and bn.answer_text:
-                extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
-
     user_block = _get_user_block(current_block)
     user_brainnodes = list(user_block.brainnodes.order_by('order')) if user_block else []
-    for bn in user_brainnodes:
-        if bn.question_text and bn.answer_text:
-            extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
+    base_ctx = {
+        'answers': answers,
+        'user_brainnodes': user_brainnodes,
+        'tree': current_block.braintree,
+        'block_id': block_id,
+    }
+    session_data = request.session.get(_session_key(block_id))
+    if not session_data:
+        return render(request, _demo_flow_template(request, "prompt_results"), {
+            **base_ctx, 'loading': True,
+        })
+    return render(request, _demo_flow_template(request, "prompt_results"), {
+        **base_ctx,
+        'loading': False,
+        'result_1': session_data.get('result_1', ''),
+        'result_2': session_data.get('result_2', ''),
+        'cra_tokens': session_data.get('cra_tokens', []),
+        'cra_call3': session_data.get('cra_call3', {}),
+        'continuity_hint': session_data.get('continuity_hint'),
+        'real_generic_result': session_data.get('real_generic_result', ''),
+        'real_sp_result': session_data.get('real_sp_result', ''),
+        'token_before': session_data.get('token_before', {}),
+        'token_after': session_data.get('token_after', {}),
+    })
 
-    # 캐시된 결과가 있으면 AI 재호출 없이 바로 사용
-    if current_block.cached_result_1 and current_block.cached_result_2:
-        result_1 = current_block.cached_result_1
-        result_2 = current_block.cached_result_2
-    else:
-        result_1, result_2 = run_prompt_generation_pair(answers, extra_qa=extra_qa)
-        current_block.cached_result_1 = result_1
-        current_block.cached_result_2 = result_2
-        current_block.save(update_fields=["cached_result_1", "cached_result_2"])
 
-    # CRA 파이프라인 + 실제 Before/After — 최초 1회만 AI 호출, 이후 cached_cra 재사용
-    cra_tokens = []
-    cra_call3 = {}
-    continuity_hint = None
-    real_generic_result = ""
-    real_sp_result = ""
-    token_before = {}
-    token_after = {}
-    try:
-        cached = current_block.cached_cra or {}
+@never_cache
+@login_required
+def prompt_flow_stream(request, block_id):
+    """SSE 스트림: 단계별 AI 생성 진행 상황을 실시간으로 전송."""
+    from questionnaire.prompts.service import run_single_task
 
-        # ── 캐시에 실제 결과까지 있으면 바로 사용 ──
-        if cached.get("status") == "OK" and cached.get("real_generic_result"):
-            pipeline_result = cached
-            real_generic_result = cached.get("real_generic_result", "")
-            real_sp_result = cached.get("real_sp_result", "")
-            token_before = cached.get("token_before") or {}
-            token_after = cached.get("token_after") or {}
-        else:
-            # ── 최초 호출 ──
+    def send(data):
+        return f"data: {_json.dumps(data, ensure_ascii=False)}\n\n"
+
+    def event_stream():
+        try:
+            current_block, answers = _get_prompt_flow_answers(request.user, block_id)
+            extra_qa = []
+            ai_block = _get_ai_block(current_block)
+            if ai_block:
+                for bn in ai_block.brainnodes.order_by('order'):
+                    if bn.question_text and bn.answer_text:
+                        extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
+            user_block = _get_user_block(current_block)
+            for bn in (user_block.brainnodes.order_by('order') if user_block else []):
+                if bn.question_text and bn.answer_text:
+                    extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
+
+            yield send({"step": 1, "total": 6, "label": "답변 분석 준비 중...", "progress": 5})
+
+            yield send({"step": 2, "total": 6, "label": "전략 방향 도출 중...", "progress": 18})
+            result_1 = run_single_task("strategy", answers, extra_qa=extra_qa)
+
+            yield send({"step": 3, "total": 6, "label": "맞춤 프롬프트 생성 중...", "progress": 35})
+            result_2 = run_single_task("prompt_builder", answers, extra_qa=extra_qa)
+
+            yield send({"step": 4, "total": 6, "label": "핵심 개념 추출 중 (CRA 분석)...", "progress": 55})
             from questionnaire.prompts.cra_engine import run_cra_pipeline
-            from pathlib import Path
-
+            from pathlib import Path as _Path
             combined_text = " ".join(
                 a.answer_text for a in answers if a.answer_text and a.answer_text.strip()
             )
             for item in extra_qa:
                 combined_text += f" [추가정보] {item['q']}: {item['a']}"
-            kb_names = [p.stem for p in (Path(__file__).resolve().parent.parent / "prompts" / "kb").glob("*.json")]
+            kb_names = [p.stem for p in (_Path(__file__).resolve().parent.parent / "prompts" / "kb").glob("*.json")]
             block_title = (current_block.title or "").lower().replace(" ", "_")
             domain = next((k for k in kb_names if k in block_title), None)
             if not domain:
@@ -431,61 +447,65 @@ def prompt_flow_results(request, block_id):
                     if cat_name in kb_names and cat_name != 'common':
                         domain = cat_name
                         break
-
-            # CRA 파이프라인
             pipeline_result = run_cra_pipeline(
-                combined_text,
-                domain=domain,
-                use_ai=True,
-                user=request.user,
-                braintree=current_block.braintree,
+                combined_text, domain=domain, use_ai=True,
+                user=request.user, braintree=current_block.braintree,
             )
+            cra_tokens, cra_call3, continuity_hint = [], {}, None
+            if pipeline_result.get("status") == "OK":
+                cra_tokens = (pipeline_result.get("call1") or {}).get("domain_hits", [])
+                cra_call3 = pipeline_result.get("call3") or {}
+                continuity_hint = pipeline_result.get("continuity_hint")
+            logger.info("SSE CRA 결과: status=%s cra_call3_keys=%s expert_len=%d",
+                        pipeline_result.get("status"),
+                        list(cra_call3.keys()) if cra_call3 else "empty",
+                        len((cra_call3.get("expert_output") or "")))
 
-            gen = {"max_tokens": 800, "temperature": 0.5}
+            yield send({"step": 5, "total": 6, "label": "일반 AI 응답 생성 중...", "progress": 73})
             call = _chat_generate_with_usage()
-
-            # ① 일반 AI (Before): raw 답변 그대로 전송
             raw_prompt = (
                 "아래는 사용자가 입력한 답변입니다. 이를 바탕으로 실행 가능한 조언을 해주세요.\n\n"
                 + combined_text
             )
-            real_generic_result, token_before = call("gemini-2.0-flash", raw_prompt, gen)
+            try:
+                real_generic_result, token_before = call(
+                    "gemini-2.5-flash-lite", raw_prompt, {"max_tokens": 600, "temperature": 0.5}
+                )
+            except Exception as e:
+                logger.warning("Before AI 호출 실패 (무시): %s", e)
+                real_generic_result, token_before = "", {}
 
-            # ② Sage Pontus (After): CRA 정제 프롬프트(result_2) 전송
+            yield send({"step": 6, "total": 6, "label": "Sage Pontus 심층 분석 중...", "progress": 90})
             sp_prompt = result_2 if result_2 else combined_text
-            real_sp_result, token_after = call("gemini-2.0-flash", sp_prompt, gen)
+            try:
+                real_sp_result, token_after = call(
+                    "gemini-2.5-flash-lite", sp_prompt, {"max_tokens": 600, "temperature": 0.5}
+                )
+            except Exception as e:
+                logger.warning("After AI 호출 실패 (무시): %s", e)
+                real_sp_result, token_after = "", {}
 
-            # 전체 캐시 저장
-            if pipeline_result.get("status") == "OK":
-                pipeline_result["real_generic_result"] = real_generic_result
-                pipeline_result["real_sp_result"] = real_sp_result
-                pipeline_result["token_before"] = token_before
-                pipeline_result["token_after"] = token_after
-                current_block.cached_cra = pipeline_result
-                current_block.save(update_fields=["cached_cra"])
+            request.session[_session_key(block_id)] = {
+                "result_1": result_1, "result_2": result_2,
+                "cra_tokens": cra_tokens, "cra_call3": cra_call3,
+                "continuity_hint": continuity_hint,
+                "real_generic_result": real_generic_result,
+                "real_sp_result": real_sp_result,
+                "token_before": token_before, "token_after": token_after,
+            }
+            request.session.save()
 
-        if pipeline_result.get("status") == "OK":
-            cra_tokens = (pipeline_result.get("call1") or {}).get("domain_hits", [])
-            cra_call3 = pipeline_result.get("call3") or {}
-            continuity_hint = pipeline_result.get("continuity_hint")
-    except Exception:
-        logger.exception("CRA 파이프라인 실패 — 결과 페이지는 정상 표시")
+            yield send({"step": 6, "total": 6, "label": "분석 완료! 결과를 불러오는 중...", "progress": 100})
+            yield send({"done": True})
 
-    return render(request, _demo_flow_template(request, "prompt_results"), {
-        'answers': answers,
-        'user_brainnodes': user_brainnodes,
-        'result_1': result_1,
-        'result_2': result_2,
-        'tree': current_block.braintree,
-        'block_id': block_id,
-        'cra_tokens': cra_tokens,
-        'cra_call3': cra_call3,
-        'continuity_hint': continuity_hint,
-        'real_generic_result': real_generic_result,
-        'real_sp_result': real_sp_result,
-        'token_before': token_before,
-        'token_after': token_after,
-    })
+        except Exception as e:
+            logger.exception("SSE 스트림 오류 (block_id=%s)", block_id)
+            yield send({"error": str(e)})
+
+    resp = StreamingHttpResponse(event_stream(), content_type="text/event-stream")
+    resp["Cache-Control"] = "no-cache"
+    resp["X-Accel-Buffering"] = "no"
+    return resp
 
 
 # 기존 URL 이름 `summary` 호환 (동일 뷰)
@@ -508,14 +528,7 @@ def edit_answer(request, answer_id):
         bid = answer.brainnode.block_id
         if bid:
             # 개별 답변 수정 시 캐시 무효화
-            try:
-                block = BrainBlockNode.objects.get(id=bid)
-                block.cached_result_1 = ""
-                block.cached_result_2 = ""
-                block.cached_cra = None
-                block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
-            except BrainBlockNode.DoesNotExist:
-                pass
+            request.session.pop(_session_key(bid), None)
             return redirect('questionnaire:summary', block_id=bid)
         return redirect('home')
 

@@ -1,7 +1,7 @@
 # v2: 측정·검증 강조 (동일 API, 다른 지시문·생성 파라미터)
 version: v2
 description: "측정 가능한 목표와 검증 단계를 강조한 전략·프롬프트"
-model: "Qwen/Qwen2.5-1.5B-Instruct"
+model: "gemini-2.5-flash-lite"
 api: chat
 generation:
   max_tokens: 600
@@ -15,4 +15,4 @@ tasks:
     system: prompt_builder_system.jinja
     generation:
       temperature: 0.4
-      max_tokens: 640
+      max_tokens: 2048
