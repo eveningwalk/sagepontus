@@ -352,8 +352,12 @@ def answers_review(request, block_id):
                         order=max_order,
                     )
 
-        # ── 세션 캐시 초기화 ──
+        # ── 세션 + DB 캐시 초기화 ──
         request.session.pop(_session_key(block_id), None)
+        current_block.cached_result_1 = ""
+        current_block.cached_result_2 = ""
+        current_block.cached_cra = None
+        current_block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
         return redirect('questionnaire:prompt_flow_results', block_id=block_id)
 
     return render(request, _demo_flow_template(request, "answers_review"), {
@@ -379,6 +383,26 @@ def prompt_flow_results(request, block_id):
         'block_id': block_id,
     }
     session_data = request.session.get(_session_key(block_id))
+
+    # 세션 없으면 DB 캐시 확인
+    if not session_data:
+        cached = current_block.cached_cra or {}
+        if current_block.cached_result_1 and current_block.cached_result_2:
+            session_data = {
+                "result_1": current_block.cached_result_1,
+                "result_2": current_block.cached_result_2,
+                "cra_tokens": (cached.get("call1") or {}).get("domain_hits", []),
+                "cra_call3": cached.get("call3") or {},
+                "continuity_hint": cached.get("continuity_hint"),
+                "real_generic_result": cached.get("real_generic_result", ""),
+                "real_sp_result": cached.get("real_sp_result", ""),
+                "token_before": cached.get("token_before") or {},
+                "token_after": cached.get("token_after") or {},
+            }
+            # 세션에도 복원
+            request.session[_session_key(block_id)] = session_data
+            request.session.save()
+
     if not session_data:
         return render(request, _demo_flow_template(request, "prompt_results"), {
             **base_ctx, 'loading': True,
@@ -485,7 +509,7 @@ def prompt_flow_stream(request, block_id):
                 logger.warning("After AI 호출 실패 (무시): %s", e)
                 real_sp_result, token_after = "", {}
 
-            request.session[_session_key(block_id)] = {
+            session_payload = {
                 "result_1": result_1, "result_2": result_2,
                 "cra_tokens": cra_tokens, "cra_call3": cra_call3,
                 "continuity_hint": continuity_hint,
@@ -493,7 +517,22 @@ def prompt_flow_stream(request, block_id):
                 "real_sp_result": real_sp_result,
                 "token_before": token_before, "token_after": token_after,
             }
+            request.session[_session_key(block_id)] = session_payload
             request.session.save()
+
+            # DB에도 저장 (세션 만료 후 재방문 시 재호출 방지)
+            current_block.cached_result_1 = result_1
+            current_block.cached_result_2 = result_2
+            current_block.cached_cra = {
+                "call3": cra_call3,
+                "continuity_hint": continuity_hint,
+                "real_generic_result": real_generic_result,
+                "real_sp_result": real_sp_result,
+                "token_before": token_before,
+                "token_after": token_after,
+                "call1": {"domain_hits": cra_tokens},
+            }
+            current_block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
 
             yield send({"step": 6, "total": 6, "label": "분석 완료! 결과를 불러오는 중...", "progress": 100})
             yield send({"done": True})
@@ -527,8 +566,16 @@ def edit_answer(request, answer_id):
             answer.save()
         bid = answer.brainnode.block_id
         if bid:
-            # 개별 답변 수정 시 캐시 무효화
+            # 개별 답변 수정 시 세션 + DB 캐시 무효화
             request.session.pop(_session_key(bid), None)
+            try:
+                block = BrainBlockNode.objects.get(id=bid)
+                block.cached_result_1 = ""
+                block.cached_result_2 = ""
+                block.cached_cra = None
+                block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
+            except BrainBlockNode.DoesNotExist:
+                pass
             return redirect('questionnaire:summary', block_id=bid)
         return redirect('home')
 
