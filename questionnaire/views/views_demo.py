@@ -81,9 +81,4 @@ def demo_entry(request):
         order=1,
     )
 
-    return redirect(
-        "questionnaire:show_question_step",
-        category="common",
-        order=root_node.order,
-        block_id=root_node.id,
-    )
+    return redirect("questionnaire:brain_dump", block_id=root_node.id)

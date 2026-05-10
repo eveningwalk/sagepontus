@@ -17,6 +17,9 @@ from .views import (
     ai_question_start,
     ai_question_step,
     demo_session_list,
+    brain_dump,
+    brain_dump_setup,
+    brain_dump_autofill,
 )
 from .views_demo import demo_entry, landing
 from .views import cra_process

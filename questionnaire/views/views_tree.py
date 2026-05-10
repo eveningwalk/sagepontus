@@ -34,15 +34,9 @@ def create_tree_and_start(request):
             order=1
         )
 
-        # 3. 질문 단계로 이동
-        print("\n # 3. 질문 단계로 이동")
-        return redirect(
-            'questionnaire:show_question_step',
-            category='common',
-            order=root_node.order,
-            #tree_id=new_tree.id,
-            block_id=root_node.id
-        )
+        # 3. Brain Dump 입력 단계로 이동
+        print("\n # 3. Brain Dump 단계로 이동")
+        return redirect('questionnaire:brain_dump', block_id=root_node.id)
        
 
     return redirect("home")

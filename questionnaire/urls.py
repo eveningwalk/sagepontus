@@ -16,6 +16,9 @@ urlpatterns = [
     path('summary/<int:block_id>', views.summary, name='summary'),
     path('ai-questions/<int:block_id>/start/', views.ai_question_start, name='ai_question_start'),
     path('ai-questions/<int:block_id>/step/<int:order>/', views.ai_question_step, name='ai_question_step'),
+    path('brain-dump/<int:block_id>/', views.brain_dump, name='brain_dump'),
+    path('brain-dump/<int:block_id>/setup/', views.brain_dump_setup, name='brain_dump_setup'),
+    path('brain-dump/autofill/<int:domain_block_id>/', views.brain_dump_autofill, name='brain_dump_autofill'),
     path('demo/sessions/', views.demo_session_list, name='demo_session_list'),
     path(
         'prompt-flow/<int:block_id>/results/',

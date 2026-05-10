@@ -14,7 +14,7 @@ from django.contrib.auth.decorators import login_required
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
 from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_category_name
 from questionnaire.prompts import run_prompt_generation_pair
-from questionnaire.prompts.service import generate_ai_followup_questions, _chat_generate_with_usage
+from questionnaire.prompts.service import generate_ai_followup_questions, _chat_generate_with_usage, autofill_answers_from_brain_dump
 from questionnaire.device import landing_template_name
 
 logger = logging.getLogger(__name__)
@@ -161,6 +161,17 @@ def show_question_step(request, category, order, block_id):
                 )
             else:
                 if category == 'common':
+                    # brain dump 경로에서 도메인이 미리 선택된 경우 domain selection 건너뜀
+                    preselected = request.session.pop(
+                        f'preselected_domain_{block_node.id}', None
+                    )
+                    if preselected:
+                        return redirect(
+                            'questionnaire:show_question_step',
+                            category=preselected['domain'],
+                            order=1,
+                            block_id=preselected['domain_block_id'],
+                        )
                     return redirect('questionnaire:select_domain', parent_block_id=block_node.id)
                 else:
                     return redirect('questionnaire:ai_question_start', block_id=block_node.id)
@@ -190,6 +201,7 @@ def show_question_step(request, category, order, block_id):
         'question_scope': question_scope,
         'scope_label': scope_label,
         'is_last_domain_question': is_last_domain_question,
+        'brain_dump_text': _get_brain_dump_text(braintree),
     })
 
 def select_domain(request, parent_block_id):
@@ -788,3 +800,165 @@ def cra_process(request):
         result = process_cra(text, domain=domain, use_ai=use_ai)
 
     return JsonResponse(result, json_dumps_params={"ensure_ascii": False})
+
+
+# ─── Brain Dump 플로우 ────────────────────────────────────────────────────────
+
+def _get_brain_dump_text(braintree) -> str:
+    block = BrainBlockNode.objects.filter(braintree=braintree, type='brain_dump').first()
+    return (block.description or "") if block else ""
+
+
+@never_cache
+@login_required
+def brain_dump(request, block_id):
+    """Brain Dump 입력 페이지 — root block 생성 직후 호출."""
+    root_block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
+
+    if request.method == 'POST':
+        dump_text = request.POST.get('dump_text', '').strip()
+
+        # 기존 brain_dump 블록이 있으면 갱신, 없으면 생성
+        bd_block, _ = BrainBlockNode.objects.update_or_create(
+            braintree=root_block.braintree,
+            parent=root_block,
+            type='brain_dump',
+            defaults={'title': 'Brain Dump', 'description': dump_text, 'order': 0},
+        )
+
+        if _is_demo_session(request) and not dump_text:
+            # 데모: 빈 dump 허용 → 도메인 선택으로 바로 이동
+            pass
+
+        return redirect('questionnaire:brain_dump_setup', block_id=root_block.id)
+
+    return render(request, _demo_flow_template(request, 'brain_dump'), {
+        'root_block': root_block,
+        'tree': root_block.braintree,
+    })
+
+
+@never_cache
+@login_required
+def brain_dump_setup(request, block_id):
+    """도메인 + 진행 방식 선택 페이지."""
+    root_block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
+    categories = Category.objects.exclude(name='common')
+    allowed_domain = getattr(settings, 'DEMO_DOMAIN_CATEGORY', 'physical_therapist')
+    brain_dump_text = _get_brain_dump_text(root_block.braintree)
+
+    if request.method == 'POST':
+        selected_domain = request.POST.get('domain', '').strip()
+        track = request.POST.get('track', 'question_flow')  # 'question_flow' | 'autofill'
+
+        if not selected_domain or selected_domain not in [c.name for c in categories]:
+            return render(request, _demo_flow_template(request, 'brain_dump_setup'), {
+                'root_block': root_block,
+                'tree': root_block.braintree,
+                'categories': categories,
+                'allowed_domain': allowed_domain,
+                'brain_dump_text': brain_dump_text,
+                'error': '도메인을 선택해 주세요.',
+            })
+
+        category, _ = Category.objects.get_or_create(name=selected_domain)
+        domain_block, _ = BrainBlockNode.objects.get_or_create(
+            braintree=root_block.braintree,
+            parent=root_block,
+            type='domain',
+            defaults={
+                'title': f'{selected_domain} 시작',
+                'description': f'{selected_domain} 관련 질문 흐름',
+                'order': 1,
+            },
+        )
+
+        if track == 'autofill':
+            return redirect('questionnaire:brain_dump_autofill', domain_block_id=domain_block.id)
+
+        # 질문 flow: 도메인 블록 ID를 세션에 저장 → 공통 질문 완료 후 자동 분기
+        request.session[f'preselected_domain_{root_block.id}'] = {
+            'domain': selected_domain,
+            'domain_block_id': domain_block.id,
+        }
+        first_common = Question.objects.filter(category__name='common', order=1).first()
+        if not first_common:
+            return redirect('questionnaire:select_domain', parent_block_id=root_block.id)
+        return redirect(
+            'questionnaire:show_question_step',
+            category='common',
+            order=1,
+            block_id=root_block.id,
+        )
+
+    return render(request, _demo_flow_template(request, 'brain_dump_setup'), {
+        'root_block': root_block,
+        'tree': root_block.braintree,
+        'categories': categories,
+        'allowed_domain': allowed_domain,
+        'brain_dump_text': brain_dump_text,
+    })
+
+
+@never_cache
+@login_required
+def brain_dump_autofill(request, domain_block_id):
+    """AI가 brain dump → 공통+도메인 답변 자동 생성 후 answers_review로 이동."""
+    domain_block = get_object_or_404(
+        BrainBlockNode, id=domain_block_id, braintree__user=request.user
+    )
+    root_block = domain_block.get_ancestors(include_self=True).first()
+    brain_dump_text = _get_brain_dump_text(root_block.braintree)
+
+    if request.method == 'POST':
+        domain_name = domain_block.title.replace(' 시작', '').strip()
+        common_cat = Category.objects.filter(name='common').first()
+        domain_cat = Category.objects.filter(name=domain_name).first()
+
+        all_questions = []
+        if common_cat:
+            all_questions += list(
+                Question.objects.filter(category=common_cat).order_by('order')
+            )
+        if domain_cat:
+            all_questions += list(
+                Question.objects.filter(category=domain_cat).order_by('order')
+            )
+
+        # AI 자동 매핑
+        q_dicts = [
+            {'id': q.id, 'text': q.question_text, 'category': q.category.name}
+            for q in all_questions
+        ]
+        ai_answers = autofill_answers_from_brain_dump(brain_dump_text, q_dicts)
+
+        # BrainNode + Answer 생성 (질문 flow와 동일한 구조)
+        for q in all_questions:
+            block = root_block if q.category.name == 'common' else domain_block
+            answer_text = ai_answers.get(q.id, '').strip()
+            brain_node = BrainNode.objects.create(
+                block=block,
+                question_text=q.question_text.strip(),
+                order=q.order,
+            )
+            Answer.objects.get_or_create(
+                user=request.user,
+                question=q,
+                brainnode=brain_node,
+                defaults={'answer_text': answer_text},
+            )
+
+        # 세션 캐시 초기화 (이전 결과 있을 경우 대비)
+        request.session.pop(_session_key(domain_block.id), None)
+        domain_block.cached_result_1 = ''
+        domain_block.cached_result_2 = ''
+        domain_block.cached_cra = None
+        domain_block.save(update_fields=['cached_result_1', 'cached_result_2', 'cached_cra'])
+
+        return redirect('questionnaire:summary', block_id=domain_block.id)
+
+    return render(request, _demo_flow_template(request, 'brain_dump_autofill'), {
+        'domain_block': domain_block,
+        'tree': domain_block.braintree,
+        'brain_dump_text': brain_dump_text,
+    })

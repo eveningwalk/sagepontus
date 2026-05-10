@@ -49,6 +49,7 @@ class BrainBlockNode(MPTTModel):
             ("ai", "AI 생성형"),
             ("ai_followup", "AI 보완 질문"),
             ("user_custom", "직접 추가"),
+            ("brain_dump", "브레인 덤프"),
         ),
         default="common"
     )

@@ -299,3 +299,67 @@ def run_single_task(task_key: str, answers, extra_qa: list[dict] | None = None) 
         provider = "Gemini" if os.environ.get("GEMINI_API_KEY", "").strip() else "Hugging Face"
         logger.exception("%s 생성 실패 task=%s", provider, task_key)
         return f"[AI 생성 실패] {provider} API 호출 중 오류가 났습니다.\n상세: {e!s}"
+
+
+_AUTOFILL_SYSTEM = "당신은 사용자의 메모(brain dump)를 분석해 구조화된 질문지에 답변을 채워주는 전문가입니다."
+
+_AUTOFILL_USER_TMPL = """\
+아래는 사용자가 자유롭게 작성한 메모(brain dump)입니다.
+
+[메모]
+{brain_dump}
+
+이 메모를 바탕으로 아래 질문들에 대한 답변을 작성해 주세요.
+메모에 관련 내용이 없는 질문은 빈 문자열("")로 답변하세요.
+각 답변은 메모에서 추출하거나 합리적으로 추론한 내용만 포함하고, 없는 내용은 지어내지 마세요.
+
+[질문 목록]
+{questions}
+
+아래 JSON 형식만 반환하세요 (마크다운 코드블록 없이):
+{{"answers": [{{"id": <질문ID>, "answer": "<답변 텍스트>"}}, ...]}}"""
+
+
+def autofill_answers_from_brain_dump(brain_dump: str, questions: list[dict]) -> dict[int, str]:
+    """
+    brain dump 텍스트에서 각 질문에 대한 답변을 AI로 생성한다.
+    questions: [{"id": int, "text": str, "category": str}, ...]
+    반환: {question_id: answer_text}  (실패 시 빈 dict)
+    """
+    import json as _json
+
+    if not brain_dump.strip() or not questions:
+        return {}
+
+    q_lines = "\n".join(
+        f"- ID {q['id']} [{q['category']}] {q['text']}" for q in questions
+    )
+    user_prompt = _AUTOFILL_USER_TMPL.format(
+        brain_dump=brain_dump.strip(),
+        questions=q_lines,
+    )
+    gen = {"max_tokens": 2000, "temperature": 0.3}
+
+    try:
+        raw = _chat_generate()(
+            "gemini-2.5-flash-lite",
+            user_prompt,
+            gen,
+            system=_AUTOFILL_SYSTEM,
+        )
+    except Exception as e:
+        logger.warning("autofill AI 호출 실패: %s", e)
+        return {}
+
+    try:
+        data = _json.loads(raw)
+        return {int(item["id"]): item["answer"] for item in data.get("answers", [])}
+    except Exception:
+        # JSON 파싱 실패 시 _extract_json 시도
+        try:
+            from questionnaire.prompts.cra_engine import _extract_json
+            data = _json.loads(_extract_json(raw))
+            return {int(item["id"]): item["answer"] for item in data.get("answers", [])}
+        except Exception:
+            logger.warning("autofill JSON 파싱 실패. raw=%s", raw[:200])
+            return {}
