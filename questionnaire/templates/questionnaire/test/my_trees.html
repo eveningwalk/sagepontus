@@ -1,0 +1,62 @@
+{% extends "index.html" %}
+
+{% block nav_my_trees_active %}bg-primary/10 text-primary{% endblock %}
+{% block page_title %}내 트리 — Sage Pontus{% endblock %}
+
+{% block main %}
+<div class="max-w-2xl">
+
+  <!-- Header -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-xl font-bold text-foreground">내 트리</h1>
+    <form method="post" action="{% url 'questionnaire:create_tree_and_start' %}" class="flex items-center gap-2">
+      {% csrf_token %}
+      <input type="text" name="name" placeholder="새 트리 이름"
+             class="px-3 py-2 text-sm border border-border rounded-lg bg-card text-foreground placeholder:text-muted-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 w-44">
+      <button type="submit"
+              class="px-4 py-2 bg-primary hover:bg-primary/90 text-white text-sm font-semibold rounded-lg transition-colors">
+        + 새 트리
+      </button>
+    </form>
+  </div>
+
+  <!-- Tree list -->
+  {% if tree_data %}
+    <div class="flex flex-col gap-3">
+      {% for item in tree_data %}
+      <div class="bg-card border border-border rounded-xl px-5 py-4 flex items-center justify-between hover:border-primary/30 transition-colors">
+        <div>
+          <p class="font-semibold text-foreground">{{ item.tree.title }}</p>
+          <p class="text-xs text-muted-foreground mt-0.5">{{ item.tree.created_at|date:"Y.m.d" }}</p>
+        </div>
+        <div class="flex items-center gap-2">
+          {% if item.root_node %}
+          <a href="{% url 'questionnaire:resume_tree' item.tree.id %}"
+             class="px-4 py-1.5 bg-primary hover:bg-primary/90 text-white text-sm font-semibold rounded-lg transition-colors">
+            열기
+          </a>
+          <a href="{% url 'questionnaire:tree_view' item.tree.id %}"
+             class="px-4 py-1.5 text-sm font-medium text-foreground border border-border hover:bg-muted rounded-lg transition-colors">
+            트리 보기
+          </a>
+          {% endif %}
+          <a href="{% url 'questionnaire:delete_tree' item.tree.id %}"
+             class="px-4 py-1.5 text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 rounded-lg transition-colors">
+            삭제
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  {% else %}
+    <div class="text-center py-16 text-muted-foreground">
+      <svg class="w-12 h-12 mx-auto mb-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+      </svg>
+      <p class="text-sm">아직 트리가 없습니다. 새 트리를 만들어보세요.</p>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

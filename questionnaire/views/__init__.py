@@ -1,5 +1,5 @@
 
-from .views_tree import create_tree_and_start, edit_tree, delete_tree, resume_tree, review_tree, tree_view,brainblock_tree_json, brainnode_tree_json
+from .views_tree import create_tree_and_start, edit_tree, delete_tree, resume_tree, review_tree, tree_view, brainblock_tree_json, brainnode_tree_json, my_trees
 #from .views_tree import tree_detail
 from .views_tree import check_braintree_title
 
@@ -22,4 +22,4 @@ from .views import (
     brain_dump_autofill,
 )
 from .views_demo import demo_entry, landing
-from .views import cra_process
+from .views import cra_process, regenerate_prompt

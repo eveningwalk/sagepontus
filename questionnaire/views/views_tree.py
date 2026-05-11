@@ -9,6 +9,16 @@ from questionnaire.forms import BrainTreeForm
 
 
 @login_required
+def my_trees(request):
+    trees = BrainTree.objects.filter(user=request.user).order_by("-created_at")
+    tree_data = []
+    for tree in trees:
+        root_node = BrainBlockNode.objects.filter(braintree=tree, parent=None).first()
+        tree_data.append({"tree": tree, "root_node": root_node})
+    return render(request, "questionnaire/test/my_trees.html", {"tree_data": tree_data})
+
+
+@login_required
 def create_tree_and_start(request):
     """
     새 BrainTree를 만들고, 첫 Root BrainBlockNode를 생성한 뒤 공통 질문 step 1로 이동
@@ -62,7 +72,7 @@ def delete_tree(request, tree_id):
 
     if request.method == "POST":
         tree.delete()
-        return redirect("home")  # 홈으로 리다이렉트
+        return redirect("questionnaire:my_trees")
 
     return render(request, "questionnaire/test/delete_tree.html", {"tree": tree})
 
@@ -74,15 +84,41 @@ def check_braintree_title(request):
     return JsonResponse({"exists": exists})
 
 
+@login_required
 def resume_tree(request, tree_id):
+    """트리 진행 상태를 감지하여 적절한 페이지로 리다이렉트."""
     braintree = get_object_or_404(BrainTree, id=tree_id, user=request.user)
-    # 해당 트리에 대한 사용자의 답변 목록
-    answers = Answer.objects.filter(user=request.user, question__tree=tree).select_related("question")
+    root_block = BrainBlockNode.objects.filter(braintree=braintree, parent=None).first()
 
-    return render(request, "questionnaire/resume.html", {
-        "tree": braintree,
-        "answers": answers
-    })
+    if not root_block:
+        return redirect('questionnaire:my_trees')
+
+    # 가장 최근 도메인 블록 확인
+    domain_block = BrainBlockNode.objects.filter(
+        braintree=braintree, type='domain'
+    ).order_by('-id').first()
+
+    if domain_block:
+        # AI 결과 캐시 있으면 → 결과 페이지
+        if domain_block.cached_result_1:
+            return redirect('questionnaire:prompt_flow_results', block_id=domain_block.id)
+        # 답변 있으면 → 답변 검토 페이지
+        has_answers = Answer.objects.filter(
+            user=request.user,
+            brainnode__block__braintree=braintree
+        ).exists()
+        if has_answers:
+            return redirect('questionnaire:summary', block_id=domain_block.id)
+
+    # brain_dump 블록 있으면 → brain_dump_setup (도메인 선택부터 재시작)
+    brain_dump_exists = BrainBlockNode.objects.filter(
+        braintree=braintree, type='brain_dump'
+    ).exists()
+    if brain_dump_exists:
+        return redirect('questionnaire:brain_dump_setup', block_id=root_block.id)
+
+    # 기본: Brain Dump 입력 페이지
+    return redirect('questionnaire:brain_dump', block_id=root_block.id)
 
 def review_tree(request, tree_id):
     braintree = get_object_or_404(BrainTree, id=tree_id, user=request.user)

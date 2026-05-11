@@ -1,14 +1,37 @@
-{% extends "base.html" %}
+{% extends "index.html" %}
 
-{% block content %}
-<div class="container">
-    <h2>⚠️ 정말로 삭제하시겠습니까?</h2>
-    <p><strong>{{ tree.title }}</strong> (생성일: {{ tree.created_at|date:"Y-m-d" }})</p>
+{% block page_title %}트리 삭제 — Sage Pontus{% endblock %}
 
-    <form method="post">
+{% block main %}
+<div class="max-w-md">
+  <div class="bg-card border border-border rounded-xl p-6">
+
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center flex-shrink-0">
+        <svg class="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+        </svg>
+      </div>
+      <h1 class="text-lg font-bold text-foreground">트리를 삭제할까요?</h1>
+    </div>
+
+    <p class="text-sm text-muted-foreground mb-1">다음 트리와 관련된 모든 데이터가 삭제됩니다.</p>
+    <p class="font-semibold text-foreground mb-6">{{ tree.title }}</p>
+
+    <div class="flex gap-3">
+      <form method="post" class="flex-1">
         {% csrf_token %}
-        <button type="submit">삭제하기</button>
-        <a href="{% url 'home' %}">취소</a>
-    </form>
+        <button type="submit"
+                class="w-full py-2 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition-colors">
+          삭제하기
+        </button>
+      </form>
+      <a href="{% url 'questionnaire:my_trees' %}"
+         class="flex-1 py-2 text-center text-sm font-medium border border-border text-foreground hover:bg-muted rounded-lg transition-colors">
+        취소
+      </a>
+    </div>
+
+  </div>
 </div>
 {% endblock %}

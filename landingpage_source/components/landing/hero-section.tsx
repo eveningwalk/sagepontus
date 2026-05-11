@@ -7,7 +7,11 @@ const HERO_HEADLINE_1 = "\uC804\uB7B5\uC744 \uC2E4\uBB34 \uACB0\uACFC\uB85C"
 const HERO_HEADLINE_2 = "\uC5F0\uACB0\uD558\uB294 AI"
 const HERO_DESCRIPTION = "\uC9C8\uBB38 \uD50C\uB85C\uC6B0 \uAE30\uBC18 \uD504\uB86C\uD504\uD2B8\uB85C \uAE30\uC5C5\uC758 \uC804\uB7B5\uC801 \uBE44\uC804\uC744 \uAD6C\uCCB4\uC801\uC778 \uC2E4\uD589 \uACB0\uACFC\uBB3C\uB85C \uC804\uD658\uD569\uB2C8\uB2E4. \uBCF5\uC7A1\uD55C \uBE44\uC988\uB2C8\uC2A4 \uC758\uC0AC\uACB0\uC815\uC744 \uBA85\uD655\uD55C \uC561\uC158\uC73C\uB85C \uB9CC\uB4E4\uC5B4 \uB4DC\uB9BD\uB2C8\uB2E4."
 
-export function HeroSection() {
+interface HeroSectionProps {
+  onGetEarlyAccess?: () => void
+}
+
+export function HeroSection({ onGetEarlyAccess }: HeroSectionProps) {
   return (
     <section className="relative pt-32 pb-20 px-4 sm:px-6 lg:px-8 overflow-hidden">
       <div className="absolute inset-0 -z-10">
@@ -32,7 +36,7 @@ export function HeroSection() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-12 text-base">
+          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-12 text-base" onClick={onGetEarlyAccess}>
             Get Early Access
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

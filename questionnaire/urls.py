@@ -30,6 +30,11 @@ urlpatterns = [
         views.prompt_flow_stream,
         name='prompt_flow_stream',
     ),
+    path(
+        'prompt-flow/<int:block_id>/regenerate/',
+        views.regenerate_prompt,
+        name='regenerate_prompt',
+    ),
     
     path("check-title/", views.check_braintree_title, name="check_braintree_title"),
     path('<int:tree_id>/resume/', views.resume_tree, name='resume_tree'),
@@ -39,6 +44,7 @@ urlpatterns = [
     path("tree/<int:tree_id>/delete/", views.delete_tree, name="delete_tree"),
     
     path("tree/create/", views.create_tree_and_start, name="create_tree_and_start"),
+    path("my-trees/", views.my_trees, name="my_trees"),
     
     path('tree/<int:braintree_id>/', views.tree_view, name='tree_view'),
     path('tree/<int:braintree_id>/edit/', views.edit_tree, name='edit_tree'),

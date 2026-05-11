@@ -37,10 +37,6 @@ def _demo_flow_template(request, base_name: str) -> str:
 
 
 def root(request):
-    """
-    루트 URL(/). 비로그인 + 데모 ON → 랜딩 페이지.
-    데모 유저 로그인 중 → 항상 /demo/ (새 세션 시작)으로 이동.
-    """
     if request.user.is_authenticated:
         demo_username = getattr(settings, "DEMO_USER_USERNAME", "")
         if getattr(settings, "DEMO_ENABLED", False) and demo_username and request.user.get_username() == demo_username:
@@ -49,25 +45,22 @@ def root(request):
             response["Pragma"] = "no-cache"
             return response
         return home(request)
-    if getattr(settings, "DEMO_ENABLED", False):
-        response = render(request, landing_template_name(request), {})
-        response["Cache-Control"] = "no-store, no-cache, must-revalidate"
-        response["Pragma"] = "no-cache"
-        return response
-    return redirect("accounts:login")
+    response = render(request, landing_template_name(request), {})
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    response["Pragma"] = "no-cache"
+    return response
 
 
 @login_required
 def home(request):
-    # 로그인한 유저의 BrainTree 불러오기
-    braintrees = BrainTree.objects.filter(user=request.user).order_by("created_at")
+    braintrees = BrainTree.objects.filter(user=request.user)
+    count = braintrees.count()
 
-    if request.method == "POST":
-        new_name = request.POST.get("name", "Untitled BrainTree")
-        new_tree = BrainTree.objects.create(user=request.user, title=new_name)
-        return redirect("questionnaire:create_tree_and_start")
+    if count == 1:
+        braintree = braintrees.first()
+        return redirect("questionnaire:resume_tree", tree_id=braintree.id)
 
-    return render(request, "questionnaire/test/home.html", {"braintrees": braintrees})
+    return redirect("questionnaire:my_trees")
 
 @login_required
 def show_question_step(request, category, order, block_id):
@@ -497,10 +490,12 @@ def prompt_flow_stream(request, block_id):
                         list(cra_call3.keys()) if cra_call3 else "empty",
                         len((cra_call3.get("expert_output") or "")))
 
-            yield send({"step": 5, "total": 6, "label": "일반 AI 응답 생성 중...", "progress": 73})
+            yield send({"step": 5, "total": 6, "label": "일반 AI 프롬프트 생성 중...", "progress": 73})
             call = _chat_generate_with_usage()
             raw_prompt = (
-                "아래는 사용자가 입력한 답변입니다. 이를 바탕으로 실행 가능한 조언을 해주세요.\n\n"
+                "아래는 사용자가 입력한 답변입니다.\n"
+                "이 내용을 바탕으로 다른 AI에게 전달할 수 있는 프롬프트를 작성해주세요.\n"
+                "프롬프트는 명확한 지시와 필요한 맥락을 포함한 2~4 문단의 산문 형태로 작성하세요.\n\n"
                 + combined_text
             )
             try:
@@ -511,15 +506,9 @@ def prompt_flow_stream(request, block_id):
                 logger.warning("Before AI 호출 실패 (무시): %s", e)
                 real_generic_result, token_before = "", {}
 
-            yield send({"step": 6, "total": 6, "label": "Sage Pontus 심층 분석 중...", "progress": 90})
-            sp_prompt = result_2 if result_2 else combined_text
-            try:
-                real_sp_result, token_after = call(
-                    "gemini-2.5-flash-lite", sp_prompt, {"max_tokens": 600, "temperature": 0.5}
-                )
-            except Exception as e:
-                logger.warning("After AI 호출 실패 (무시): %s", e)
-                real_sp_result, token_after = "", {}
+            yield send({"step": 6, "total": 6, "label": "결과 정리 중...", "progress": 90})
+            real_sp_result = result_2 if result_2 else ""
+            token_after = {}
 
             session_payload = {
                 "result_1": result_1, "result_2": result_2,
@@ -594,6 +583,18 @@ def edit_answer(request, answer_id):
     return render(request, _demo_flow_template(request, "edit_answer"), {'answer': answer})
 
 
+@login_required
+def regenerate_prompt(request, block_id):
+    """캐시 초기화 후 결과 페이지로 리다이렉트 → SSE 재실행."""
+    block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
+    request.session.pop(_session_key(block_id), None)
+    block.cached_result_1 = ""
+    block.cached_result_2 = ""
+    block.cached_cra = None
+    block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
+    return redirect('questionnaire:prompt_flow_results', block_id=block_id)
+
+
 def can_create_tree(user):
     plan = user.policy.plan
     count = user.brain_trees.filter(status="active").count()
@@ -626,7 +627,7 @@ def demo_session_list(request):
     도메인 블록이 있으면 결과 페이지 링크를 제공한다.
     """
     if not _is_demo_session(request):
-        return redirect('landing')
+        return redirect('questionnaire:my_trees')
 
     trees = BrainTree.objects.filter(user=request.user).order_by('-created_at')
 

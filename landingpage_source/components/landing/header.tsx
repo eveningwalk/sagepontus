@@ -5,7 +5,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Menu, X } from "lucide-react"
 
-export function Header() {
+interface HeaderProps {
+  onGetEarlyAccess?: () => void
+}
+
+export function Header({ onGetEarlyAccess }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   return (
@@ -35,7 +39,7 @@ export function Header() {
             <Button variant="ghost" size="sm">
               Log in
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onGetEarlyAccess}>
               Get Early Access
             </Button>
           </div>
@@ -65,7 +69,7 @@ export function Header() {
                 <Button variant="ghost" size="sm" className="justify-start">
                   Log in
                 </Button>
-                <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onGetEarlyAccess}>
                   Get Early Access
                 </Button>
               </div>
