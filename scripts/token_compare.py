@@ -35,10 +35,12 @@ from pathlib import Path
 from datetime import datetime
 
 
-# ── 모델 단가 테이블 ($/1M input tokens, 2025년 기준) ────────────────────
+# ── 모델 단가 테이블 ($/1M input tokens, 2026-05 공식 단가 기준) ──────────
+# GPT-4o: gpt-4o-2024-08-06 기준 $2.50, base gpt-4o는 $5.00
+# Gemini 2.5 Flash: 2026-06 deprecation 예정
 MODEL_PRICING = {
-    "Gemini 2.5 Flash":  {"input": 0.15,  "tier": "저가"},
-    "Claude Haiku 4.5":  {"input": 0.80,  "tier": "저가"},
+    "Gemini 2.5 Flash":  {"input": 0.05,  "tier": "저가"},
+    "Claude Haiku 4.5":  {"input": 1.00,  "tier": "저가"},
     "GPT-4o mini":       {"input": 0.15,  "tier": "저가"},
     "Claude Sonnet 4.5": {"input": 3.00,  "tier": "중가"},
     "GPT-4o":            {"input": 2.50,  "tier": "고가"},
