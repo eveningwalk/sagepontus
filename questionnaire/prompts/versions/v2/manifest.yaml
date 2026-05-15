@@ -16,3 +16,9 @@ tasks:
     generation:
       temperature: 0.4
       max_tokens: 2048
+  startup_bizplan_prompt:
+    user: startup_bizplan_user.jinja
+    system: startup_bizplan_system.jinja
+    generation:
+      temperature: 0.4
+      max_tokens: 2048

@@ -12,6 +12,7 @@ from .views import (
     select_domain,
     summary,
     answers_review,
+    save_custom_node,
     prompt_flow_results,
     prompt_flow_stream,
     ai_question_start,
@@ -23,3 +24,4 @@ from .views import (
 )
 from .views_demo import demo_entry, landing
 from .views import cra_process, regenerate_prompt
+from .views_perf_test import perf_test, perf_test_run, perf_test_detail, perf_test_vote

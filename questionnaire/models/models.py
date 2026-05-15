@@ -58,3 +58,25 @@ class Answer(models.Model):
 
     def __str__(self):
         return f"Answer to {self.question.question_text[:30]} (Node {self.brainnode_id})"
+
+
+class PerfTestResult(models.Model):
+    user       = models.ForeignKey(User, on_delete=models.CASCADE, related_name="perf_test_results")
+    case_name  = models.CharField(max_length=200, blank=True)
+    prompt_a   = models.TextField()
+    b_system   = models.TextField()
+    b_task     = models.TextField()
+    tokens     = models.JSONField()
+    result_a   = models.TextField()
+    result_b   = models.TextField()
+    usage_a    = models.JSONField(default=dict)
+    usage_b    = models.JSONField(default=dict)
+    flipped    = models.BooleanField(default=False, null=True)  # True면 화면에서 A↔B 위치 교환
+    vote       = models.CharField(max_length=1, null=True, blank=True)  # 'A' or 'B' (실제 응답 기준)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.case_name or '(무제)'} — {self.user} {self.created_at:%Y-%m-%d %H:%M}"

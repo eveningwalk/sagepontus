@@ -149,3 +149,121 @@ def chat_completion_generate_with_usage(
         "total_tokens": int(raw_usage.get("total_tokens", 0)),
     }
     return (content or "").strip(), usage
+
+
+_GEMINI_NATIVE_BASE = "https://generativelanguage.googleapis.com/v1beta"
+
+
+def _native_headers() -> dict:
+    return {
+        "x-goog-api-key": _api_key(),
+        "Content-Type": "application/json",
+    }
+
+
+def generate_with_context_cache(
+    model_id: str,
+    user: str,
+    generation: dict[str, Any],
+    *,
+    system: str,
+) -> tuple[str, dict]:
+    """
+    Gemini Native Context Caching API 사용.
+    system prompt를 캐시로 등록 후 생성 → 실측 캐시/신규 토큰 반환.
+    캐시 생성 실패(토큰 미달 등) 시 일반 방식으로 폴백.
+    반환 usage: {input_tokens, output_tokens, cached_tokens, fresh_tokens, cache_supported}
+    """
+    model = _model_id(model_id)
+    native_model = f"models/{model}" if not model.startswith("models/") else model
+    headers = _native_headers()
+
+    # ── 1. 캐시 생성 ──────────────────────────────────────────
+    cache_name = None
+    cache_token_count = 0
+    cache_error = None
+    try:
+        cache_payload = {
+            "model": native_model,
+            "systemInstruction": {"parts": [{"text": system.strip()}]},
+            "ttl": "300s",
+        }
+        cache_resp = requests.post(
+            f"{_GEMINI_NATIVE_BASE}/cachedContents",
+            headers=headers,
+            json=cache_payload,
+            timeout=30,
+        )
+        if not cache_resp.ok:
+            api_err = cache_resp.json()
+            err_msg = (api_err.get("error") or {}).get("message") or cache_resp.text[:200]
+            cache_error = f"캐시 API 오류 ({cache_resp.status_code}): {err_msg}"
+            logger.warning("Gemini 캐시 생성 실패 — 폴백: %s", cache_error)
+        else:
+            cache_data = cache_resp.json()
+            cache_name = cache_data.get("name")
+            cache_token_count = (cache_data.get("usageMetadata") or {}).get("totalTokenCount", 0)
+            logger.debug("Gemini 캐시 생성: name=%s tokens=%d", cache_name, cache_token_count)
+    except Exception as e:
+        cache_error = str(e)
+        logger.warning("Gemini 캐시 생성 실패 — 폴백: %s", e)
+
+    # ── 2. 생성 ───────────────────────────────────────────────
+    try:
+        if cache_name:
+            gen_payload = {
+                "cachedContent": cache_name,
+                "contents": [{"role": "user", "parts": [{"text": user}]}],
+                "generationConfig": {
+                    "maxOutputTokens": int(generation.get("max_tokens", 3000)),
+                    "temperature": float(generation.get("temperature", 0.7)),
+                },
+            }
+            gen_resp = requests.post(
+                f"{_GEMINI_NATIVE_BASE}/{native_model}:generateContent",
+                headers=headers,
+                json=gen_payload,
+                timeout=120,
+            )
+            gen_resp.raise_for_status()
+            gen_data = gen_resp.json()
+
+            try:
+                content = gen_data["candidates"][0]["content"]["parts"][0]["text"]
+            except (KeyError, IndexError, TypeError) as e:
+                raise TypeError(f"Gemini Native 응답 형식 오류: {json.dumps(gen_data)[:300]}") from e
+
+            meta = gen_data.get("usageMetadata") or {}
+            total_in = int(meta.get("promptTokenCount", 0))
+            cached = int(meta.get("cachedContentTokenCount", 0))
+            out = int(meta.get("candidatesTokenCount", 0))
+            usage = {
+                "input_tokens": total_in,
+                "output_tokens": out,
+                "cached_tokens": cached,
+                "fresh_tokens": total_in - cached,
+                "cache_supported": True,
+            }
+            return (content or "").strip(), usage
+
+        else:
+            # 캐시 없이 일반 방식
+            result, usage = chat_completion_generate_with_usage(model_id, user, generation, system=system)
+            usage["cached_tokens"] = 0
+            usage["fresh_tokens"] = usage["input_tokens"]
+            usage["cache_supported"] = False
+            usage["cache_error"] = cache_error or "unknown"
+            return result, usage
+
+    finally:
+        # ── 3. 캐시 삭제 ──────────────────────────────────────
+        if cache_name:
+            try:
+                requests.delete(
+                    f"{_GEMINI_NATIVE_BASE}/{cache_name}",
+                    headers=headers,
+                    timeout=10,
+                )
+                logger.debug("Gemini 캐시 삭제: %s", cache_name)
+            except Exception as e:
+                logger.warning("Gemini 캐시 삭제 실패(무시): %s", e)

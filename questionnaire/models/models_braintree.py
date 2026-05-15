@@ -45,6 +45,7 @@ class BrainBlockNode(MPTTModel):
         max_length=20,
         choices=(
             ("common", "공통"),
+            ("vertical_profile", "버티컬 프로필"),
             ("domain", "도메인"),
             ("ai", "AI 생성형"),
             ("ai_followup", "AI 보완 질문"),

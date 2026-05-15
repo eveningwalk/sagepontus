@@ -56,9 +56,13 @@ urlpatterns = [
     path('node/<int:node_id>/edit/', views.edit_node, name='edit_node'),
     path('node/<int:node_id>/delete/', views.delete_node, name='delete_node'),
 
+    path('api/save-custom-node/', views.save_custom_node, name='save_custom_node'),
     path('api/brainblock_tree/<int:braintree_id>/', views.brainblock_tree_json, name='brainblock_tree_json'),
     path('api/brainnode_tree/<int:block_id>/', views.brainnode_tree_json, name='brainnode_tree_json'),
     path('api/cra/process/', views.cra_process, name='cra_process'),
 
-
+    path('perf-test/', views.perf_test, name='perf_test'),
+    path('perf-test/run/', views.perf_test_run, name='perf_test_run'),
+    path('perf-test/vote/', views.perf_test_vote, name='perf_test_vote'),
+    path('perf-test/<int:pk>/', views.perf_test_detail, name='perf_test_detail'),
 ]

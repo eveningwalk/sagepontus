@@ -14,14 +14,18 @@
 
   <h1 class="text-xl font-bold text-foreground mb-2">AI 자동 채우기</h1>
   <p class="text-sm text-muted-foreground mb-8">
+    {% if is_soap %}
+    소견서를 분석해 S·O·A·P 항목에 맞는 내용을 자동으로 채웁니다.<br>
+    {% else %}
     Brain Dump를 분석해 각 질문에 맞는 답변을 자동으로 생성합니다.<br>
+    {% endif %}
     완료 후 답변 수정 페이지로 이동합니다.
   </p>
 
-  <!-- Brain dump 미리보기 -->
+  <!-- 소견서 / Brain dump 미리보기 -->
   {% if brain_dump_text %}
   <div class="text-left mb-8 p-4 rounded-xl bg-muted/40 border border-border">
-    <p class="text-xs font-semibold text-muted-foreground mb-2">입력된 Brain Dump</p>
+    <p class="text-xs font-semibold text-muted-foreground mb-2">{% if is_soap %}입력된 소견서{% else %}입력된 Brain Dump{% endif %}</p>
     <p class="text-sm text-foreground leading-relaxed whitespace-pre-wrap line-clamp-4">{{ brain_dump_text }}</p>
   </div>
   {% endif %}
