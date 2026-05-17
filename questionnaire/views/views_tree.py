@@ -3,9 +3,9 @@ from django.contrib.auth.decorators import login_required
 
 from questionnaire.models.models import Answer
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
-#from .forms import NodeForm
 from django.http import JsonResponse
 from questionnaire.forms import BrainTreeForm
+from questionnaire.prompts.service import _SOAP_DOMAINS
 
 
 @login_required
@@ -102,15 +102,28 @@ def resume_tree(request, tree_id):
         # AI 결과 캐시 있으면 → 결과 페이지
         if domain_block.cached_result_1:
             return redirect('questionnaire:prompt_flow_results', block_id=domain_block.id)
-        # 답변 있으면 → 답변 검토 페이지
-        has_answers = Answer.objects.filter(
+        # 도메인 답변 있으면 → 답변 검토 페이지 (vertical_profile 제외)
+        has_domain_answers = Answer.objects.filter(
             user=request.user,
-            brainnode__block__braintree=braintree
+            brainnode__block__braintree=braintree,
+        ).exclude(
+            brainnode__block__type='vertical_profile',
         ).exists()
-        if has_answers:
+        if has_domain_answers:
             return redirect('questionnaire:summary', block_id=domain_block.id)
 
-    # brain_dump 블록 있으면 → brain_dump_setup (도메인 선택부터 재시작)
+        # SOAP 도메인 + 프로필 완성 → 바로 autofill
+        domain_name = (domain_block.description or '').strip()
+        if domain_name in _SOAP_DOMAINS:
+            has_profile = Answer.objects.filter(
+                user=request.user,
+                brainnode__block__braintree=braintree,
+                brainnode__block__type='vertical_profile',
+            ).exists()
+            if has_profile:
+                return redirect('questionnaire:brain_dump_autofill', domain_block_id=domain_block.id)
+
+    # brain_dump 블록 있으면 → brain_dump_setup
     brain_dump_exists = BrainBlockNode.objects.filter(
         braintree=braintree, type='brain_dump'
     ).exists()

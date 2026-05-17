@@ -3,15 +3,19 @@ import re
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
+
+
+def _is_tester(user):
+    return user.groups.filter(name='tester').exists()
 
 from questionnaire.models import PerfTestResult
 from questionnaire.models.models_braintree import BrainBlockNode
 from questionnaire.prompts.service import _chat_generate_with_usage
 from questionnaire.prompts.gemini_client import generate_with_context_cache
 
-_AI_GENERATION = {"max_tokens": 3000, "temperature": 0.7}
+_AI_GENERATION = {"max_tokens": 6000, "temperature": 0.7}
 
 MODEL_PRICING = {
     "Gemini 2.5 Flash":  {"input": 0.15,  "cache_write": 0.15,   "cache_read": 0.0375, "tier": "저가"},
@@ -125,6 +129,7 @@ def perf_test(request):
         "monthly_sessions": MONTHLY_SESSIONS,
         "history":          list(history),
         "user_trees":       user_trees,
+        "is_tester":        _is_tester(request.user),
     })
 
 
@@ -245,6 +250,21 @@ def perf_test_run(request):
         "usage_a":     usage_a,
         "usage_b":     usage_b,
         "actual_cost": actual_cost,
+    })
+
+
+@login_required
+@require_http_methods(["GET"])
+def perf_test_compare(request, pk):
+    record = get_object_or_404(PerfTestResult, pk=pk)
+    flipped = record.flipped or False
+    return render(request, "questionnaire/test/compare.html", {
+        "record":   record,
+        "result_1": record.result_b if flipped else record.result_a,
+        "result_2": record.result_a if flipped else record.result_b,
+        "voted":    bool(record.vote),
+        "winner":   ("Sage Pontus" if record.vote == "B" else "기존 방식") if record.vote else None,
+        "chosen_num": ("1" if (flipped and record.vote == "B") or (not flipped and record.vote == "A") else "2") if record.vote else None,
     })
 
 

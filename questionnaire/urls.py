@@ -65,4 +65,6 @@ urlpatterns = [
     path('perf-test/run/', views.perf_test_run, name='perf_test_run'),
     path('perf-test/vote/', views.perf_test_vote, name='perf_test_vote'),
     path('perf-test/<int:pk>/', views.perf_test_detail, name='perf_test_detail'),
+
+    path('compare/<int:pk>/', views.perf_test_compare, name='perf_test_compare'),
 ]

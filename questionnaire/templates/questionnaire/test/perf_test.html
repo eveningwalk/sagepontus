@@ -10,6 +10,7 @@
   <!-- 헤더 + 샘플 -->
   <div class="flex items-center gap-4 mb-3">
     <h1 class="text-base font-semibold text-foreground whitespace-nowrap">A/B 성능 테스트</h1>
+    {% if not is_tester %}
     <div class="flex items-center gap-2">
       <span class="text-xs text-muted-foreground">샘플:</span>
       {% for s in samples %}
@@ -24,6 +25,7 @@
       </form>
       {% endfor %}
     </div>
+    {% endif %}
   </div>
 
   <!-- 입력 폼 -->
@@ -118,8 +120,8 @@
   <!-- 결과 -->
   <div id="result-box" class="hidden mt-6 space-y-4">
 
-    <!-- 토큰 요약 -->
-    <div class="grid grid-cols-4 gap-3">
+    <!-- 토큰 요약 (tester 제외) -->
+    <div id="token-summary" class="grid grid-cols-4 gap-3 {% if is_tester %}hidden{% endif %}">
       <div class="bg-card border border-border rounded-xl px-4 py-3">
         <p class="text-xs text-muted-foreground mb-1">A 입력 토큰</p>
         <p class="text-xl font-bold text-foreground" id="r-tok-a">—</p>
@@ -142,6 +144,13 @@
     <!-- AI 응답 비교 (블라인드) -->
     <div class="bg-card border border-border rounded-xl overflow-hidden">
       <div class="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center gap-2">
+        <a id="share-link" href="#" target="_blank"
+           class="ml-auto inline-flex items-center gap-1.5 text-xs text-primary hover:underline hidden">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+          </svg>
+          PT에게 공유
+        </a>
         <svg class="w-4 h-4 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
         </svg>
@@ -185,8 +194,8 @@
       </div>
     </div>
 
-    <!-- 비용 테이블 -->
-    <div class="bg-card border border-border rounded-xl overflow-hidden">
+    <!-- 비용 테이블 (tester 제외) -->
+    <div id="cost-table" class="bg-card border border-border rounded-xl overflow-hidden {% if is_tester %}hidden{% endif %}">
       <div class="px-4 py-2 border-b border-border flex items-center justify-between">
         <span class="text-xs font-semibold text-foreground">모델별 월간 비용</span>
         <div class="flex items-center gap-2">
@@ -231,7 +240,9 @@
            onclick="loadHistory({{ h.id }})">
         <span class="font-medium text-foreground truncate flex-1">{{ h.case_name|default:"(무제)" }}</span>
         <span class="text-muted-foreground flex-shrink-0">{{ h.created_at|date:"m/d H:i" }}</span>
+        {% if not is_tester %}
         <span class="text-primary flex-shrink-0">절감 {{ h.tokens.writing_reduction }}%</span>
+        {% endif %}
       </div>
       {% endfor %}
     </div>
@@ -391,6 +402,8 @@
     });
   }
 
+  const IS_TESTER = {{ is_tester|yesno:"true,false" }};
+
   function renderResult(d) {
     const t = d.tokens;
     currentRecordId = d.id;
@@ -410,103 +423,113 @@
     lbl1.classList.remove('hidden');
     lbl2.classList.remove('hidden');
 
-    document.getElementById('r-tok-a').textContent      = t.tok_a + ' tok';
-    document.getElementById('r-tok-b-task').textContent = t.tok_b_task + ' tok';
-    document.getElementById('r-tok-b-system-hint').textContent = 'system ' + t.tok_b_system + ' tok 재사용';
-    document.getElementById('r-reduction').textContent  = t.reduction + '%';
-    document.getElementById('r-writing').textContent    = t.writing_reduction + '%';
+    if (!IS_TESTER) {
+      document.getElementById('r-tok-a').textContent      = t.tok_a + ' tok';
+      document.getElementById('r-tok-b-task').textContent = t.tok_b_task + ' tok';
+      document.getElementById('r-tok-b-system-hint').textContent = 'system ' + t.tok_b_system + ' tok 재사용';
+      document.getElementById('r-reduction').textContent  = t.reduction + '%';
+      document.getElementById('r-writing').textContent    = t.writing_reduction + '%';
+    }
 
     document.getElementById('r-result-1').textContent = d.result_1;
     document.getElementById('r-result-2').textContent = d.result_2;
+
+    const shareLink = document.getElementById('share-link');
+    if (d.id) {
+      shareLink.href = `/questionnaire/compare/${d.id}/`;
+      shareLink.classList.remove('hidden');
+    }
 
     // 투표 초기화
     document.getElementById('vote-section').classList.remove('hidden');
     document.getElementById('vote-reveal').classList.add('hidden');
 
-    const ua = d.usage_a, ub = d.usage_b, ac = d.actual_cost || {};
-    let bDetail = '';
-    if (ub.cache_supported) {
-      bDetail = `캐시 ${ub.cached_tokens}tok + 신규 ${ub.fresh_tokens}tok`;
-    } else {
-      bDetail = '캐시 미적용';
-    }
-    document.getElementById('r-usage').textContent =
-      `실측 — A: ${ua.input_tokens ?? '-'}in / ${ua.output_tokens ?? '-'}out  |  B: ${ub.input_tokens ?? '-'}in (${bDetail}) / ${ub.output_tokens ?? '-'}out`;
-
-    // 실측 비용 배너
-    if (ac.a_per_session !== undefined) {
-      const existing = document.getElementById('actual-cost-banner');
-      if (existing) existing.remove();
-      const banner = document.createElement('div');
-      banner.id = 'actual-cost-banner';
-      const cacheNote = ub.cache_supported
-        ? `<span class="text-emerald-600 font-semibold">캐시 실측 적용</span>`
-        : `<span class="text-amber-600" title="${(ub.cache_error||'').replace(/"/g,"'")}">캐시 미적용 — ${ub.cache_error || '원인 불명'}</span>`;
-      banner.className = 'mt-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20 text-xs flex items-center gap-4 flex-wrap';
-      banner.innerHTML = `
-        <span class="font-semibold text-foreground">실측 세션 비용 (Gemini 2.5 Flash)</span>
-        <span class="text-muted-foreground">A: <strong>$${ac.a_per_session}</strong></span>
-        <span class="text-muted-foreground">B: <strong class="text-primary">$${ac.b_per_session}</strong></span>
-        <span class="${ac.saved_per_session > 0 ? 'text-emerald-600' : 'text-red-500'} font-semibold">
-          절감 ${ac.saved_pct}% ($${ac.saved_per_session})
-        </span>
-        <span class="ml-auto">${cacheNote}</span>
-      `;
-      document.getElementById('r-usage').parentElement.after(banner);
-    }
-
-    // 실측 토큰 기준으로 테이블 재계산
-    const MONTHLY = {{ monthly_sessions }};
-    const MODEL_PRICES = {
-      "Gemini 2.5 Flash":  { input: 0.05,  cache_write: 0.05,   cache_read: 0.0125, output: 0.60,  tier: "저가" },
-      "Claude Haiku 4.5":  { input: 0.80,  cache_write: 1.00,   cache_read: 0.08,   output: 4.00,  tier: "저가" },
-      "GPT-4o mini":       { input: 0.15,  cache_write: 0.15,   cache_read: 0.075,  output: 0.60,  tier: "저가" },
-      "Claude Sonnet 4.5": { input: 3.00,  cache_write: 3.75,   cache_read: 0.30,   output: 15.00, tier: "중가" },
-      "GPT-4o":            { input: 2.50,  cache_write: 2.50,   cache_read: 1.25,   output: 10.00, tier: "고가" },
-    };
-    const tokA_in  = ua.input_tokens  || 0;
-    const tokA_out = ua.output_tokens || 0;
-    const tokB_cached = ub.cached_tokens || 0;
-    const tokB_fresh  = ub.fresh_tokens  || ub.input_tokens || 0;
-    const tokB_out    = ub.output_tokens || 0;
-    const cacheOk     = ub.cache_supported === true;
-    const isActual    = tokA_in > 0;
-
-    document.getElementById('table-basis-label').classList.toggle('hidden', isActual);
-
-    const tbody = document.getElementById('pricing-tbody');
-    tbody.innerHTML = '';
-    const tierColor = { '저가': 'bg-green-100 text-green-700', '중가': 'bg-yellow-100 text-yellow-700', '고가': 'bg-red-100 text-red-700' };
-
-    Object.entries(MODEL_PRICES).forEach(([model, p]) => {
-      const ca = (tokA_in * p.input + tokA_out * p.output) / 1_000_000 * MONTHLY;
-      let cb;
-      if (cacheOk) {
-        cb = (
-          tokB_fresh  * p.input        / 1_000_000 * MONTHLY +
-          tokB_cached * p.cache_read   / 1_000_000 * MONTHLY +
-          tokB_out    * p.output       / 1_000_000 * MONTHLY +
-          tokB_cached * p.cache_write  / 1_000_000 * 1
-        );
+    if (!IS_TESTER) {
+      const ua = d.usage_a, ub = d.usage_b, ac = d.actual_cost || {};
+      let bDetail = '';
+      if (ub.cache_supported) {
+        bDetail = `캐시 ${ub.cached_tokens}tok + 신규 ${ub.fresh_tokens}tok`;
       } else {
-        cb = ((tokB_fresh + tokB_cached) * p.input + tokB_out * p.output) / 1_000_000 * MONTHLY;
+        bDetail = '캐시 미적용';
       }
-      const saved = ca - cb;
-      const pct   = ca ? (saved / ca * 100) : 0;
-      const savedColor = saved > 0 ? 'text-primary' : 'text-red-500';
-      const cacheTag = !cacheOk
-        ? `<span class="ml-1 text-[9px] text-amber-600 font-semibold">(캐시 미적용)</span>` : '';
-      tbody.insertAdjacentHTML('beforeend', `
-        <tr class="border-b border-border last:border-0 hover:bg-muted/40">
-          <td class="px-4 py-2 font-medium text-foreground">${model}${cacheTag}</td>
-          <td class="px-4 py-2"><span class="px-1.5 py-0.5 rounded-full text-xs ${tierColor[p.tier]??''}">${p.tier}</span></td>
-          <td class="px-4 py-2 text-right text-muted-foreground">$${ca.toFixed(4)}</td>
-          <td class="px-4 py-2 text-right font-medium text-secondary">$${cb.toFixed(4)}</td>
-          <td class="px-4 py-2 text-right ${savedColor}">$${saved.toFixed(4)}</td>
-          <td class="px-4 py-2 text-right font-semibold ${savedColor}">${pct.toFixed(1)}%</td>
-        </tr>`);
-    });
-    document.getElementById('gpt-cache-note').classList.add('hidden');
+      document.getElementById('r-usage').textContent =
+        `실측 — A: ${ua.input_tokens ?? '-'}in / ${ua.output_tokens ?? '-'}out  |  B: ${ub.input_tokens ?? '-'}in (${bDetail}) / ${ub.output_tokens ?? '-'}out`;
+
+      // 실측 비용 배너
+      if (ac.a_per_session !== undefined) {
+        const existing = document.getElementById('actual-cost-banner');
+        if (existing) existing.remove();
+        const banner = document.createElement('div');
+        banner.id = 'actual-cost-banner';
+        const cacheNote = ub.cache_supported
+          ? `<span class="text-emerald-600 font-semibold">캐시 실측 적용</span>`
+          : `<span class="text-amber-600" title="${(ub.cache_error||'').replace(/"/g,"'")}">캐시 미적용 — ${ub.cache_error || '원인 불명'}</span>`;
+        banner.className = 'mt-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20 text-xs flex items-center gap-4 flex-wrap';
+        banner.innerHTML = `
+          <span class="font-semibold text-foreground">실측 세션 비용 (Gemini 2.5 Flash)</span>
+          <span class="text-muted-foreground">A: <strong>$${ac.a_per_session}</strong></span>
+          <span class="text-muted-foreground">B: <strong class="text-primary">$${ac.b_per_session}</strong></span>
+          <span class="${ac.saved_per_session > 0 ? 'text-emerald-600' : 'text-red-500'} font-semibold">
+            절감 ${ac.saved_pct}% ($${ac.saved_per_session})
+          </span>
+          <span class="ml-auto">${cacheNote}</span>
+        `;
+        document.getElementById('r-usage').parentElement.after(banner);
+      }
+
+      // 실측 토큰 기준으로 테이블 재계산
+      const MONTHLY = {{ monthly_sessions }};
+      const MODEL_PRICES = {
+        "Gemini 2.5 Flash":  { input: 0.05,  cache_write: 0.05,   cache_read: 0.0125, output: 0.60,  tier: "저가" },
+        "Claude Haiku 4.5":  { input: 0.80,  cache_write: 1.00,   cache_read: 0.08,   output: 4.00,  tier: "저가" },
+        "GPT-4o mini":       { input: 0.15,  cache_write: 0.15,   cache_read: 0.075,  output: 0.60,  tier: "저가" },
+        "Claude Sonnet 4.5": { input: 3.00,  cache_write: 3.75,   cache_read: 0.30,   output: 15.00, tier: "중가" },
+        "GPT-4o":            { input: 2.50,  cache_write: 2.50,   cache_read: 1.25,   output: 10.00, tier: "고가" },
+      };
+      const tokA_in  = ua.input_tokens  || 0;
+      const tokA_out = ua.output_tokens || 0;
+      const tokB_cached = ub.cached_tokens || 0;
+      const tokB_fresh  = ub.fresh_tokens  || ub.input_tokens || 0;
+      const tokB_out    = ub.output_tokens || 0;
+      const cacheOk     = ub.cache_supported === true;
+      const isActual    = tokA_in > 0;
+
+      document.getElementById('table-basis-label').classList.toggle('hidden', isActual);
+
+      const tbody = document.getElementById('pricing-tbody');
+      tbody.innerHTML = '';
+      const tierColor = { '저가': 'bg-green-100 text-green-700', '중가': 'bg-yellow-100 text-yellow-700', '고가': 'bg-red-100 text-red-700' };
+
+      Object.entries(MODEL_PRICES).forEach(([model, p]) => {
+        const ca = (tokA_in * p.input + tokA_out * p.output) / 1_000_000 * MONTHLY;
+        let cb;
+        if (cacheOk) {
+          cb = (
+            tokB_fresh  * p.input        / 1_000_000 * MONTHLY +
+            tokB_cached * p.cache_read   / 1_000_000 * MONTHLY +
+            tokB_out    * p.output       / 1_000_000 * MONTHLY +
+            tokB_cached * p.cache_write  / 1_000_000 * 1
+          );
+        } else {
+          cb = ((tokB_fresh + tokB_cached) * p.input + tokB_out * p.output) / 1_000_000 * MONTHLY;
+        }
+        const saved = ca - cb;
+        const pct   = ca ? (saved / ca * 100) : 0;
+        const savedColor = saved > 0 ? 'text-primary' : 'text-red-500';
+        const cacheTag = !cacheOk
+          ? `<span class="ml-1 text-[9px] text-amber-600 font-semibold">(캐시 미적용)</span>` : '';
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="border-b border-border last:border-0 hover:bg-muted/40">
+            <td class="px-4 py-2 font-medium text-foreground">${model}${cacheTag}</td>
+            <td class="px-4 py-2"><span class="px-1.5 py-0.5 rounded-full text-xs ${tierColor[p.tier]??''}">${p.tier}</span></td>
+            <td class="px-4 py-2 text-right text-muted-foreground">$${ca.toFixed(4)}</td>
+            <td class="px-4 py-2 text-right font-medium text-secondary">$${cb.toFixed(4)}</td>
+            <td class="px-4 py-2 text-right ${savedColor}">$${saved.toFixed(4)}</td>
+            <td class="px-4 py-2 text-right font-semibold ${savedColor}">${pct.toFixed(1)}%</td>
+          </tr>`);
+      });
+      document.getElementById('gpt-cache-note').classList.add('hidden');
+    }
   }
 </script>
 {% endblock %}

@@ -974,6 +974,7 @@ def brain_dump(request, block_id):
     return render(request, _demo_flow_template(request, 'brain_dump'), {
         'root_block': root_block,
         'tree': root_block.braintree,
+        'brain_dump_text': _get_brain_dump_text(root_block.braintree),
     })
 
 
@@ -1013,7 +1014,7 @@ def brain_dump_setup(request, block_id):
             },
         )
 
-        # SOAP 도메인: track 무관하게 vertical_profile 먼저 거침
+        # SOAP 도메인: vertical_profile 미완성이면 먼저 거침, 완성이면 바로 분기
         if selected_domain in _SOAP_DOMAINS:
             profile_block, _ = BrainBlockNode.objects.get_or_create(
                 braintree=root_block.braintree,
@@ -1025,6 +1026,19 @@ def brain_dump_setup(request, block_id):
                     'order': 0,
                 },
             )
+            has_profile = Answer.objects.filter(
+                user=request.user,
+                brainnode__block=profile_block,
+            ).exists()
+            if has_profile:
+                if track == 'autofill':
+                    return redirect('questionnaire:brain_dump_autofill', domain_block_id=domain_block.id)
+                return redirect(
+                    'questionnaire:show_question_step',
+                    category=selected_domain,
+                    order=1,
+                    block_id=domain_block.id,
+                )
             request.session[f'preselected_domain_{profile_block.id}'] = {
                 'domain': selected_domain,
                 'domain_block_id': domain_block.id,
@@ -1076,6 +1090,7 @@ def brain_dump_autofill(request, domain_block_id):
 
     if request.method == 'POST':
         domain_name = (domain_block.description or '').strip() or domain_block.title.replace(' 시작', '').strip()
+        logger.info(f"[autofill] domain_name={domain_name!r} | description={domain_block.description!r} | title={domain_block.title!r} | _SOAP_DOMAINS={_SOAP_DOMAINS}")
         common_cat = Category.objects.filter(name='common').first()
         domain_cat = Category.objects.filter(name=domain_name).first()
 

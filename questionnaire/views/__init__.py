@@ -24,4 +24,4 @@ from .views import (
 )
 from .views_demo import demo_entry, landing
 from .views import cra_process, regenerate_prompt
-from .views_perf_test import perf_test, perf_test_run, perf_test_detail, perf_test_vote
+from .views_perf_test import perf_test, perf_test_run, perf_test_detail, perf_test_vote, perf_test_compare

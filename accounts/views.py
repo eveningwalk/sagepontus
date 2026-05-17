@@ -41,13 +41,14 @@ def signup(request):
 def login(request):
     error = False
     if request.method == 'POST':
-        email = request.POST.get('email', '').strip().lower()
+        email_or_username = request.POST.get('email', '').strip()
         password = request.POST.get('password')
+        user = None
         try:
-            user_obj = User.objects.get(email=email)
+            user_obj = User.objects.get(email=email_or_username.lower())
             user = authenticate(request, username=user_obj.username, password=password)
         except User.DoesNotExist:
-            user = None
+            user = authenticate(request, username=email_or_username, password=password)
         if user:
             auth_login(request, user)
             return redirect('questionnaire:home')
