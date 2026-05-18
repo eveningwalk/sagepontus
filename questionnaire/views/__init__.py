@@ -1,5 +1,5 @@
 
-from .views_tree import create_tree_and_start, edit_tree, delete_tree, resume_tree, review_tree, tree_view, brainblock_tree_json, brainnode_tree_json, my_trees
+from .views_tree import create_tree_and_start, edit_tree, delete_tree, resume_tree, review_tree, tree_view, brainblock_tree_json, brainnode_tree_json, my_trees, add_block_node, add_brain_node, delete_block_node, delete_brain_node, update_block_node, update_brain_node
 #from .views_tree import tree_detail
 from .views_tree import check_braintree_title
 

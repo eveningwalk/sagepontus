@@ -59,6 +59,12 @@ urlpatterns = [
     path('api/save-custom-node/', views.save_custom_node, name='save_custom_node'),
     path('api/brainblock_tree/<int:braintree_id>/', views.brainblock_tree_json, name='brainblock_tree_json'),
     path('api/brainnode_tree/<int:block_id>/', views.brainnode_tree_json, name='brainnode_tree_json'),
+    path('api/braintree/<int:braintree_id>/add-block/', views.add_block_node,   name='add_block_node'),
+    path('api/brainblock/<int:block_id>/add-nodes/',   views.add_brain_node,   name='add_brain_node'),
+    path('api/brainblock/<int:block_id>/update/',      views.update_block_node, name='update_block_node'),
+    path('api/brainblock/<int:block_id>/delete/',      views.delete_block_node, name='delete_block_node'),
+    path('api/brainnode/<int:node_id>/update/',        views.update_brain_node, name='update_brain_node'),
+    path('api/brainnode/<int:node_id>/delete/',        views.delete_brain_node, name='delete_brain_node'),
     path('api/cra/process/', views.cra_process, name='cra_process'),
 
     path('perf-test/', views.perf_test, name='perf_test'),

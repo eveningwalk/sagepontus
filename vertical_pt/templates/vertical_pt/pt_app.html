@@ -1,0 +1,1424 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PT Red Flag — Sage Pontus</title>
+  <link rel="stylesheet" href="{% static 'css/app_shell.css' %}">
+  <style>
+    /* ── PT App 전용 추가 스타일 ── */
+    body { background: #f0f2f7; }
+
+    /* 사이드바 스크롤 fix */
+    .app-sidebar { overflow: hidden; height: 100%; }
+    .app-sidebar__nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+    .app-sidebar__nav::-webkit-scrollbar { width: 4px; }
+    .app-sidebar__nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 4px; }
+
+    /* ── 슬라이드 패널 ── */
+    .slide-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.35);
+      z-index: 200; opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .slide-overlay.open { opacity: 1; pointer-events: all; }
+
+    .slide-panel {
+      position: fixed; top: 0; right: 0; height: 100dvh; width: 75vw; max-width: 1100px; min-width: 360px;
+      background: #fff; z-index: 201; display: flex; flex-direction: column;
+      box-shadow: -8px 0 40px rgba(0,0,0,.18);
+      transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
+    }
+    .slide-panel.open { transform: translateX(0); }
+
+    .slide-panel-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+    }
+    .slide-panel-body {
+      flex: 1; min-height: 0; padding: 20px;
+      display: flex; flex-direction: column; gap: 16px; overflow-y: auto;
+    }
+    .slide-panel-body::-webkit-scrollbar { width: 5px; }
+    .slide-panel-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+    /* 2컬럼 + 드래그 핸들 */
+    .slide-cols {
+      display: flex; gap: 0;
+      flex: 1; min-height: 0;
+    }
+    .slide-col { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .slide-col-title {
+      font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; flex-shrink: 0;
+    }
+    .slide-col pre {
+      flex: 1; min-height: 0; overflow-y: auto; margin: 0;
+      font-size: 12px; line-height: 1.7; border-radius: 8px; padding: 14px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .slide-col pre::-webkit-scrollbar { width: 4px; }
+    .slide-col pre::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+    /* 드래그 핸들 */
+    .slide-divider {
+      width: 6px; flex-shrink: 0; cursor: col-resize;
+      background: transparent; position: relative; margin: 0 4px;
+    }
+    .slide-divider::after {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 2px; height: 100%; background: #e5e7eb; border-radius: 2px; transition: background .15s;
+    }
+    .slide-divider:hover::after,
+    .slide-divider.dragging::after { background: #6366f1; }
+
+    /* letter 포맷 */
+    .letter-sep  { color: #94a3b8; }
+    .letter-head { font-weight: 700; color: #1e293b; }
+    .letter-key  { font-weight: 700; color: #374151; }
+
+    @media (max-width: 700px) {
+      .slide-panel { width: 92vw; }
+      .slide-cols { flex-direction: column; }
+      .slide-divider { display: none; }
+    }
+
+    /* 사이드바 환자 아이템 */
+    .pt-patient-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      transition: background .15s; margin-bottom: 2px;
+    }
+    .pt-patient-item:hover { background: rgba(255,255,255,.1); }
+    .pt-patient-item.active { background: rgba(94,129,255,.3); }
+
+    .pt-alarm-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .pt-alarm-dot.RED    { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+    .pt-alarm-dot.YELLOW { background: #f59e0b; }
+    .pt-alarm-dot.NONE   { background: #22c55e; }
+
+    .pt-patient-info { flex: 1; min-width: 0; }
+    .pt-patient-name { font-size: 13px; font-weight: 600; color: #e2e8f0;
+                       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pt-patient-meta { font-size: 11px; color: #94a3b8; }
+
+    .pt-new-btn {
+      display: flex; align-items: center; gap: 6px;
+      margin: 0 12px 12px; padding: 8px 12px;
+      background: rgba(94,129,255,.2); border: 1px solid rgba(94,129,255,.4);
+      border-radius: 8px; color: #a5b4fc; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .pt-new-btn:hover { background: rgba(94,129,255,.35); color: #c7d2fe; }
+
+    /* ── 메인 패널 ── */
+    .pt-main { max-width: 1100px; margin: 0 auto; }
+
+    .pt-panels {
+      display: grid; gap: 20px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 900px) { .pt-panels { grid-template-columns: 1fr; } }
+
+    .pt-card {
+      background: #fff; border-radius: 12px;
+      border: 1px solid #e5e7eb; overflow: hidden;
+    }
+    .pt-card-header {
+      padding: 14px 18px; border-bottom: 1px solid #f1f5f9;
+      font-size: 13px; font-weight: 700; color: #374151;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pt-card-body { padding: 18px; }
+
+    /* 폼 요소 */
+    .pt-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .pt-row > * { flex: 1; }
+    .pt-label {
+      display: block; font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;
+    }
+    .pt-input {
+      width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 7px;
+      font-size: 13px; font-family: inherit; outline: none; transition: border-color .15s;
+      box-sizing: border-box;
+    }
+    .pt-input:focus { border-color: #6366f1; }
+    .pt-textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 7px;
+      font-size: 12px; font-family: monospace; line-height: 1.6; resize: vertical;
+      outline: none; transition: border-color .15s; box-sizing: border-box;
+    }
+    .pt-textarea:focus { border-color: #6366f1; }
+
+    .pt-analyze-btn {
+      width: 100%; padding: 11px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      background: linear-gradient(135deg,#dc2626,#b91c1c);
+      color: #fff; transition: opacity .15s, transform .1s;
+      margin-top: 12px;
+    }
+    .pt-analyze-btn:hover { opacity: .9; transform: translateY(-1px); }
+    .pt-analyze-btn:disabled { opacity: .6; cursor: wait; transform: none; }
+
+    /* ── 결과 패널 ── */
+    .pt-alarm-banner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 10px; margin-bottom: 14px; border: 2px solid;
+    }
+    .pt-alarm-banner.RED    { background: #fef2f2; border-color: #dc2626; }
+    .pt-alarm-banner.YELLOW { background: #fffbeb; border-color: #d97706; }
+    .pt-alarm-banner.NONE   { background: #f0fdf4; border-color: #16a34a; }
+
+    .pt-alarm-icon  { font-size: 32px; line-height: 1; }
+    .pt-alarm-level { font-size: 15px; font-weight: 900; }
+    .RED  .pt-alarm-level { color: #dc2626; }
+    .YELLOW .pt-alarm-level { color: #d97706; }
+    .NONE .pt-alarm-level { color: #16a34a; }
+    .pt-alarm-cond { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+    .pt-section-title {
+      font-size: 10px; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px;
+    }
+    .pt-hit-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+    .pt-hit-item {
+      padding: 6px 10px; border-radius: 6px; font-size: 12px;
+      display: flex; align-items: center; gap: 6px;
+      background: #f8fafc; border: 1px solid #e2e8f0;
+    }
+    .pt-hit-item.RED    { background: #fef2f2; border-color: #fca5a5; }
+    .pt-hit-item.YELLOW { background: #fffbeb; border-color: #fcd34d; }
+
+    .pt-score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .pt-score-label { font-size: 11px; color: #9ca3af; white-space: nowrap; }
+    .pt-score-bar   { flex: 1; height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
+    .pt-score-fill  { height: 100%; border-radius: 99px; transition: width .5s ease; }
+    .pt-score-val   { font-size: 12px; font-weight: 700; color: #374151; min-width: 36px; text-align: right; }
+
+    .pt-referral {
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 10px 12px; font-family: monospace; font-size: 11px; line-height: 1.6;
+      white-space: pre-wrap; max-height: 200px; overflow-y: auto; color: #1f2937;
+      margin-bottom: 8px;
+    }
+    .pt-copy-btn {
+      padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 6px;
+      background: #f9fafb; font-size: 12px; cursor: pointer;
+    }
+    .pt-copy-btn:hover { background: #f3f4f6; }
+
+    /* ── 환자 히스토리 패널 ── */
+    .pt-history-title {
+      font-size: 16px; font-weight: 800; color: #1a1a2e;
+    }
+
+    /* 히스토리 2단 레이아웃 */
+    .pt-history-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .pt-history-layout { grid-template-columns: 1fr; }
+    }
+
+    /* 좌: 세션 목록 */
+    .pt-session-list {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;
+    }
+    .pt-session-list-header {
+      padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+      font-size: 11px; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .pt-session-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-bottom: 1px solid #f8fafc;
+      cursor: pointer; transition: background .12s;
+    }
+    .pt-session-row:last-child { border-bottom: none; }
+    .pt-session-row:hover { background: #f8fafc; }
+    .pt-session-row.active { background: #eef2ff; }
+
+    .pt-session-row-info { flex: 1; min-width: 0; }
+    .pt-session-row-date { font-size: 13px; font-weight: 700; color: #374151; }
+    .pt-session-row-meta { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+
+    .pt-session-badge {
+      padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .badge-RED    { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+    .badge-YELLOW { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+    .badge-NONE   { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+    /* 우: 상세 패널 */
+    .pt-detail-panel { display: flex; flex-direction: column; gap: 16px; }
+
+    /* SOAP 카드 */
+    .pt-soap-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;
+    }
+    .pt-soap-card-header {
+      padding: 13px 18px; border-bottom: 1px solid #f1f5f9;
+      font-size: 13px; font-weight: 700; color: #374151;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pt-soap-body {
+      padding: 18px; font-family: monospace; font-size: 13px;
+      line-height: 1.75; color: #1f2937; white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Indicators 카드 */
+    .pt-indicators-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;
+    }
+
+    /* Referral Letter 카드 */
+    .pt-letter-card {
+      background: #fff; border: 2px solid #dc2626; border-radius: 12px; overflow: hidden;
+    }
+    .pt-letter-card.yellow { border-color: #d97706; }
+    .pt-letter-card-header {
+      padding: 14px 20px; border-bottom: 1px solid #fee2e2;
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fef2f2;
+    }
+    .pt-letter-card.yellow .pt-letter-card-header {
+      background: #fffbeb; border-bottom-color: #fef3c7;
+    }
+    .pt-letter-card-title {
+      font-size: 14px; font-weight: 800; color: #dc2626;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pt-letter-card.yellow .pt-letter-card-title { color: #d97706; }
+    .pt-letter-actions { display: flex; gap: 8px; }
+    .pt-letter-btn {
+      padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid #d1d5db; background: #fff; transition: background .12s;
+    }
+    .pt-letter-btn:hover { background: #f3f4f6; }
+    .pt-letter-btn-primary {
+      background: #dc2626; color: #fff; border-color: #dc2626;
+    }
+    .pt-letter-btn-primary:hover { background: #b91c1c; }
+    .pt-letter-card.yellow .pt-letter-btn-primary { background: #d97706; border-color: #d97706; }
+    .pt-letter-card.yellow .pt-letter-btn-primary:hover { background: #b45309; }
+    .pt-letter-body {
+      padding: 28px 32px; font-family: 'Courier New', Courier, monospace;
+      font-size: 13.5px; line-height: 1.9; color: #111827;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* 빈 상세 */
+    .pt-detail-empty {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 64px 24px; text-align: center; color: #9ca3af;
+    }
+
+    /* ── 로그인 카드 ── */
+    .pt-login-wrap { max-width: 420px; margin: 48px auto; }
+    .pt-login-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px; }
+    .pt-login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .pt-login-logo-icon { font-size: 32px; }
+    .pt-login-logo-title { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+    .pt-login-logo-sub   { font-size: 12px; color: #6b7280; }
+    .pt-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+                border-radius: 6px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; }
+
+    /* ── 빈 상태 ── */
+    .pt-empty { text-align: center; padding: 48px 24px; color: #9ca3af; }
+    .pt-empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .pt-empty-text { font-size: 14px; }
+
+    /* ── 로딩 스피너 ── */
+    .pt-spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+      border-radius: 50%; animation: spin .6s linear infinite; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 사이드바 검색 */
+    .pt-search-wrap {
+      position: relative; margin: 0 10px 8px;
+    }
+    .pt-search-icon {
+      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+      color: #64748b; pointer-events: none; display: flex; align-items: center;
+    }
+    .pt-search {
+      padding: 7px 10px 7px 30px;
+      border: 1px solid rgba(255,255,255,.1); border-radius: 8px;
+      background: rgba(0,0,0,.2); color: #e2e8f0;
+      font-size: 12px; outline: none; width: 100%; box-sizing: border-box;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .pt-search::placeholder { color: #4b5563; }
+    .pt-search:focus {
+      border-color: rgba(99,102,241,.6);
+      box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+      background: rgba(0,0,0,.3);
+    }
+    .pt-patient-alarm-badge {
+      font-size: 10px; font-weight: 700; padding: 1px 5px;
+      border-radius: 4px; flex-shrink: 0; margin-left: auto;
+    }
+    .pt-patient-alarm-badge.RED    { background:#fee2e2; color:#dc2626; }
+    .pt-patient-alarm-badge.YELLOW { background:#fef3c7; color:#b45309; }
+    .pt-patient-alarm-badge.NONE   { display:none; }
+  </style>
+</head>
+<body>
+
+{% if not user.is_authenticated %}
+<!-- ── 미로그인: 로그인 카드 ── -->
+<div class="pt-login-wrap">
+  <div class="pt-login-card">
+    <div class="pt-login-logo">
+      <span class="pt-login-logo-icon">🛡️</span>
+      <div>
+        <div class="pt-login-logo-title">Sage Pontus</div>
+        <div class="pt-login-logo-sub">PT Red Flag Alert</div>
+      </div>
+    </div>
+    {% if login_error %}<div class="pt-error">{{ login_error }}</div>{% endif %}
+    <form method="post" action="{% url 'accounts:login' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="/pt/" />
+      <div style="margin-bottom:12px">
+        <label class="pt-label">Username</label>
+        <input class="pt-input" type="text" name="username" autocomplete="username" placeholder="username" />
+      </div>
+      <div style="margin-bottom:16px">
+        <label class="pt-label">Password</label>
+        <input class="pt-input" type="password" name="password" autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <button type="submit" style="width:100%;padding:10px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Sign In</button>
+    </form>
+  </div>
+</div>
+
+{% else %}
+<!-- ── 로그인: 사이드바 앱 ── -->
+<div class="app-shell">
+
+  <!-- 사이드바 -->
+  <aside class="app-sidebar">
+
+    <!-- 브랜드 -->
+    <div class="app-sidebar__brand">
+      🛡️ PT Red Flag
+    </div>
+
+    <!-- 계정 정보 -->
+    <div style="padding:10px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);
+                    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">
+          {{ user.first_name|first|upper|default:user.username|first|upper }}
+        </div>
+        <div style="min-width:0;flex:1;">
+          <div style="font-size:13px;font-weight:600;color:#e2e8f0;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}
+          </div>
+          <div style="font-size:11px;color:#64748b;">
+            {% if user.pt_profile %}{{ user.pt_profile.get_role_display }}{% if user.pt_profile.clinic_name %} · {{ user.pt_profile.clinic_name }}{% endif %}{% else %}{{ user.email }}{% endif %}
+          </div>
+        </div>
+        <a href="{% url 'vertical_pt:pt_logout' %}"
+           title="Sign out"
+           style="flex-shrink:0;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
+                  justify-content:center;color:#64748b;text-decoration:none;transition:background .15s,color .15s;"
+           onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='#f87171'"
+           onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <button class="pt-new-btn" onclick="showNewSession()">
+      <span style="font-size:16px;line-height:1">＋</span> New Session
+    </button>
+
+    <!-- 메뉴 -->
+    <div style="padding:0 10px;margin-bottom:4px;">
+      <button id="menu-alarms" onclick="showAlarms()"
+        style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;
+               border-radius:8px;border:none;background:transparent;color:#94a3b8;
+               font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:background .15s,color .15s;">
+        <span>🔔</span>
+        <span>Alarm 현황</span>
+        <span id="alarm-badge" style="margin-left:auto;background:#dc2626;color:#fff;
+              font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;display:none;">0</span>
+      </button>
+    </div>
+
+    <div class="pt-search-wrap">
+      <span class="pt-search-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
+      <input class="pt-search" type="text" placeholder="환자 검색..." id="patient-search"
+             oninput="filterPatients(this.value)" />
+    </div>
+
+    <div class="app-sidebar__section-label" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Patients</span>
+      <span id="patient-count" style="font-size:10px;font-weight:700;padding:1px 6px;
+            border-radius:99px;background:rgba(255,255,255,.1);color:#94a3b8;"></span>
+    </div>
+    <nav class="app-sidebar__nav" id="patient-list" style="padding:0 6px;gap:0;">
+      <div style="padding:12px;font-size:12px;color:#64748b;">불러오는 중...</div>
+    </nav>
+
+    <div class="app-sidebar__footer">
+      <a href="{% url 'vertical_pt:pt_logout' %}" class="app-sidebar__footer-link">Sign out</a>
+    </div>
+  </aside>
+
+  <!-- 메인 영역 -->
+  <main class="app-main">
+    <div class="pt-main">
+
+      <!-- 뷰 1: 새 세션 (기본) -->
+      <div id="view-new">
+        <div class="pt-panels">
+
+          <!-- 입력 패널 -->
+          <div class="pt-card">
+            <div class="pt-card-header">🩺 SOAP Note 입력</div>
+            <div class="pt-card-body">
+              <div class="pt-row">
+                <div>
+                  <label class="pt-label">Patient Name</label>
+                  <input class="pt-input" id="inp-name" placeholder="e.g. 홍길동" />
+                </div>
+                <div>
+                  <label class="pt-label">Patient ID</label>
+                  <div style="display:flex;gap:6px;">
+                    <input class="pt-input" id="inp-id" placeholder="e.g. PT-260518-001"
+                           style="flex:1;" oninput="this.value=this.value.toUpperCase()" />
+                    <button type="button" onclick="generatePatientId()"
+                            style="padding:0 10px;border:1px solid #d1d5db;border-radius:7px;
+                                   background:#f8fafc;font-size:11px;font-weight:600;
+                                   color:#374151;cursor:pointer;white-space:nowrap;flex-shrink:0;"
+                            title="날짜 기반 ID 자동 생성">
+                      ⚡ Generate
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-bottom:12px">
+                <label class="pt-label">Session Date</label>
+                <input class="pt-input" id="inp-date" type="date" />
+              </div>
+              <div>
+                <label class="pt-label">SOAP Note</label>
+                <textarea class="pt-textarea" id="inp-soap" rows="16"
+                  placeholder="S: 주관적 호소...
+O: ROM, MMT, 특수검사...
+A: 임상 판단...
+P: 치료 계획..."></textarea>
+              </div>
+              <button class="pt-analyze-btn" id="analyze-btn" onclick="analyzeAndSave()">
+                🚨 Analyze Red Flags &amp; Save
+              </button>
+            </div>
+          </div>
+
+          <!-- 결과 패널 -->
+          <div class="pt-card" id="result-panel">
+            <div class="pt-card-header">📊 분석 결과</div>
+            <div class="pt-card-body">
+              <div class="pt-empty" id="result-empty">
+                <div class="pt-empty-icon">🔍</div>
+                <div class="pt-empty-text">SOAP note를 입력하고<br>분석을 실행하세요</div>
+              </div>
+              <div id="result-content" style="display:none"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 뷰 2: 환자 히스토리 -->
+      <div id="view-history" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;flex-shrink:0;">← Back</button>
+          <div class="pt-history-title" id="history-title">Patient History</div>
+          <button onclick="addSessionForPatient()" style="margin-left:auto;padding:7px 16px;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">+ New Session</button>
+        </div>
+        <div class="pt-history-layout">
+          <!-- 좌: 세션 목록 -->
+          <div class="pt-session-list" id="session-list-panel">
+            <div class="pt-session-list-header">Sessions</div>
+            <div id="session-list-items"></div>
+          </div>
+          <!-- 우: 상세 패널 -->
+          <div class="pt-detail-panel" id="detail-panel">
+            <div class="pt-detail-empty">
+              <div style="font-size:36px;margin-bottom:12px;">📋</div>
+              <div style="font-size:14px;">세션을 선택하세요</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 뷰 3: Alarm 현황 -->
+      <div id="view-alarms" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;">← Back</button>
+          <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0;">🔔 Alarm 현황</h2>
+        </div>
+
+        <!-- 요약 카드 -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;" id="alarm-summary-cards"></div>
+
+        <!-- 필터 탭 -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button onclick="filterAlarmView('ALL')" id="tab-ALL"
+            style="padding:6px 16px;border-radius:7px;border:1px solid #6366f1;background:#6366f1;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">전체</button>
+          <button onclick="filterAlarmView('RED')" id="tab-RED"
+            style="padding:6px 16px;border-radius:7px;border:1px solid #d1d5db;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">🚨 RED</button>
+          <button onclick="filterAlarmView('YELLOW')" id="tab-YELLOW"
+            style="padding:6px 16px;border-radius:7px;border:1px solid #d1d5db;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">⚠️ YELLOW</button>
+        </div>
+
+        <!-- 알람 목록 -->
+        <div id="alarm-list"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ── 슬라이드 패널 (알람 세션 상세) ── -->
+<div class="slide-overlay" id="slide-overlay" onclick="closeSlidePanel()"></div>
+<div class="slide-panel" id="slide-panel">
+  <div class="slide-panel-header">
+    <button onclick="closeSlidePanel()"
+      style="width:32px;height:32px;border:none;background:#f1f5f9;border-radius:8px;
+             font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+    <div id="slide-panel-title" style="font-size:15px;font-weight:700;color:#1e293b;flex:1;min-width:0;
+         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+    <div id="slide-panel-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;flex-shrink:0;"></div>
+  </div>
+  <div class="slide-panel-body" id="slide-panel-body"></div>
+</div>
+{% endif %}
+
+<script>
+const CSRF = '{{ csrf_token }}';
+let allPatients = [];
+let activePatientId = null;
+let currentPatientId = null;
+
+// ── 초기화 ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  {% if user.is_authenticated %}
+  document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+  loadPatients();
+  loadAlarmBadge();
+  {% endif %}
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSlidePanel();
+});
+
+// ── 환자 목록 로드 ───────────────────────────────────
+async function loadAlarmBadge() {
+  try {
+    const r = await fetch('/pt/api/alarms/');
+    const d = await r.json();
+    const redCount = d.counts.red || 0;
+    const badge = document.getElementById('alarm-badge');
+    if (redCount > 0) {
+      badge.textContent = redCount;
+      badge.style.display = 'inline-block';
+    }
+  } catch(e) {}
+}
+
+async function loadPatients() {
+  try {
+    const r = await fetch('/pt/api/patients/', {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+    const d = await r.json();
+    allPatients = d.patients || [];
+    renderPatientList(allPatients);
+  } catch(e) {
+    document.getElementById('patient-list').innerHTML =
+      '<div style="padding:12px;font-size:12px;color:#94a3b8;">불러오기 실패</div>';
+  }
+}
+
+function renderPatientList(patients) {
+  const el = document.getElementById('patient-list');
+  const countEl = document.getElementById('patient-count');
+  if (countEl) countEl.textContent = patients.length || '';
+
+  if (!patients.length) {
+    el.innerHTML = '<div style="padding:12px;font-size:12px;color:#64748b;">환자 없음</div>';
+    return;
+  }
+  el.innerHTML = patients.map(p => `
+    <div class="pt-patient-item${p.patient_id===activePatientId?' active':''}"
+         onclick="selectPatient('${esc(p.patient_id)}','${esc(p.patient_name||p.patient_id)}')">
+      <span class="pt-alarm-dot ${p.latest_alarm}"></span>
+      <div class="pt-patient-info">
+        <div class="pt-patient-name">${esc(p.patient_name||p.patient_id)}</div>
+        <div class="pt-patient-meta">
+          <span style="color:#6366f1;font-weight:600;">${esc(p.patient_id)}</span>
+          · ${p.session_count}세션 · ${p.last_session}
+        </div>
+      </div>
+      <span class="pt-patient-alarm-badge ${p.latest_alarm}">${p.latest_alarm === 'NONE' ? '' : p.latest_alarm}</span>
+    </div>
+  `).join('');
+}
+
+function filterPatients(q) {
+  const filtered = q
+    ? allPatients.filter(p => (p.patient_name+p.patient_id).toLowerCase().includes(q.toLowerCase()))
+    : allPatients;
+  renderPatientList(filtered);
+}
+
+// ── 환자 선택 → 히스토리 ─────────────────────────────
+async function selectPatient(pid, pname) {
+  activePatientId = pid;
+  currentPatientId = pid;
+  renderPatientList(allPatients);
+  document.getElementById('view-new').style.display = 'none';
+  document.getElementById('view-history').style.display = 'block';
+  document.getElementById('history-title').textContent = pname || pid;
+  document.getElementById('session-list-items').innerHTML =
+    '<div style="padding:24px;text-align:center;font-size:13px;color:#9ca3af;">불러오는 중...</div>';
+  document.getElementById('detail-panel').innerHTML =
+    '<div class="pt-detail-empty"><div style="font-size:36px;margin-bottom:12px;">⏳</div><div style="font-size:14px;">불러오는 중...</div></div>';
+
+  try {
+    const r = await fetch(`/pt/api/patients/${encodeURIComponent(pid)}/sessions/`);
+    const d = await r.json();
+    renderHistory(d);
+  } catch(e) {
+    document.getElementById('session-list-items').innerHTML =
+      '<div style="color:#dc2626;padding:16px;font-size:13px;">불러오기 실패</div>';
+  }
+}
+
+let _sessions = [];
+
+function renderHistory(d) {
+  _sessions = d.sessions || [];
+  const listEl = document.getElementById('session-list-items');
+
+  if (!_sessions.length) {
+    listEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:13px;color:#9ca3af;">세션 없음</div>';
+    document.getElementById('detail-panel').innerHTML =
+      '<div class="pt-detail-empty"><div style="font-size:36px;margin-bottom:12px;">📋</div><div style="font-size:14px;">세션이 없습니다</div></div>';
+    return;
+  }
+
+  listEl.innerHTML = _sessions.map((s, i) => `
+    <div class="pt-session-row${i===0?' active':''}" id="srow-${s.id}" onclick="showSessionDetail(${i})">
+      <div class="pt-session-row-info">
+        <div class="pt-session-row-date">${s.session_date}</div>
+        <div class="pt-session-row-meta">Risk ${s.critical_score}%${s.triggered_condition ? ' · '+s.triggered_condition : ''}</div>
+      </div>
+      <span class="pt-session-badge badge-${s.alarm_level}">${alarmLabel(s.alarm_level)}</span>
+    </div>
+  `).join('');
+
+  // 첫 번째 세션 자동 선택
+  showSessionDetail(0);
+}
+
+function showSessionDetail(idx) {
+  const s = _sessions[idx];
+  if (!s) return;
+
+  // 좌측 리스트 active 표시
+  _sessions.forEach((_, i) => {
+    const row = document.getElementById(`srow-${_sessions[i].id}`);
+    if (row) row.classList.toggle('active', i === idx);
+  });
+
+  const panel = document.getElementById('detail-panel');
+  const alarmColors = {RED:'#dc2626', YELLOW:'#d97706', NONE:'#16a34a'};
+  const alarmIcons  = {RED:'🚨', YELLOW:'⚠️', NONE:'✅'};
+  let html = '';
+
+  // ── SOAP 카드 ──
+  html += `
+    <div class="pt-soap-card">
+      <div class="pt-soap-card-header">
+        <span>${alarmIcons[s.alarm_level]}</span>
+        <span>${s.session_date}</span>
+        <span class="pt-session-badge badge-${s.alarm_level}" style="margin-left:4px;">${alarmLabel(s.alarm_level)}</span>
+        ${s.triggered_condition ? `<span style="font-size:12px;color:#6b7280;margin-left:4px;">${esc(s.triggered_condition)}</span>` : ''}
+        <span style="margin-left:auto;font-size:12px;color:#9ca3af;">Risk ${s.critical_score}%</span>
+        <button onclick="deleteSession(${s.id}, '${currentPatientId}')"
+          style="margin-left:10px;padding:3px 8px;border:1px solid #fca5a5;border-radius:5px;
+                 background:transparent;color:#ef4444;font-size:11px;cursor:pointer;
+                 transition:background .15s;"
+          onmouseover="this.style.background='#fef2f2'"
+          onmouseout="this.style.background='transparent'"
+          title="이 세션 삭제">🗑 삭제</button>
+      </div>
+      <div class="pt-soap-body">${esc(s.soap_text)}</div>
+    </div>`;
+
+  // ── Detected Indicators 카드 (알람 있을 때만) ──
+  if (s.alarm_level !== 'NONE' && s.matched_indicators && s.matched_indicators.length) {
+    html += `
+      <div class="pt-indicators-card">
+        <div class="pt-card-header" style="padding:13px 18px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:700;color:#374151;">
+          ⚑ Detected Red Flag Indicators
+        </div>
+        <div style="padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px;">
+          ${s.matched_indicators.map(m => `
+            <span style="padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;
+              background:${s.alarm_level==='RED'?'#fef2f2':'#fffbeb'};
+              color:${s.alarm_level==='RED'?'#dc2626':'#d97706'};
+              border:1px solid ${s.alarm_level==='RED'?'#fca5a5':'#fcd34d'};">⚑ ${esc(m)}</span>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  // ── Referral Letter 카드 ──
+  if (s.referral_letter) {
+    const isYellow = s.alarm_level === 'YELLOW';
+    html += `
+      <div class="pt-letter-card${isYellow?' yellow':''}">
+        <div class="pt-letter-card-header">
+          <div class="pt-letter-card-title">
+            📄 Physician Referral Letter
+          </div>
+          <div class="pt-letter-actions">
+            <button class="pt-letter-btn" onclick="printLetter(${idx})">🖨️ Print</button>
+            <button class="pt-letter-btn pt-letter-btn-primary" id="copy-btn-${idx}"
+                    onclick="copyLetter(${idx}, this)">📋 Copy</button>
+          </div>
+        </div>
+        <div class="pt-letter-body" id="letter-body-${idx}">${esc(s.referral_letter)}</div>
+      </div>`;
+  }
+
+  panel.innerHTML = html;
+}
+
+// ── 슬라이드 패널 ────────────────────────────────────────────
+function openSlidePanel(s) {
+  const alarmColor = {RED:'#dc2626', YELLOW:'#d97706', NONE:'#16a34a'};
+  const alarmBg    = {RED:'#fef2f2', YELLOW:'#fffbeb', NONE:'#f0fdf4'};
+  const alarmIcon  = {RED:'🚨', YELLOW:'⚠️', NONE:'✅'};
+
+  // 헤더
+  document.getElementById('slide-panel-title').textContent =
+    `${s.patient_name || s.patient_id}  ·  ${s.session_date}`;
+  const badge = document.getElementById('slide-panel-badge');
+  badge.textContent = `${alarmIcon[s.alarm_level]} ${s.alarm_level}`;
+  badge.style.cssText += `;background:${alarmBg[s.alarm_level]};color:${alarmColor[s.alarm_level]};border:1px solid ${alarmColor[s.alarm_level]}40;`;
+
+  let html = '';
+
+  // 스코어 바
+  html += `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;
+                background:${alarmBg[s.alarm_level]};border-radius:10px;border:1px solid ${alarmColor[s.alarm_level]}30;">
+      <div style="flex:1;">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">Risk Score</div>
+        <div style="height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
+          <div style="width:${s.critical_score}%;height:100%;background:${alarmColor[s.alarm_level]};border-radius:4px;"></div>
+        </div>
+      </div>
+      <div style="font-size:22px;font-weight:800;color:${alarmColor[s.alarm_level]};min-width:48px;text-align:right;">${s.critical_score}%</div>
+    </div>`;
+
+  // 감지 지표
+  if (s.matched_indicators && s.matched_indicators.length) {
+    html += `
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;
+                    letter-spacing:.5px;margin-bottom:8px;">⚑ Detected Indicators</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${s.matched_indicators.map(m => `
+            <span style="font-size:12px;padding:4px 10px;border-radius:99px;font-weight:600;
+              background:${alarmBg[s.alarm_level]};color:${alarmColor[s.alarm_level]};
+              border:1px solid ${alarmColor[s.alarm_level]}50;">${esc(m)}</span>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  // SOAP + Letter 2컬럼
+  const borderColor = s.alarm_level === 'RED' ? '#dc2626' : '#d97706';
+  html += `<div class="slide-cols" id="slide-cols">`;
+
+  // 좌: SOAP Note
+  html += `
+    <div class="slide-col" id="slide-left-col" style="flex:1;">
+      <div class="slide-col-title">🩺 SOAP Note</div>
+      <div style="background:#f8fafc;border:1px solid #e5e7eb;color:#334155;
+           font-family:'Courier New',monospace;font-size:11.5px;border-radius:8px;
+           padding:14px;flex:1;min-height:0;overflow-y:auto;white-space:pre-wrap;
+           word-break:break-word;line-height:1.8;">${s.soap_text ? formatSoap(s.soap_text) : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
+    </div>`;
+
+  // 드래그 핸들
+  html += `<div class="slide-divider" id="slide-divider"></div>`;
+
+  // 우: Referral Letter
+  html += `
+    <div class="slide-col" style="flex:1;">
+      <div class="slide-col-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>📄 Referral Letter</span>
+        <div style="display:flex;gap:6px;">
+          <button onclick="slidePrintLetter()" style="padding:3px 9px;border:1px solid #d1d5db;border-radius:6px;
+                  background:#fff;font-size:11px;cursor:pointer;font-weight:400;">🖨️ Print</button>
+          <button id="slide-copy-btn" onclick="slideCopyLetter(this)"
+                  style="padding:3px 9px;border:1px solid #6366f1;border-radius:6px;
+                  background:#6366f1;color:#fff;font-size:11px;cursor:pointer;">📋 Copy</button>
+        </div>
+      </div>
+      <div id="slide-letter-text" style="background:#fff;border:2px solid ${borderColor};
+           color:#1e293b;font-family:'Courier New',monospace;font-size:11.5px;border-radius:8px;
+           padding:14px;flex:1;min-height:0;overflow-y:auto;white-space:pre-wrap;
+           word-break:break-word;line-height:1.7;">${s.referral_letter ? formatLetter(s.referral_letter) : '<span style="color:#9ca3af;">Letter 없음</span>'}</div>
+    </div>`;
+
+  html += `</div>`;
+
+  document.getElementById('slide-panel-body').innerHTML = html;
+  setupSlideDivider();
+  document.getElementById('slide-panel').classList.add('open');
+  document.getElementById('slide-overlay').classList.add('open');
+}
+
+function closeSlidePanel() {
+  document.getElementById('slide-panel').classList.remove('open');
+  document.getElementById('slide-overlay').classList.remove('open');
+}
+
+function slideCopyLetter(btn) {
+  const text = document.getElementById('slide-letter-text')?.innerText || '';
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+  });
+}
+
+function slidePrintLetter() {
+  const text = document.getElementById('slide-letter-text')?.innerText || '';
+  const w = window.open('', '_blank');
+  w.document.write(`<pre style="font-family:monospace;font-size:13px;padding:40px;">${text}</pre>`);
+  w.document.close(); w.print();
+}
+
+// ── Alarm 현황 ───────────────────────────────────────────────
+let alarmData = null;
+
+async function showAlarms() {
+  document.getElementById('view-new').style.display = 'none';
+  document.getElementById('view-history').style.display = 'none';
+  document.getElementById('view-alarms').style.display = 'block';
+
+  // 메뉴 하이라이트
+  const btn = document.getElementById('menu-alarms');
+  btn.style.background = 'rgba(99,102,241,.2)';
+  btn.style.color = '#a5b4fc';
+
+  document.getElementById('alarm-list').innerHTML =
+    '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:14px;">불러오는 중...</div>';
+
+  try {
+    const r = await fetch('/pt/api/alarms/');
+    alarmData = await r.json();
+    renderAlarmDashboard(alarmData);
+  } catch(e) {
+    document.getElementById('alarm-list').innerHTML =
+      '<div style="padding:40px;text-align:center;color:#ef4444;">불러오기 실패</div>';
+  }
+}
+
+function renderAlarmDashboard(d) {
+  const total = (d.counts.red || 0) + (d.counts.yellow || 0);
+
+  // 요약 카드
+  const cards = [
+    { label:'RED Alert', count: d.counts.red,    bg:'#fef2f2', border:'#fca5a5', color:'#dc2626', icon:'🚨' },
+    { label:'YELLOW Flag', count: d.counts.yellow, bg:'#fffbeb', border:'#fcd34d', color:'#d97706', icon:'⚠️' },
+    { label:'전체 알람', count: total,             bg:'#f8fafc', border:'#e2e8f0', color:'#475569', icon:'📊' },
+  ];
+  document.getElementById('alarm-summary-cards').innerHTML = cards.map(c => `
+    <div style="background:${c.bg};border:1px solid ${c.border};border-radius:12px;padding:18px 20px;">
+      <div style="font-size:24px;margin-bottom:6px;">${c.icon}</div>
+      <div style="font-size:28px;font-weight:800;color:${c.color};line-height:1;">${c.count}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px;">${c.label}</div>
+    </div>`).join('');
+
+  filterAlarmView('ALL');
+}
+
+function filterAlarmView(level) {
+  // 탭 스타일
+  ['ALL','RED','YELLOW'].forEach(l => {
+    const t = document.getElementById(`tab-${l}`);
+    if (l === level) {
+      t.style.background = '#6366f1'; t.style.color = '#fff'; t.style.borderColor = '#6366f1';
+    } else {
+      t.style.background = '#fff'; t.style.color = '#374151'; t.style.borderColor = '#d1d5db';
+    }
+  });
+
+  if (!alarmData) return;
+  const rows = level === 'RED' ? alarmData.red
+             : level === 'YELLOW' ? alarmData.yellow
+             : [...alarmData.red, ...alarmData.yellow];
+
+  if (!rows.length) {
+    document.getElementById('alarm-list').innerHTML =
+      `<div style="padding:48px;text-align:center;color:#9ca3af;font-size:14px;">해당 알람이 없습니다</div>`;
+    return;
+  }
+
+  // 데이터를 전역 배열에 저장 후 인덱스로 참조
+  window._alarmRows = rows;
+
+  const html = rows.map((s, i) => {
+    const bg     = s.alarm_level === 'RED' ? '#fef2f2' : '#fffbeb';
+    const border = s.alarm_level === 'RED' ? '#fca5a5' : '#fcd34d';
+    const color  = s.alarm_level === 'RED' ? '#dc2626' : '#d97706';
+    const icon   = s.alarm_level === 'RED' ? '🚨' : '⚠️';
+    const indicators = (s.matched_indicators || []).map(m =>
+      `<span style="font-size:11px;background:#fff;border:1px solid #e5e7eb;border-radius:4px;
+                    padding:2px 7px;color:#374151;">${esc(m)}</span>`
+    ).join('');
+
+    return `
+      <div data-alarm-idx="${i}"
+           style="background:${bg};border:1px solid ${border};border-radius:12px;
+                  padding:16px 20px;margin-bottom:12px;cursor:pointer;transition:box-shadow .15s;"
+           onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'"
+           onmouseout="this.style.boxShadow='none'">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:18px;">${icon}</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#1e293b;">
+              ${esc(s.patient_name||s.patient_id)}
+              <span style="font-size:12px;font-weight:400;color:#64748b;margin-left:6px;">${esc(s.patient_id)}</span>
+            </div>
+            <div style="font-size:12px;color:#64748b;">${s.session_date}</div>
+          </div>
+          <div style="margin-left:auto;text-align:right;">
+            <div style="font-size:13px;font-weight:700;color:${color};">${s.alarm_level}</div>
+            <div style="font-size:12px;color:#94a3b8;">${esc(s.triggered_condition||'')}</div>
+          </div>
+          <div style="text-align:right;min-width:52px;">
+            <div style="font-size:20px;font-weight:800;color:${color};">${s.critical_score}%</div>
+            <div style="font-size:10px;color:#94a3b8;">risk score</div>
+          </div>
+        </div>
+        ${indicators ? `<div style="display:flex;flex-wrap:wrap;gap:5px;">${indicators}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  document.getElementById('alarm-list').innerHTML = html;
+
+  // 이벤트 위임으로 클릭 처리
+  document.getElementById('alarm-list').onclick = e => {
+    const card = e.target.closest('[data-alarm-idx]');
+    if (card) openSlidePanel(window._alarmRows[+card.dataset.alarmIdx]);
+  };
+}
+
+async function deleteSession(sessionId, patientId) {
+  if (!confirm('이 세션을 삭제하시겠습니까?')) return;
+
+  const r = await fetch(`/pt/api/sessions/${sessionId}/delete/`, {
+    method: 'DELETE',
+    headers: { 'X-CSRFToken': CSRF },
+  });
+  const d = await r.json();
+  if (!r.ok) { alert('삭제 실패: ' + (d.error || r.status)); return; }
+
+  if (d.remaining === 0) {
+    // 환자 세션이 모두 삭제됨 → 사이드바에서 제거 후 새 세션 뷰로
+    allPatients = allPatients.filter(p => p.patient_id !== patientId);
+    renderPatientList(allPatients);
+    showNewSession();
+  } else {
+    // 나머지 세션 다시 로드
+    await selectPatient(patientId, document.getElementById('history-title').textContent);
+  }
+}
+
+function copyLetter(idx, btn) {
+  const el = document.getElementById(`letter-body-${idx}`);
+  navigator.clipboard.writeText(el?.innerText || '').then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+  });
+}
+
+function printLetter(idx) {
+  const text = document.getElementById(`letter-body-${idx}`)?.innerText || '';
+  const win = window.open('', '_blank', 'width=800,height=900');
+  win.document.write(`<!DOCTYPE html><html><head><title>Referral Letter</title>
+    <style>body{font-family:'Courier New',monospace;font-size:14px;line-height:1.9;
+    padding:48px;color:#111;white-space:pre-wrap;}
+    @media print{body{padding:24px;}}</style></head>
+    <body>${esc(text)}</body></html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 300);
+}
+
+function copyText(elemId, btn) {
+  const text = document.getElementById(elemId)?.innerText || '';
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy Letter'; }, 2000);
+  });
+}
+
+// ── 새 세션 폼 ───────────────────────────────────────
+async function generatePatientId() {
+  const btn = document.querySelector('button[onclick="generatePatientId()"]');
+  const orig = btn.textContent;
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    const r = await fetch('/pt/api/generate-patient-id/');
+    const d = await r.json();
+    document.getElementById('inp-id').value = d.patient_id;
+  } catch(e) {
+    alert('ID 생성 실패');
+  } finally {
+    btn.textContent = orig; btn.disabled = false;
+  }
+}
+
+function showNewSession() {
+  activePatientId = null;
+  renderPatientList(allPatients);
+  document.getElementById('view-history').style.display = 'none';
+  document.getElementById('view-alarms').style.display = 'none';
+  document.getElementById('view-new').style.display = 'block';
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-id').value = '';
+  document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('inp-soap').value = '';
+  resetResult();
+  // 메뉴 하이라이트 초기화
+  const btn = document.getElementById('menu-alarms');
+  btn.style.background = 'transparent';
+  btn.style.color = '#94a3b8';
+}
+
+function addSessionForPatient() {
+  const pname = document.getElementById('history-title').textContent;
+  document.getElementById('view-history').style.display = 'none';
+  document.getElementById('view-new').style.display = 'block';
+  document.getElementById('inp-name').value = pname !== activePatientId ? pname : '';
+  document.getElementById('inp-id').value = activePatientId || '';
+  document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('inp-soap').value = '';
+  resetResult();
+}
+
+// ── SOAP 분석 & 저장 ─────────────────────────────────
+async function analyzeAndSave() {
+  const soap = document.getElementById('inp-soap').value.trim();
+  const name = document.getElementById('inp-name').value.trim();
+  const pid  = document.getElementById('inp-id').value.trim() || (name ? name.replace(/\s+/g,'_') : 'ANON');
+  const date = document.getElementById('inp-date').value;
+
+  if (!soap) { alert('SOAP note를 입력하세요.'); return; }
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="pt-spinner"></span>분석 중...';
+
+  try {
+    const r = await fetch('/pt/api/save/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({soap_text:soap, patient_id:pid, patient_name:name, session_date:date})
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Server error');
+    renderResult(d);
+    await loadPatients();
+    // 저장 후 사이드바에서 해당 환자 활성화
+    activePatientId = pid;
+    renderPatientList(allPatients);
+  } catch(e) {
+    document.getElementById('result-content').innerHTML =
+      `<div style="color:#dc2626;font-size:13px;">오류: ${esc(e.message)}</div>`;
+    document.getElementById('result-content').style.display = 'block';
+    document.getElementById('result-empty').style.display = 'none';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🚨 Analyze Red Flags &amp; Save';
+  }
+}
+
+function renderResult(d) {
+  const colors = {RED:'#dc2626',YELLOW:'#d97706',NONE:'#16a34a'};
+  const icons  = {RED:'🚨',YELLOW:'⚠️',NONE:'✅'};
+  const labels = {RED:'RED ALERT — 즉시 조치 필요',YELLOW:'YELLOW FLAG — 주의 관찰',NONE:'Red Flag 없음'};
+  let html = '';
+
+  // 알람 배너
+  html += `<div class="pt-alarm-banner ${d.alarm}">
+    <div class="pt-alarm-icon">${icons[d.alarm]}</div>
+    <div>
+      <div class="pt-alarm-level">${labels[d.alarm]}</div>
+      ${d.condition ? `<div class="pt-alarm-cond">${d.condition.replace(/_/g,' ')}</div>` : ''}
+    </div>
+  </div>`;
+
+  // 스코어 바
+  const fillColor = colors[d.alarm] || '#6b7280';
+  html += `<div class="pt-score-row">
+    <span class="pt-score-label">Risk score</span>
+    <div class="pt-score-bar"><div class="pt-score-fill" style="width:${d.score}%;background:${fillColor};"></div></div>
+    <span class="pt-score-val">${d.score}%</span>
+  </div>`;
+
+  // 멀티 컨디션 목록
+  const active = (d.conditions || []).filter(c => c.alarm !== 'NONE');
+  if (active.length) {
+    html += `<div class="pt-section-title">감지된 Red Flag 조건 (${active.length}개)</div>`;
+    active.forEach(c => {
+      const bg  = c.alarm === 'RED' ? '#fef2f2' : '#fffbeb';
+      const bdr = c.alarm === 'RED' ? '#fca5a5' : '#fcd34d';
+      html += `<div style="border:1px solid ${bdr};border-radius:8px;padding:10px 12px;margin-bottom:8px;background:${bg};">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:${colors[c.alarm]};color:#fff;">${c.alarm}</span>
+          <strong style="font-size:13px;color:#1e293b;">${esc(c.condition.replace(/_/g,' '))}</strong>
+          <span style="margin-left:auto;font-size:11px;color:#6b7280;">${(c.score*100).toFixed(0)}%</span>
+        </div>
+        ${c.trigger ? `<div style="font-size:11px;color:#dc2626;margin-bottom:4px;">trigger: ${esc(c.trigger)}</div>` : ''}
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          ${(c.matched||[]).map(m => `<span style="font-size:11px;background:#fff;border:1px solid #e5e7eb;border-radius:4px;padding:2px 6px;color:#374151;">${esc(m)}</span>`).join('')}
+        </div>
+      </div>`;
+    });
+  }
+
+  // VPPS 추출 증상 (원시 hits)
+  if (d.vpps_hits && d.vpps_hits.length) {
+    html += `<div class="pt-section-title">VPPS 추출 증상 (${d.vpps_hits.length}개)</div>
+    <div class="pt-hit-list">`;
+    d.vpps_hits.forEach(h => {
+      html += `<div class="pt-hit-item ${h.alarm_level}">
+        <span>${h.alarm_level==='RED'?'🔴':'🟡'}</span>
+        <span style="font-size:12px;">${esc(h.label)}</span>
+        <span style="margin-left:auto;font-size:10px;color:#9ca3af;">${(h.weight*100).toFixed(0)}%</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // 환자 컨텍스트
+  if (d.patient_context && d.patient_context.session_count > 1) {
+    html += `<div class="pt-section-title">환자 이력 (${d.patient_context.session_count}세션)</div>
+    <div style="background:#f8fafc;border-radius:7px;padding:9px 11px;font-size:12px;color:#374151;margin-bottom:12px;">${esc(d.patient_context.summary)}</div>`;
+  }
+
+  // 리퍼럴 레터
+  if (d.referral_letter) {
+    html += `<div class="pt-section-title">📄 Physician Referral Letter</div>
+    <div class="pt-referral" id="referral-text">${esc(d.referral_letter)}</div>
+    <button class="pt-copy-btn" onclick="copyReferral()">📋 Copy Letter</button>`;
+  }
+
+  const content = document.getElementById('result-content');
+  content.innerHTML = html;
+  content.style.display = 'block';
+  document.getElementById('result-empty').style.display = 'none';
+  content.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function resetResult() {
+  document.getElementById('result-content').style.display = 'none';
+  document.getElementById('result-content').innerHTML = '';
+  document.getElementById('result-empty').style.display = 'block';
+}
+
+// ── 유틸 ────────────────────────────────────────────
+function alarmLabel(a) {
+  return {RED:'🚨 RED',YELLOW:'⚠️ YELLOW',NONE:'✅ NONE'}[a] || a;
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function copyReferral() {
+  const text = document.getElementById('referral-text')?.innerText || '';
+  await navigator.clipboard.writeText(text);
+  const btn = event.target;
+  btn.textContent = '✅ Copied!';
+  setTimeout(() => { btn.textContent = '📋 Copy Letter'; }, 2000);
+}
+
+// ── SOAP 포맷팅 ───────────────────────────────────────────────
+function formatSoap(rawText) {
+  if (!rawText) return '<span style="color:#9ca3af;">내용 없음</span>';
+
+  // 섹션 헤더 라벨 (굵은 배지 + 구분선)
+  const sectionLabels = /^(LTG|STG|Plan|Assessment|Intervention|Subjective|Objective)s?:/i;
+  // 환자 정보 라벨
+  const infoLabels = /^(Patient|Chief\s+complaint|Onset|History|Diagnosis|Measurements?|Precaution|Goal)s?:/i;
+
+  return rawText.split('\n').map(line => {
+    const t = line.trim();
+    if (!t) return '';
+
+    // 섹션 헤더 (LTG, STG, Plan 등) → 배경 있는 섹션 구분
+    if (sectionLabels.test(t)) {
+      const colon = t.indexOf(':');
+      const label = t.slice(0, colon);
+      const rest  = esc(t.slice(colon + 1).trim());
+      return `<span style="display:inline-block;margin-top:6px;padding:2px 10px;border-radius:4px;`
+           + `font-size:11px;font-weight:800;background:#1e293b;color:#f8fafc;letter-spacing:.4px;">`
+           + `${esc(label)}</span>${rest ? '<span style="color:#475569;"> — </span>' + rest : ''}`;
+    }
+
+    // 환자 정보 라벨 (Patient:, Chief complaint: 등) → 파란 굵은 라벨
+    if (infoLabels.test(t)) {
+      const colon = t.indexOf(':');
+      const label = t.slice(0, colon);
+      const rest  = esc(t.slice(colon + 1).trim());
+      return `<strong style="color:#1d4ed8;font-weight:700;">${esc(label)}:</strong>`
+           + (rest ? ` <span style="color:#1e293b;">${rest}</span>` : '');
+    }
+
+    // 범용 Key: value (Urgency, Recommended, Guideline 등)
+    const m = t.match(/^([A-Za-z가-힣][^:]{0,30}):\s*(.+)$/);
+    if (m) {
+      return `<strong style="color:#374151;font-weight:700;">${esc(m[1])}:</strong> `
+           + `<span style="color:#1e293b;">${esc(m[2])}</span>`;
+    }
+
+    // 번호 항목 (1. 2. 3.) → 약간 들여쓰기
+    if (/^\d+\./.test(t)) {
+      return `<span style="color:#64748b;padding-left:8px;display:inline-block;">${esc(line)}</span>`;
+    }
+
+    return `<span style="color:#334155;">${esc(line)}</span>`;
+  }).join('\n');
+}
+
+// ── Letter 포맷팅 ─────────────────────────────────────────────
+function formatLetter(rawText) {
+  if (!rawText) return '<span style="color:#9ca3af;">Letter 없음</span>';
+
+  return rawText.split('\n').map(line => {
+    const t = line.trim();
+
+    // 빈 줄
+    if (!t) return '';
+
+    // ===== 구분선 → 얇은 실선
+    if (/^={4,}$/.test(t)) {
+      return `<span style="display:block;border-top:1px solid #e2e8f0;margin:6px 0;font-size:0;"></span>`;
+    }
+    // ----- 구분선 → 더 연한 실선
+    if (/^-{4,}$/.test(t)) {
+      return `<span style="display:block;border-top:1px dashed #e2e8f0;margin:4px 0;font-size:0;"></span>`;
+    }
+
+    // [RED] / [YELLOW] / [GREEN] 배지 처리
+    const colored = t
+      .replace(/\[RED\]/g,    `<span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[RED]</span>`)
+      .replace(/\[YELLOW\]/g, `<span style="background:#fef3c7;color:#b45309;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[YELLOW]</span>`)
+      .replace(/\[GREEN\]/g,  `<span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[GREEN]</span>`);
+
+    // Urgency: EMERGENCY / WARNING 강조
+    if (/^Urgency:/i.test(t)) {
+      const isEmergency = /EMERGENCY/i.test(t);
+      const bg    = isEmergency ? '#fef2f2' : '#fffbeb';
+      const color = isEmergency ? '#dc2626'  : '#b45309';
+      return `<span style="display:inline-block;padding:3px 8px;border-radius:5px;background:${bg};`
+           + `border:1px solid ${color}40;font-weight:700;color:${color};">${colored}</span>`;
+    }
+
+    // ALL CAPS 헤딩 (OVERALL ALERT LEVEL, IDENTIFIED CONDITIONS 등)
+    if (/[A-Z]/.test(t) && !/[a-z]/.test(t) && t.length >= 4 && !/^\[/.test(t)) {
+      return `<strong style="display:inline-block;margin-top:4px;font-size:12px;font-weight:800;`
+           + `color:#111827;letter-spacing:.3px;">${colored}</strong>`;
+    }
+
+    // Key: value 라벨
+    const m = t.match(/^([A-Za-z][^:]{0,28}):\s*(.*)$/);
+    if (m) {
+      const val = m[2]
+        .replace(/\[RED\]/g,    `<span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[RED]</span>`)
+        .replace(/\[YELLOW\]/g, `<span style="background:#fef3c7;color:#b45309;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[YELLOW]</span>`);
+      return `<strong style="font-weight:700;color:#374151;">${esc(m[1])}:</strong> <span style="color:#1e293b;">${val}</span>`;
+    }
+
+    // bullet (•)
+    if (/^[•·\-]\s/.test(t)) {
+      return `<span style="color:#374151;padding-left:6px;display:inline-block;">${colored}</span>`;
+    }
+
+    return `<span style="color:#1e293b;">${colored}</span>`;
+  }).join('\n');
+}
+
+// ── 슬라이드 패널 드래그 핸들 ─────────────────────────────────
+let _slideDrag = null;
+
+function setupSlideDivider() {
+  const divider = document.getElementById('slide-divider');
+  const leftCol = document.getElementById('slide-left-col');
+  const cols    = document.getElementById('slide-cols');
+  if (!divider || !leftCol || !cols) return;
+  divider.addEventListener('mousedown', e => {
+    e.preventDefault();
+    divider.classList.add('dragging');
+    _slideDrag = { divider, leftCol, cols,
+                   startX: e.clientX,
+                   startW: leftCol.getBoundingClientRect().width };
+  });
+}
+
+document.addEventListener('mousemove', e => {
+  if (!_slideDrag) return;
+  const { leftCol, cols, startX, startW } = _slideDrag;
+  const dx     = e.clientX - startX;
+  const totalW = cols.getBoundingClientRect().width;
+  const newW   = Math.max(150, Math.min(totalW - 150, startW + dx));
+  leftCol.style.flex  = 'none';
+  leftCol.style.width = newW + 'px';
+  e.preventDefault();
+});
+
+document.addEventListener('mouseup', () => {
+  if (!_slideDrag) return;
+  _slideDrag.divider.classList.remove('dragging');
+  _slideDrag = null;
+});
+</script>
+</body>
+</html>

@@ -1,5 +1,9 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 from questionnaire.models.models import Answer
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
@@ -215,6 +219,133 @@ def brainnode_tree_json(request, block_id):
     root_nodes = BrainNode.objects.filter(block_id=block_id, parent=None)
     data = [build_mptt_tree(node) for node in root_nodes]
     return JsonResponse(data, safe=False)
+
+
+# ── AJAX: BrainBlockNode 추가 ─────────────────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def add_block_node(request, braintree_id):
+    braintree = get_object_or_404(BrainTree, id=braintree_id, user=request.user)
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    title = data.get("title", "").strip()
+    if not title:
+        return JsonResponse({"error": "제목을 입력하세요"}, status=400)
+
+    parent_id = data.get("parent_id")
+    parent = None
+    if parent_id:
+        parent = get_object_or_404(BrainBlockNode, id=parent_id, braintree=braintree)
+
+    last_order = (
+        BrainBlockNode.objects.filter(braintree=braintree, parent=parent)
+        .order_by("-order").values_list("order", flat=True).first() or 0
+    )
+    block = BrainBlockNode.objects.create(
+        braintree=braintree,
+        parent=parent,
+        title=title,
+        description=data.get("description", "").strip(),
+        type="user_custom",
+        order=last_order + 1,
+    )
+    return JsonResponse({"ok": True, "block_id": block.id, "title": block.title})
+
+
+# ── AJAX: BrainNode(노드) 추가 ────────────────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def add_brain_node(request, block_id):
+    block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    nodes_data = data.get("nodes", [])
+    if not nodes_data:
+        return JsonResponse({"error": "노드 내용을 입력하세요"}, status=400)
+
+    last_order = (
+        BrainNode.objects.filter(block=block, parent=None)
+        .order_by("-order").values_list("order", flat=True).first() or 0
+    )
+    created = []
+    for i, item in enumerate(nodes_data):
+        q = item.get("question_text", "").strip()
+        a = item.get("answer_text", "").strip()
+        if not q and not a:
+            continue
+        node = BrainNode.objects.create(
+            block=block,
+            parent=None,
+            question_text=q,
+            answer_text=a,
+            order=last_order + i + 1,
+        )
+        created.append({"id": node.id, "question_text": node.question_text})
+
+    return JsonResponse({"ok": True, "created": len(created), "nodes": created})
+
+
+# ── AJAX: BrainBlockNode 수정 ─────────────────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def update_block_node(request, block_id):
+    block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    title = data.get("title", "").strip()
+    if not title:
+        return JsonResponse({"error": "제목을 입력하세요"}, status=400)
+    block.title = title
+    block.description = data.get("description", "").strip()
+    block.save(update_fields=["title", "description"])
+    return JsonResponse({"ok": True, "title": block.title})
+
+
+# ── AJAX: BrainNode 수정 ──────────────────────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def update_brain_node(request, node_id):
+    node = get_object_or_404(BrainNode, id=node_id, block__braintree__user=request.user)
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    node.question_text = data.get("question_text", node.question_text).strip()
+    node.answer_text   = data.get("answer_text",   node.answer_text).strip()
+    node.save(update_fields=["question_text", "answer_text"])
+    return JsonResponse({"ok": True})
+
+
+# ── AJAX: BrainBlockNode 삭제 ─────────────────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def delete_block_node(request, block_id):
+    block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
+    block.delete()
+    return JsonResponse({"ok": True})
+
+
+# ── AJAX: BrainNode 삭제 ──────────────────────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def delete_brain_node(request, node_id):
+    node = get_object_or_404(BrainNode, id=node_id, block__braintree__user=request.user)
+    node.delete()
+    return JsonResponse({"ok": True})
 
 
 
