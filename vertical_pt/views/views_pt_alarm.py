@@ -25,6 +25,9 @@ from vertical_pt.engine.referral import generate_referral_letter, generate_multi
 from vertical_pt.engine.documents import generate_document, DOC_TITLES
 from vertical_pt.engine.soap_extractor import extract_clinical_context
 from vertical_pt.engine.scribe import process_audio
+from vertical_pt.engine.referral_tracker import (
+    send_referral_email, mark_sent, mark_followup,
+)
 from vertical_pt.models import PatientTimeline, RedFlagAlert
 
 
@@ -104,6 +107,12 @@ def patient_sessions_json(request, patient_id):
             "created_at":          s.created_at.strftime("%Y-%m-%d %H:%M"),
             "matched_indicators":  alert.matched_indicators if alert else [],
             "referral_letter":     alert.referral_letter if alert else "",
+            # 리퍼럴 추적 Phase 1
+            "alert_id":                alert.id if alert else None,
+            "referral_sent_at":        alert.referral_sent_at.strftime("%Y-%m-%d") if alert and alert.referral_sent_at else None,
+            "referral_sent_to_email":  alert.referral_sent_to_email if alert else "",
+            "referral_email_delivered": alert.referral_email_delivered if alert else False,
+            "referral_followup_checked": alert.referral_followup_checked if alert else False,
         })
     patient_name = qs[0].patient_name if qs else ""
     return JsonResponse({
@@ -139,6 +148,11 @@ def alarm_dashboard_json(request):
             "soap_text":           s.soap_text,
             "matched_indicators":  alert.matched_indicators if alert else [],
             "referral_letter":     alert.referral_letter if alert else "",
+            "alert_id":                alert.id if alert else None,
+            "referral_sent_at":        alert.referral_sent_at.strftime("%Y-%m-%d") if alert and alert.referral_sent_at else None,
+            "referral_sent_to_email":  alert.referral_sent_to_email if alert else "",
+            "referral_email_delivered": alert.referral_email_delivered if alert else False,
+            "referral_followup_checked": alert.referral_followup_checked if alert else False,
         })
 
     red    = [r for r in rows if r["alarm_level"] == "RED"]
@@ -418,3 +432,85 @@ def result_view(request):
         return redirect("vertical_pt:pt_index")
     ctx["score_pct"] = round((ctx.get("score") or 0) * 100)
     return render(request, "vertical_pt/result.html", ctx)
+
+
+# ── 리퍼럴 추적 Phase 1 ──────────────────────────────────────────
+
+def _get_alert_for_user(alert_id: int, user):
+    """alert가 해당 therapist 소유인지 확인 후 반환."""
+    try:
+        return RedFlagAlert.objects.select_related("timeline").get(
+            id=alert_id, timeline__therapist=user
+        )
+    except RedFlagAlert.DoesNotExist:
+        return None
+
+
+@login_required
+@require_http_methods(["POST"])
+def referral_send(request, alert_id):
+    """리퍼럴 레터 이메일 발송 + '보냈음' 상태 기록."""
+    alert = _get_alert_for_user(alert_id, request.user)
+    if not alert:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    try:
+        data     = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        data = {}
+
+    to_email   = (data.get("to_email") or "").strip()
+    send_email = bool(to_email)
+
+    if send_email:
+        delivered = send_referral_email(
+            alert, to_email=to_email,
+            therapist_name=request.user.get_full_name() or request.user.username,
+        )
+    else:
+        mark_sent(alert, to_email=to_email)
+        delivered = None  # 이메일 없이 수동 체크
+
+    return JsonResponse({
+        "ok":        True,
+        "email_sent": send_email,
+        "delivered":  delivered,
+        "sent_at":    alert.referral_sent_at.isoformat() if alert.referral_sent_at else None,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def referral_mark_followup(request, alert_id):
+    """PT가 '환자 follow-up 완료' 체크."""
+    alert = _get_alert_for_user(alert_id, request.user)
+    if not alert:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    mark_followup(alert)
+    return JsonResponse({
+        "ok":          True,
+        "followup_at": alert.referral_followup_at.isoformat(),
+    })
+
+
+@login_required
+def referral_print(request, alert_id):
+    """리퍼럴 레터 인쇄 전용 HTML 페이지 (브라우저 print-to-PDF 유도)."""
+    alert = _get_alert_for_user(alert_id, request.user)
+    if not alert:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    letter = alert.referral_letter or "(No referral letter generated)"
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<title>Referral Letter — {alert.timeline.patient_id}</title>
+<style>
+  body{{font-family:'Times New Roman',serif;font-size:12pt;
+       max-width:700px;margin:48px auto;color:#111;white-space:pre-wrap;line-height:1.6}}
+  @media print{{body{{margin:24px}}@page{{margin:2cm}}}}
+</style>
+<script>window.onload=()=>window.print();</script>
+</head><body>{letter}</body></html>"""
+    from django.http import HttpResponse
+    return HttpResponse(html, content_type="text/html")

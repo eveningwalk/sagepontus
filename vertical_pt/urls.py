@@ -29,6 +29,11 @@ urlpatterns = [
                                              views_pt_alarm.generate_doc_ajax,    name="pt_generate_doc"),
     path("pt/api/transcribe/",               views_pt_alarm.transcribe_audio,     name="pt_transcribe"),
 
+    # ── 리퍼럴 추적 Phase 1 ────────────────────────────────────────
+    path("pt/api/alerts/<int:alert_id>/send/",      views_pt_alarm.referral_send,         name="pt_referral_send"),
+    path("pt/api/alerts/<int:alert_id>/followup/",  views_pt_alarm.referral_mark_followup, name="pt_referral_followup"),
+    path("pt/api/alerts/<int:alert_id>/print/",     views_pt_alarm.referral_print,         name="pt_referral_print"),
+
     # ── 웹 UI ─────────────────────────────────────────────────────────────
     path("pt/",          views_pt_alarm.index,        name="pt_index"),
     path("pt/analyze/",  views_pt_alarm.analyze_view, name="pt_analyze"),

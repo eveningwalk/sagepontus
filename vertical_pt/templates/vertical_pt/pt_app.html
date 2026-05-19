@@ -796,6 +796,78 @@ let allPatients = [];
 let activePatientId = null;
 let currentPatientId = null;
 
+// ── 리퍼럴 추적 Phase 1 ──────────────────────────────
+function buildReferralTracker(s) {
+  if (!s.alert_id) return '';
+  const sent      = !!s.referral_sent_at;
+  const followup  = s.referral_followup_checked;
+
+  if (followup) {
+    return `<span style="font-size:11px;color:#22c55e;font-weight:600;align-self:center;">✓ Follow-up Confirmed</span>`;
+  }
+  if (sent) {
+    return `
+      <span style="font-size:11px;color:#60a5fa;align-self:center;">
+        Sent ${s.referral_sent_at}${s.referral_sent_to_email ? ' → ' + s.referral_sent_to_email : ''}
+      </span>
+      <button class="pt-letter-btn" onclick="markFollowup(${s.alert_id}, this)"
+        style="background:#166534;border-color:#166534;">✓ Follow-up Done</button>`;
+  }
+  return `
+    <button class="pt-letter-btn" onclick="openSendModal(${s.alert_id}, this)"
+      style="background:#1e40af;border-color:#1e40af;">📧 Send to Doctor</button>`;
+}
+
+function printReferralLetter(alertId) {
+  if (!alertId) return;
+  window.open(`/pt/api/alerts/${alertId}/print/`, '_blank');
+}
+
+function openSendModal(alertId, btn) {
+  const email = prompt('Physician email address (leave blank to mark as sent without email):');
+  if (email === null) return;  // cancelled
+  sendReferral(alertId, email.trim(), btn);
+}
+
+async function sendReferral(alertId, toEmail, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const resp = await fetch(`/pt/api/alerts/${alertId}/send/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ to_email: toEmail }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || resp.statusText);
+
+    const msg = data.email_sent
+      ? (data.delivered ? `✓ Email delivered to ${toEmail}` : `⚠ Send failed — marked as sent manually`)
+      : '✓ Marked as sent (no email)';
+    alert(msg);
+    loadPatientSessions(activePatientId);  // 화면 갱신
+  } catch (e) {
+    alert('Error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '📧 Send to Doctor'; }
+  }
+}
+
+async function markFollowup(alertId, btn) {
+  if (!confirm('Confirm that the patient followed up with the physician?')) return;
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const resp = await fetch(`/pt/api/alerts/${alertId}/followup/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || resp.statusText);
+    loadPatientSessions(activePatientId);
+  } catch (e) {
+    alert('Error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Follow-up Done'; }
+  }
+}
+
 // ── 오디오 녹음 + Scribe 전송 ─────────────────────────
 let _mediaRecorder = null;
 let _audioChunks   = [];
@@ -1408,12 +1480,13 @@ function renderDocumentsTab(patientId, patientName) {
               </div>
             </div>
           </div>
-          <div style="display:flex;gap:6px;flex-shrink:0;">
+          <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
             <button class="pt-letter-btn"
-                    onclick="viewReferralInModal(${latestIdx})">🖨️ Print</button>
+                    onclick="printReferralLetter(${latest.alert_id})">🖨️ Print / PDF</button>
             <button class="pt-letter-btn pt-letter-btn-primary"
                     style="${!isRed?'background:#d97706;border-color:#d97706;':''}"
                     onclick="viewReferralInModal(${latestIdx})">📋 View & Copy</button>
+            ${latest.alert_id ? buildReferralTracker(latest) : ''}
           </div>
         </div>
       </div>`;
