@@ -24,6 +24,7 @@ from vertical_pt.engine import score_soap, build_patient_context
 from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
 from vertical_pt.engine.documents import generate_document, DOC_TITLES
 from vertical_pt.engine.soap_extractor import extract_clinical_context
+from vertical_pt.engine.scribe import process_audio
 from vertical_pt.models import PatientTimeline, RedFlagAlert
 
 
@@ -319,6 +320,35 @@ def generate_doc_ajax(request, patient_id):
         "title":        DOC_TITLES[doc_type],
         "generated_at": datetime.date.today().strftime("%B %d, %Y"),
         "session_count": len(sessions),
+    })
+
+
+# ── AJAX: 오디오 → S/O 텍스트 변환 ──────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def transcribe_audio(request):
+    audio_file = request.FILES.get("audio")
+    if not audio_file:
+        return JsonResponse({"error": "audio file required"}, status=400)
+
+    max_mb = 25
+    if audio_file.size > max_mb * 1024 * 1024:
+        return JsonResponse({"error": f"파일 크기 {max_mb}MB 초과"}, status=400)
+
+    try:
+        result = process_audio(audio_file.read())
+    except RuntimeError as e:
+        return JsonResponse({"error": str(e)}, status=502)
+    except Exception as e:
+        return JsonResponse({"error": f"변환 실패: {e}"}, status=500)
+
+    return JsonResponse({
+        "ok":       True,
+        "S":        result["S"],
+        "O":        result["O"],
+        "full_text": result["full_text"],
+        "provider": result["provider"],
     })
 
 

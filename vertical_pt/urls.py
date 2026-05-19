@@ -27,6 +27,7 @@ urlpatterns = [
     path("pt/api/generate-patient-id/",      views_pt_alarm.generate_patient_id,  name="pt_generate_pid"),
     path("pt/api/patients/<str:patient_id>/generate-doc/",
                                              views_pt_alarm.generate_doc_ajax,    name="pt_generate_doc"),
+    path("pt/api/transcribe/",               views_pt_alarm.transcribe_audio,     name="pt_transcribe"),
 
     # ── 웹 UI ─────────────────────────────────────────────────────────────
     path("pt/",          views_pt_alarm.index,        name="pt_index"),

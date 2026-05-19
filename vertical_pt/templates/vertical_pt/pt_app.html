@@ -434,7 +434,8 @@
       border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
       border-radius: 50%; animation: spin .6s linear infinite; margin-right: 6px;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    @keyframes spin  { to { transform: rotate(360deg); } }
+    @keyframes blink { 50% { opacity: 0; } }
 
     /* 사이드바 검색 */
     .pt-search-wrap {
@@ -648,12 +649,21 @@
               </div>
               <div>
                 <label class="pt-label">SOAP Note</label>
-                <div class="soap-tab-bar">
+                <div class="soap-tab-bar" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
                   <button class="soap-tab-btn active" id="stab-S" onclick="switchSoapTab('S')">S — Subjective</button>
                   <button class="soap-tab-btn" id="stab-O" onclick="switchSoapTab('O')">O — Objective</button>
                   <button class="soap-tab-btn" id="stab-A" onclick="switchSoapTab('A')">A — Assessment</button>
                   <button class="soap-tab-btn" id="stab-P" onclick="switchSoapTab('P')">P — Plan</button>
+                  <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+                    <span id="rec-status" style="display:none;font-size:11px;color:#e53e3e;font-weight:600;animation:blink 1s step-end infinite">● REC</span>
+                    <button id="mic-btn" onclick="toggleRecording()"
+                      style="background:#2d3748;border:1px solid #4a5568;color:#e2e8f0;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap"
+                      title="Record session audio — auto-fills S and O">
+                      🎙 Record
+                    </button>
+                  </div>
                 </div>
+                <div id="scribe-status" style="display:none;font-size:11px;color:#90cdf4;margin:4px 0 2px;text-align:right"></div>
                 <div id="soap-pane-S">
                   <textarea class="pt-textarea" id="inp-S" rows="6"
                     placeholder="Patient-reported symptoms, pain level, onset, prior history..."></textarea>
@@ -785,6 +795,76 @@ const CSRF = '{{ csrf_token }}';
 let allPatients = [];
 let activePatientId = null;
 let currentPatientId = null;
+
+// ── 오디오 녹음 + Scribe 전송 ─────────────────────────
+let _mediaRecorder = null;
+let _audioChunks   = [];
+
+async function toggleRecording() {
+  const btn = document.getElementById('mic-btn');
+  const recStatus  = document.getElementById('rec-status');
+  const scribeStatus = document.getElementById('scribe-status');
+
+  if (_mediaRecorder && _mediaRecorder.state === 'recording') {
+    // ── 녹음 중지 ──
+    _mediaRecorder.stop();
+    btn.textContent = '🎙 Record';
+    btn.style.background = '#2d3748';
+    recStatus.style.display = 'none';
+    return;
+  }
+
+  // ── 녹음 시작 ──
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    alert('마이크 권한이 필요합니다: ' + e.message);
+    return;
+  }
+
+  _audioChunks = [];
+  _mediaRecorder = new MediaRecorder(stream);
+
+  _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
+
+  _mediaRecorder.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(_audioChunks, { type: 'audio/webm' });
+    scribeStatus.style.display = 'block';
+    scribeStatus.textContent = '⏳ Transcribing...';
+
+    const form = new FormData();
+    form.append('audio', blob, 'session.webm');
+
+    try {
+      const resp = await fetch("{% url 'vertical_pt:pt_transcribe' %}", {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+        body: form,
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || resp.statusText);
+
+      // S / O 탭에 자동 채우기 (기존 텍스트가 있으면 뒤에 추가)
+      const sEl = document.getElementById('inp-S');
+      const oEl = document.getElementById('inp-O');
+      if (data.S) sEl.value = (sEl.value ? sEl.value + '\n' : '') + data.S;
+      if (data.O) oEl.value = (oEl.value ? oEl.value + '\n' : '') + data.O;
+
+      scribeStatus.textContent = `✓ Transcribed (${data.provider}) — S/O panes filled`;
+      setTimeout(() => { scribeStatus.style.display = 'none'; }, 4000);
+    } catch (e) {
+      scribeStatus.textContent = '✗ ' + e.message;
+      setTimeout(() => { scribeStatus.style.display = 'none'; }, 6000);
+    }
+  };
+
+  _mediaRecorder.start();
+  btn.textContent = '⏹ Stop';
+  btn.style.background = '#742a2a';
+  recStatus.style.display = 'inline';
+}
 
 // ── S/O/A/P 구조화 입력 + Red Flag 칩 ─────────────────
 let _confirmedChips = new Set();
