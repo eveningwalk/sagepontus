@@ -198,5 +198,77 @@
     "category": "red_flag_watchlist",
     "condition_ref": "malignancy",
     "alarm_level": "YELLOW"
+  },
+  "RF_026": {
+    "label": "Age of Onset < 40 (40세 미만 발병)",
+    "synonyms": [
+      "20대부터 아팠음", "30대부터 요통", "젊을 때부터 아팠음", "young onset",
+      "20대 요통", "30대 요통", "20s back pain", "30s back pain",
+      "onset in 20s", "onset in 30s", "young patient back pain",
+      "early onset back pain", "20대에 시작", "30대에 시작"
+    ],
+    "patterns": [
+      "\\b(1[89]|2\\d|3\\d)\\s*(yo|y/o|year[s]?[- ]old|세)",
+      "onset.*?(20|2[0-9]|30|3[0-9])\\s*(yo|y/o|year|세)"
+    ],
+    "depth": 0.65,
+    "category": "red_flag_risk",
+    "condition_ref": "inflammatory",
+    "alarm_level": "YELLOW"
+  },
+  "RF_027": {
+    "label": "Insidious Onset > 3 Months (3개월 이상 서서히 시작)",
+    "synonyms": [
+      "언제부터인지 모르게 아팠음", "서서히 시작", "insidious onset", "gradual onset",
+      "뚜렷한 계기 없음", "그냥 어느 날부터", "3개월 이상 지속",
+      "slow onset", "gradually started", "계기 없이 시작", "원인 모르게 시작",
+      "3달 이상", "수개월 전부터", "오래전부터 서서히"
+    ],
+    "patterns": [
+      "insidious",
+      "gradual.{0,20}onset",
+      "onset.{0,20}(3|4|5|6|seven|several).{0,10}(month|mo\\b)"
+    ],
+    "depth": 0.70,
+    "category": "red_flag_watchlist",
+    "condition_ref": "inflammatory",
+    "alarm_level": "YELLOW"
+  },
+  "RF_028": {
+    "label": "Night Pain — Second Half (새벽 2-5시 통증으로 각성)",
+    "synonyms": [
+      "새벽에 아파서 깸", "새벽 통증", "밤 후반부 통증",
+      "night pain second half", "새벽 2시에 깸", "새벽 3시에 깸",
+      "새벽 4시에 깸", "새벽에 뒤척임", "이른 아침 통증으로 각성",
+      "wakes in early morning", "wakes second half of night",
+      "2am pain", "3am pain", "4am pain", "early morning pain wakes"
+    ],
+    "patterns": [
+      "wakes?.{0,20}(2|3|4)\\s*(am|a\\.m)",
+      "pain.{0,20}second half.{0,20}night",
+      "새벽\\s*[2345]시"
+    ],
+    "depth": 0.75,
+    "category": "red_flag_watchlist",
+    "condition_ref": "inflammatory",
+    "alarm_level": "YELLOW"
+  },
+  "RF_029": {
+    "label": "Rapid Response to NSAIDs (NSAIDs 48시간 내 뚜렷한 호전)",
+    "synonyms": [
+      "소염제 먹으면 잘 듣는다", "이부프로펜 효과 있음", "소염제 효과 좋음",
+      "NSAID response", "약 먹으면 많이 나아짐", "소염진통제 잘 들음",
+      "ibuprofen helps", "naproxen helps", "NSAIDs work well",
+      "responds well to anti-inflammatory", "anti-inflammatory effective",
+      "소염제에 잘 반응", "NSAIDs에 효과"
+    ],
+    "patterns": [
+      "(ibuprofen|naproxen|NSAIDs?|anti.?inflamm).{0,30}(help|work|reliev|effect|respond|improv)",
+      "(help|work|reliev|effect|respond|improv).{0,30}(ibuprofen|naproxen|NSAIDs?|anti.?inflamm)"
+    ],
+    "depth": 0.70,
+    "category": "red_flag_watchlist",
+    "condition_ref": "inflammatory",
+    "alarm_level": "YELLOW"
   }
 }
