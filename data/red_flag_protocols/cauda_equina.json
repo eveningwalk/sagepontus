@@ -1,0 +1,112 @@
+{
+  "protocol_id": "rfp_cauda_equina",
+  "condition": "Cauda Equina Syndrome",
+  "icd_10": "G83.4",
+  "severity": "EMERGENCY",
+  "alarm_level": "RED",
+  "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed., Ch.14; APTA Clinical Practice Guidelines",
+  "decision_logic": "ANY_CARDINAL",
+  "description": "마미총(L2-S5 신경근) 압박으로 인한 응급 상태. 단 하나의 주요 징후라도 확인되면 즉시 응급실 리퍼럴 필요. 치료 금지.",
+  "action": {
+    "RED": "즉시 응급실 리퍼럴 — 치료 중단. 당일 MRI 필요. 48시간 이내 수술 여부 결정이 예후 결정.",
+    "YELLOW": "금일 담당 의사 연락 — 증상 진행 여부 면밀히 모니터링"
+  },
+  "indicators": [
+    {
+      "id": "ces_001",
+      "symptom": "saddle_anesthesia",
+      "label": "Saddle Anesthesia (안장 감각 소실)",
+      "description": "회음부/항문 주위/성기 주위의 감각 소실 또는 저림",
+      "synonyms": [
+        "회음부 저림", "항문 주위 감각 없음", "성기 감각 이상",
+        "안장 부위 무감각", "사타구니 저림", "perineal numbness",
+        "saddle area", "genital numbness", "perianal numbness"
+      ],
+      "weight": 1.0,
+      "alarm_level": "RED",
+      "standalone_trigger": true,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ces_002",
+      "symptom": "bladder_dysfunction",
+      "label": "Bladder Dysfunction (방광 기능 이상)",
+      "description": "소변 저류(가장 흔함), 소변 실금, 배뇨 감각 소실",
+      "synonyms": [
+        "소변이 안 나옴", "소변 못 봄", "소변 지림", "소변 실금",
+        "방광 조절 안됨", "배뇨 장애", "urinary retention",
+        "urinary incontinence", "bladder control loss", "소변 감각 없음"
+      ],
+      "weight": 0.95,
+      "alarm_level": "RED",
+      "standalone_trigger": true,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ces_003",
+      "symptom": "bowel_dysfunction",
+      "label": "Bowel Dysfunction (장 기능 이상)",
+      "description": "대변 실금 또는 변비 (신경인성)",
+      "synonyms": [
+        "대변 지림", "대변 실금", "변비 갑자기", "항문 조절 안됨",
+        "장 조절 불가", "bowel incontinence", "fecal incontinence",
+        "neurogenic bowel", "대변 감각 없음"
+      ],
+      "weight": 0.95,
+      "alarm_level": "RED",
+      "standalone_trigger": true,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ces_004",
+      "symptom": "bilateral_le_weakness",
+      "label": "Bilateral LE Weakness (양측 하지 근력 약화)",
+      "description": "한쪽이 아닌 양측 다리의 갑작스러운 근력 저하",
+      "synonyms": [
+        "양쪽 다리 힘 빠짐", "양측 하지 약화", "두 다리 모두 힘이 없음",
+        "bilateral weakness", "양다리 무력", "양측 근력 저하",
+        "양쪽 다리 마비", "두 다리 감각 없음"
+      ],
+      "weight": 0.90,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ces_005",
+      "symptom": "progressive_neuro_deficit",
+      "label": "Progressive Neurological Deficit (진행성 신경학적 악화)",
+      "description": "치료 중에도 신경 증상이 악화되는 패턴",
+      "synonyms": [
+        "점점 심해지는 저림", "증상 악화 중", "신경 증상 진행",
+        "마비가 번지는", "progressive weakness", "worsening numbness",
+        "악화되는 신경 증상", "신경 증상이 퍼짐"
+      ],
+      "weight": 0.85,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ces_006",
+      "symptom": "sexual_dysfunction",
+      "label": "Sexual Dysfunction (성기능 장애)",
+      "description": "갑작스러운 성기능 변화 (신경인성)",
+      "synonyms": [
+        "성기능 이상", "발기 안됨", "갑자기 성감각 없음",
+        "sexual dysfunction", "erectile dysfunction sudden onset"
+      ],
+      "weight": 0.80,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "supporting"
+    }
+  ],
+  "screening_questions": [
+    "소변이나 대변 조절에 문제가 생겼나요?",
+    "회음부(사타구니/항문 주위)가 저리거나 감각이 없나요?",
+    "양쪽 다리에 동시에 힘이 빠지거나 저리신가요?",
+    "증상이 점점 더 심해지고 있나요?"
+  ],
+  "clinical_notes": "CES는 불완전형(CESI)과 완전형(CESC)으로 나뉨. 불완전형도 응급. 방광 저류가 가장 흔한 초기 증상(90%). 발생 후 48시간 이내 수술 시 예후 유의미하게 개선됨."
+}

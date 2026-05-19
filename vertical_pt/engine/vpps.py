@@ -103,7 +103,8 @@ def _regex_match(text: str, kb: dict, seen: set[str]) -> list[dict]:
     return hits
 
 
-def extract_symptoms(soap_text: str, use_ai: bool = False) -> dict[str, Any]:
+def extract_symptoms(soap_text: str, use_ai: bool = False,
+                     pre_confirmed_ids: list[str] | None = None) -> dict[str, Any]:
     """
     SOAP 텍스트에서 Red Flag 증상 팩트 추출.
 
@@ -124,6 +125,15 @@ def extract_symptoms(soap_text: str, use_ai: bool = False) -> dict[str, Any]:
     # 2차: regex 매칭 (substring에서 놓친 것만)
     regex_hits = _regex_match(soap_text, kb, seen)
     hits = sorted(hits + regex_hits, key=lambda h: h["weight"], reverse=True)
+
+    # 2.5차: UI에서 직접 확인된 항목 주입 (체크박스 오버라이드)
+    if pre_confirmed_ids:
+        seen = {h["kb_id"] for h in hits}
+        for rf_id in pre_confirmed_ids:
+            if rf_id in kb and rf_id not in seen:
+                hits.append(_make_hit(rf_id, kb[rf_id]))
+                seen.add(rf_id)
+        hits = sorted(hits, key=lambda h: h["weight"], reverse=True)
 
     # 3차: AI 패스 (옵션, 여전히 아무것도 안 잡혔을 때만)
     if use_ai and not hits:

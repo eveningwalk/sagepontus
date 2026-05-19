@@ -1,0 +1,129 @@
+{
+  "protocol_id": "rfp_infection",
+  "condition": "Spinal Infection (Discitis / Osteomyelitis / Epidural Abscess)",
+  "icd_10": "M46.3, M46.4, G06.1",
+  "severity": "URGENT",
+  "alarm_level": "RED",
+  "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed., Ch.14",
+  "decision_logic": "WEIGHTED_SUM",
+  "threshold": { "red": 0.70, "yellow": 0.45 },
+  "description": "척추 감염 (추간판염, 척추 골수염, 경막외 농양). 발열 + 척추 통증 조합은 감염 확진까지 치료 금지.",
+  "action": {
+    "RED": "즉시 치료 중단 — 당일 응급실 또는 의사 리퍼럴. ESR/CRP/WBC 혈액검사 + MRI 필요.",
+    "YELLOW": "치료 보류 — 48시간 내 의사 확인. 발열 모니터링."
+  },
+  "indicators": [
+    {
+      "id": "inf_001",
+      "symptom": "fever",
+      "label": "Fever ≥ 38°C (발열)",
+      "description": "38도 이상 발열, 또는 환자가 열이 난다고 보고",
+      "synonyms": [
+        "열남", "발열", "체온 높음", "38도 이상", "고열",
+        "fever", "febrile", "열이 있음", "몸이 뜨거움",
+        "체온계 38", "열 측정"
+      ],
+      "weight": 0.85,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "inf_002",
+      "symptom": "recent_infection",
+      "label": "Recent Systemic Infection (최근 전신 감염력)",
+      "description": "요로감염, 폐렴, 피부 감염, 치과 시술 등 최근 세균 감염",
+      "synonyms": [
+        "방광염", "요로감염", "폐렴", "피부 감염", "상처 감염",
+        "UTI", "urinary tract infection", "최근 감기 심했음",
+        "치과 치료", "발치", "봉소염", "cellulitis",
+        "최근 입원", "항생제 복용 중"
+      ],
+      "weight": 0.75,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "inf_003",
+      "symptom": "iv_drug_use",
+      "label": "IV Drug Use (정맥 주사 약물 사용)",
+      "description": "정맥 주사 약물 사용 이력",
+      "synonyms": [
+        "마약", "정맥 주사", "IV drug", "intravenous drug use",
+        "약물 주사", "헤로인", "약물 남용"
+      ],
+      "weight": 0.80,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "inf_004",
+      "symptom": "immunocompromised",
+      "label": "Immunocompromised State (면역 저하 상태)",
+      "description": "당뇨, HIV, 항암 치료, 장기 스테로이드, 장기 이식 후",
+      "synonyms": [
+        "당뇨", "diabetes", "HIV", "면역억제제", "항암 치료 중",
+        "스테로이드 장기복용", "장기 이식", "immunosuppressed",
+        "면역 저하", "혈당 조절 안됨", "항암 중"
+      ],
+      "weight": 0.70,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "inf_005",
+      "symptom": "recent_spinal_procedure",
+      "label": "Recent Spinal Procedure (최근 척추 시술)",
+      "description": "최근 척추 주사, 수술, 경막외 마취",
+      "synonyms": [
+        "주사 맞았음", "신경 차단술", "척추 수술", "디스크 수술",
+        "경막외 주사", "epidural injection", "spinal injection",
+        "신경 주사", "최근 척추 시술", "허리 주사 맞음"
+      ],
+      "weight": 0.75,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "inf_006",
+      "symptom": "constant_unrelenting_pain",
+      "label": "Constant Unrelenting Pain (자세 무관 지속 통증)",
+      "description": "쉬어도, 움직여도, 어떤 자세에서도 완화되지 않는 통증",
+      "synonyms": [
+        "항상 아픔", "쉬어도 안 나아짐", "밤낮으로 아픔",
+        "constant pain", "unrelenting pain", "자세 바꿔도 그대로",
+        "24시간 통증", "수면 중에도 아픔"
+      ],
+      "weight": 0.65,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "symptom"
+    },
+    {
+      "id": "inf_007",
+      "symptom": "night_sweats",
+      "label": "Night Sweats (야간 발한)",
+      "description": "밤에 식은땀을 흘리며 깸",
+      "synonyms": [
+        "식은땀", "야간 발한", "밤에 땀을 흘림", "night sweats",
+        "자다가 땀에 젖음", "이불이 젖음"
+      ],
+      "weight": 0.60,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "systemic"
+    }
+  ],
+  "screening_questions": [
+    "현재 열이 있거나 최근에 열이 났나요?",
+    "최근에 다른 감염(요로감염, 폐렴 등)으로 치료받으신 적 있나요?",
+    "당뇨, HIV, 항암치료 등 면역이 약화된 상태인가요?",
+    "최근 척추 주사나 수술을 받으셨나요?",
+    "밤에 식은땀을 흘리며 깨시나요?"
+  ],
+  "clinical_notes": "발열 + 척추통증 = 즉시 RED. PT가 혈액검사 결과를 볼 수 없으므로 임상 증상 조합으로 판단. 경막외 농양은 신속 진행하여 마비 유발 가능."
+}

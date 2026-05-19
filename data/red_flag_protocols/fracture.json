@@ -1,0 +1,129 @@
+{
+  "protocol_id": "rfp_fracture",
+  "condition": "Spinal Fracture",
+  "icd_10": "S32, M48.4, M80.0",
+  "severity": "URGENT",
+  "alarm_level": "RED",
+  "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed., Ch.14; APTA Low Back Pain CPG",
+  "decision_logic": "WEIGHTED_SUM",
+  "threshold": { "red": 0.75, "yellow": 0.45 },
+  "description": "척추 골절. 직접 외상 또는 골다공증 환자의 경미한 외상으로 발생. 치료 전 이미징 확인 필수.",
+  "action": {
+    "RED": "즉시 치료 중단 — 영상 검사(X-ray/CT) 없이 도수치료 금지. 당일 의사 리퍼럴.",
+    "YELLOW": "치료 보류 — 골절 위험 요인 평가 후 의사 확인 전까지 척추 하중/조작 금지"
+  },
+  "indicators": [
+    {
+      "id": "fx_001",
+      "symptom": "significant_trauma",
+      "label": "Significant Trauma (중대 외상력)",
+      "description": "낙상, 교통사고, 높은 곳에서 추락 등 명확한 외상 사건",
+      "synonyms": [
+        "넘어짐", "낙상", "교통사고", "떨어짐", "충격", "다침",
+        "fall", "motor vehicle accident", "MVA", "trauma", "부딪힘",
+        "사고 났음", "차 사고"
+      ],
+      "weight": 0.80,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "cluster": "trauma"
+    },
+    {
+      "id": "fx_002",
+      "symptom": "age_over_70",
+      "label": "Age > 70 (70세 이상)",
+      "description": "70세 이상에서 경미한 외상도 골절 유발 가능",
+      "synonyms": [
+        "70대", "80대", "90대", "노인", "고령", "elderly",
+        "나이가 많은", "할머니", "할아버지"
+      ],
+      "weight": 0.65,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "fx_003",
+      "symptom": "osteoporosis",
+      "label": "Osteoporosis (골다공증)",
+      "description": "골다공증 진단 또는 의심 상태",
+      "synonyms": [
+        "골다공증", "뼈가 약함", "골밀도 낮음", "osteoporosis",
+        "bone density low", "뼈 약해서", "골감소증"
+      ],
+      "weight": 0.70,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "fx_004",
+      "symptom": "prolonged_steroid_use",
+      "label": "Prolonged Steroid Use (장기 스테로이드 복용)",
+      "description": "3개월 이상 경구 스테로이드 복용력",
+      "synonyms": [
+        "스테로이드", "cortisone", "prednisone", "dexamethasone",
+        "스테로이드 오래 먹음", "류마티스 약", "면역억제제"
+      ],
+      "weight": 0.65,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "fx_005",
+      "symptom": "point_tenderness",
+      "label": "Point Tenderness on Percussion (타진 시 국소 압통)",
+      "description": "특정 척추 레벨을 두드리면 극심한 통증",
+      "synonyms": [
+        "누르면 아픔", "특정 부위 극심한 압통", "뼈를 두드리면 아픔",
+        "point tenderness", "percussion tenderness", "극부 압통",
+        "한 지점 심한 통증"
+      ],
+      "weight": 0.75,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "cluster": "symptom"
+    },
+    {
+      "id": "fx_006",
+      "symptom": "pain_weightbearing",
+      "label": "Pain Worsened by Weight Bearing (체중 부하 시 통증 악화)",
+      "description": "서거나 걸을 때 심해지는 극심한 요통",
+      "synonyms": [
+        "서면 더 아픔", "걸으면 못 걷겠음", "체중 실으면 아픔",
+        "weight bearing pain", "서있기 힘듦", "일어서면 악화"
+      ],
+      "weight": 0.60,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "symptom"
+    },
+    {
+      "id": "fx_007",
+      "symptom": "postmenopausal_female",
+      "label": "Postmenopausal Female (폐경 후 여성)",
+      "description": "폐경 이후 여성 — 에스트로겐 감소로 골밀도 저하",
+      "synonyms": [
+        "폐경", "갱년기 지남", "여성 50대 이상", "postmenopausal",
+        "생리 끊김", "호르몬 치료 중"
+      ],
+      "weight": 0.55,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    }
+  ],
+  "scoring_rules": {
+    "note": "risk_factor 클러스터 + symptom 클러스터 합산. 외상력 있으면 가중치 1.3배.",
+    "trauma_multiplier": 1.3
+  },
+  "screening_questions": [
+    "최근 넘어지거나 부딪히거나 사고가 있었나요?",
+    "골다공증 진단을 받은 적 있나요?",
+    "오래 스테로이드 약을 복용하신 적 있나요?",
+    "척추의 특정 한 지점을 누를 때 극심하게 아픈가요?",
+    "서거나 걸을 때 통증이 심해지나요?"
+  ],
+  "clinical_notes": "외상 + 위험인자 조합 시 RED. 위험인자만 있어도 YELLOW로 이미징 먼저. 도수치료(HVLA thrust)는 이미징 전 절대 금지."
+}

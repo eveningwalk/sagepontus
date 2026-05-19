@@ -201,10 +201,11 @@ def detect_red_flags(vpps_result: dict) -> dict[str, Any]:
     }
 
 
-def score_soap(soap_text: str, use_ai: bool = False) -> dict[str, Any]:
+def score_soap(soap_text: str, use_ai: bool = False,
+               pre_confirmed_ids: list[str] | None = None) -> dict[str, Any]:
     """SOAP 텍스트 입력 → 알람 결과 반환 (VPPS + Scorer 통합 진입점)."""
     from .vpps import extract_symptoms
-    vpps = extract_symptoms(soap_text, use_ai=use_ai)
+    vpps = extract_symptoms(soap_text, use_ai=use_ai, pre_confirmed_ids=pre_confirmed_ids)
     result = detect_red_flags(vpps)
     result["vpps"] = vpps
     return result

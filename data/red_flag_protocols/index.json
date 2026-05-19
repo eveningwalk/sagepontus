@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed. + APTA Clinical Practice Guidelines",
+  "created": "2026-05-17",
+  "protocols": [
+    {
+      "id": "rfp_cauda_equina",
+      "file": "cauda_equina.json",
+      "condition": "Cauda Equina Syndrome",
+      "severity": "EMERGENCY",
+      "alarm_level": "RED",
+      "decision_logic": "ANY_CARDINAL",
+      "action_summary": "즉시 응급실 리퍼럴 — 치료 중단"
+    },
+    {
+      "id": "rfp_vascular",
+      "file": "vascular.json",
+      "condition": "Abdominal Aortic Aneurysm",
+      "severity": "EMERGENCY",
+      "alarm_level": "RED",
+      "decision_logic": "WEIGHTED_SUM",
+      "action_summary": "즉시 119 / 응급실 — 복부 촉진/조작 금지"
+    },
+    {
+      "id": "rfp_fracture",
+      "file": "fracture.json",
+      "condition": "Spinal Fracture",
+      "severity": "URGENT",
+      "alarm_level": "RED",
+      "decision_logic": "WEIGHTED_SUM",
+      "action_summary": "치료 중단 — 이미징 없이 도수치료 금지"
+    },
+    {
+      "id": "rfp_malignancy",
+      "file": "malignancy.json",
+      "condition": "Spinal Malignancy / Metastatic Cancer",
+      "severity": "URGENT",
+      "alarm_level": "RED",
+      "decision_logic": "SCREEN_OF_5",
+      "action_summary": "즉시 의사 리퍼럴 — 혈액검사 + MRI"
+    },
+    {
+      "id": "rfp_infection",
+      "file": "infection.json",
+      "condition": "Spinal Infection (Discitis / Osteomyelitis)",
+      "severity": "URGENT",
+      "alarm_level": "RED",
+      "decision_logic": "WEIGHTED_SUM",
+      "action_summary": "당일 응급실 — ESR/CRP 혈액검사"
+    },
+    {
+      "id": "rfp_inflammatory",
+      "file": "inflammatory.json",
+      "condition": "Inflammatory Arthritis / Ankylosing Spondylitis",
+      "severity": "WATCHLIST",
+      "alarm_level": "YELLOW",
+      "decision_logic": "WEIGHTED_SUM",
+      "action_summary": "류마티스 내과 리퍼럴 — HLA-B27 검사"
+    }
+  ]
+}

@@ -16,12 +16,15 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from questionnaire import views  # ✅ 이 줄을 추가해줘
+from questionnaire import views
+from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('questionnaire/', include('questionnaire.urls')),
-    path('accounts/', include('accounts.urls')),  # 사용자 기능은 여기에
+    path('accounts/', include('accounts.urls')),
+    path('api/auth/token/', obtain_auth_token, name='api_token'),
+    path('', include('vertical_pt.urls')),
     path('landing/', views.landing, name='landing'),
     path('demo/', views.demo_entry, name='demo'),
     path('', views.root, name='home'),

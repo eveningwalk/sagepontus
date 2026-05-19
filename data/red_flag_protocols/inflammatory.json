@@ -1,0 +1,129 @@
+{
+  "protocol_id": "rfp_inflammatory",
+  "condition": "Inflammatory Arthritis / Ankylosing Spondylitis (강직성 척추염)",
+  "icd_10": "M45, M46.0",
+  "severity": "WATCHLIST",
+  "alarm_level": "YELLOW",
+  "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed., Ch.27; ASAS Classification Criteria",
+  "decision_logic": "WEIGHTED_SUM",
+  "threshold": { "red": 0.85, "yellow": 0.55 },
+  "description": "염증성 척추 관절병증 (강직성 척추염, 건선성 관절염 등). 기계적 요통과 반대 패턴. 조기 진단 시 진행 억제 가능.",
+  "action": {
+    "RED": "류마티스 내과 즉시 리퍼럴 — HLA-B27 검사, 골반 X-ray, MRI 요청.",
+    "YELLOW": "치료 병행 가능 — 2주 내 의사 통보. NSAID 반응 모니터링."
+  },
+  "indicators": [
+    {
+      "id": "ia_001",
+      "symptom": "age_onset_under_40",
+      "label": "Age of Onset < 40 (40세 미만 발병)",
+      "description": "강직성 척추염은 대부분 40세 이전에 발병",
+      "synonyms": [
+        "20대부터 아팠음", "30대부터 요통", "젊을 때부터",
+        "young onset", "20대 요통", "30대 요통"
+      ],
+      "weight": 0.65,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "ia_002",
+      "symptom": "morning_stiffness_over_1hr",
+      "label": "Morning Stiffness > 1 Hour (1시간 이상 조조 강직)",
+      "description": "아침에 일어나면 허리가 굳어서 1시간 이상 안 풀림",
+      "synonyms": [
+        "아침에 뻣뻣함", "조조 강직", "아침에 굳어있음", "morning stiffness",
+        "일어나면 한참 뻣뻣", "1시간 이상 아침 강직",
+        "아침에 허리가 안 펴짐", "기상 후 한참 지나야 움직여짐"
+      ],
+      "weight": 0.80,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ia_003",
+      "symptom": "improves_with_exercise",
+      "label": "Improves with Exercise / Worsens with Rest (운동 시 호전, 안정 시 악화)",
+      "description": "기계적 요통과 반대 패턴 — 움직이면 나아지고 쉬면 더 아픔",
+      "synonyms": [
+        "움직이면 나아짐", "운동하면 풀림", "쉬면 더 아픔",
+        "improves with activity", "worsens with rest",
+        "활동하면 좋아짐", "가만히 있으면 더 아픔",
+        "걸으면 오히려 나음"
+      ],
+      "weight": 0.85,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ia_004",
+      "symptom": "insidious_onset_over_3months",
+      "label": "Insidious Onset > 3 Months (3개월 이상 서서히 시작)",
+      "description": "뚜렷한 계기 없이 3개월 이상 서서히 시작된 요통",
+      "synonyms": [
+        "언제부터인지 모르게 아팠음", "서서히 시작", "3개월 이상",
+        "insidious onset", "gradual onset", "뚜렷한 계기 없음",
+        "그냥 어느 날부터", "오래됐음"
+      ],
+      "weight": 0.70,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "pain_pattern"
+    },
+    {
+      "id": "ia_005",
+      "symptom": "alternating_buttock_pain",
+      "label": "Alternating Buttock Pain (교대성 둔부통)",
+      "description": "왼쪽 엉덩이가 아팠다가 오른쪽 엉덩이가 아팠다가 교대로 발생",
+      "synonyms": [
+        "교대성 엉덩이 통증", "왼쪽 오른쪽 번갈아 아픔",
+        "alternating buttock pain", "SI joint pain bilateral",
+        "엉치뼈 양쪽 번갈아", "천장관절 통증 교대"
+      ],
+      "weight": 0.80,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ia_006",
+      "symptom": "night_pain_second_half",
+      "label": "Night Pain in Second Half (새벽 2-5시 통증으로 각성)",
+      "description": "새벽 2-5시에 통증으로 깨어나는 패턴",
+      "synonyms": [
+        "새벽에 아파서 깸", "새벽 통증", "밤 후반부 통증",
+        "night pain second half", "새벽 2시에 깸", "새벽 3시에 깸",
+        "새벽에 뒤척임"
+      ],
+      "weight": 0.75,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "pain_pattern"
+    },
+    {
+      "id": "ia_007",
+      "symptom": "nsaid_rapid_response",
+      "label": "Rapid Response to NSAIDs (NSAIDs 48시간 내 뚜렷한 호전)",
+      "description": "이부프로펜 등 소염진통제에 48시간 내 현저히 나아짐",
+      "synonyms": [
+        "소염제 먹으면 잘 듣는다", "이부프로펜 효과 있음", "소염제 효과 좋음",
+        "NSAID response", "약 먹으면 많이 나아짐", "소염진통제 잘 들음"
+      ],
+      "weight": 0.70,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "treatment_response"
+    }
+  ],
+  "screening_questions": [
+    "아침에 일어나면 허리가 굳어서 1시간 이상 안 풀리나요?",
+    "쉬면 더 아프고 움직이면 나아지는 패턴이 있나요?",
+    "왼쪽 오른쪽 엉덩이가 번갈아 가며 아픈가요?",
+    "새벽 2-5시 사이에 통증으로 깨시나요?",
+    "요통이 3개월 이상 서서히 시작됐고 발생 당시 40세 미만이었나요?"
+  ],
+  "clinical_notes": "ASAS 기준: 만성 요통(3개월 이상) + 발병 40세 미만 + 다음 중 하나: 염증성 요통 패턴, HLA-B27 양성, MRI 천장관절 변화. 치료는 가능하나 조기 류마티스 리퍼럴 필요."
+}

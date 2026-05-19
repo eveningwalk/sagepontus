@@ -44,10 +44,10 @@ def login(request):
         email_or_username = request.POST.get('email', '').strip()
         password = request.POST.get('password')
         user = None
-        try:
-            user_obj = User.objects.get(email=email_or_username.lower())
+        user_obj = User.objects.filter(email=email_or_username.lower()).first()
+        if user_obj:
             user = authenticate(request, username=user_obj.username, password=password)
-        except User.DoesNotExist:
+        else:
             user = authenticate(request, username=email_or_username, password=password)
         if user:
             auth_login(request, user)

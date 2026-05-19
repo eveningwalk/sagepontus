@@ -22,6 +22,7 @@ from django.views.decorators.http import require_http_methods
 
 from vertical_pt.engine import score_soap, build_patient_context
 from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
+from vertical_pt.engine.documents import generate_document, DOC_TITLES
 from vertical_pt.models import PatientTimeline, RedFlagAlert
 
 
@@ -177,12 +178,13 @@ def save_soap_ajax(request):
     except (json.JSONDecodeError, ValueError):
         return JsonResponse({"error": "Invalid JSON"}, status=400)
 
-    soap_text    = data.get("soap_text", "").strip()
-    patient_id   = _normalize_pid(data.get("patient_id", ""))
-    patient_name = data.get("patient_name", "").strip()
-    date_str     = data.get("session_date", "")
+    soap_text       = data.get("soap_text", "").strip()
+    patient_id      = _normalize_pid(data.get("patient_id", ""))
+    patient_name    = data.get("patient_name", "").strip()
+    date_str        = data.get("session_date", "")
+    confirmed_rf_ids = data.get("confirmed_rf_ids", []) or []
 
-    if not soap_text:
+    if not soap_text and not confirmed_rf_ids:
         return JsonResponse({"error": "SOAP text is required"}, status=400)
 
     try:
@@ -190,7 +192,7 @@ def save_soap_ajax(request):
     except (ValueError, TypeError):
         session_date = datetime.date.today()
 
-    result      = score_soap(soap_text)
+    result      = score_soap(soap_text, pre_confirmed_ids=confirmed_rf_ids if confirmed_rf_ids else None)
     patient_ctx = build_patient_context(patient_id, request.user.id)
 
     timeline = PatientTimeline.objects.create(
@@ -245,6 +247,60 @@ def save_soap_ajax(request):
         "vpps_hits":       vpps.get("hits", []),
         "referral_letter": referral_letter,
         "patient_context": patient_ctx,
+    })
+
+
+# ── AJAX: 문서 생성 (multi-session history 기반) ─────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def generate_doc_ajax(request, patient_id):
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    doc_type = data.get("doc_type", "").strip()
+    if doc_type not in DOC_TITLES:
+        return JsonResponse({"error": f"Unknown doc_type: {doc_type}"}, status=400)
+
+    sessions = list(
+        PatientTimeline.objects
+        .filter(therapist=request.user, patient_id=patient_id)
+        .prefetch_related("alerts")
+        .order_by("session_date", "created_at")
+    )
+    if not sessions:
+        return JsonResponse({"error": "No sessions found for this patient"}, status=404)
+
+    patient_ctx  = build_patient_context(patient_id, request.user.id)
+    therapist_name = request.user.get_full_name() or request.user.username
+    clinic_name    = ""
+    try:
+        if request.user.pt_profile:
+            clinic_name = request.user.pt_profile.clinic_name or ""
+    except Exception:
+        pass
+
+    try:
+        doc_text = generate_document(
+            doc_type=doc_type,
+            sessions=sessions,
+            patient_ctx=patient_ctx,
+            therapist_name=therapist_name,
+            patient_id=patient_id,
+            clinic_name=clinic_name,
+        )
+    except Exception as e:
+        return JsonResponse({"error": f"Document generation failed: {e}"}, status=500)
+
+    return JsonResponse({
+        "ok":           True,
+        "doc_type":     doc_type,
+        "doc":          doc_text,
+        "title":        DOC_TITLES[doc_type],
+        "generated_at": datetime.date.today().strftime("%B %d, %Y"),
+        "session_count": len(sessions),
     })
 
 

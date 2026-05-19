@@ -116,10 +116,16 @@ export function SignupModal({ open, onOpenChange }: SignupModalProps) {
             <DialogTitle className="text-xl font-semibold">신청이 완료되었습니다!</DialogTitle>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Early Access 신청을 받았습니다.<br />
-              검토 후 순서대로 안내 드리겠습니다.
+              지금 바로 계정을 만들고 시작해 보세요.
             </p>
-            <Button className="mt-2 w-full" onClick={() => handleOpenChange(false)}>
-              닫기
+            <a
+              href={`${process.env.NEXT_PUBLIC_PT_APP_URL ?? ""}/pt/signup/`}
+              className="mt-2 w-full inline-flex items-center justify-center rounded-md bg-red-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-700 transition-colors"
+            >
+              계정 만들기 →
+            </a>
+            <Button variant="ghost" size="sm" onClick={() => handleOpenChange(false)}>
+              나중에 하기
             </Button>
           </div>
         ) : (

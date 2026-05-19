@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PT Red Flag Alert</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+
+  <!-- ── 로그인 화면 ──────────────────────────────────────── -->
+  <div id="screen-login" class="screen">
+    <div class="logo-row">
+      <span class="logo-icon">🛡</span>
+      <div>
+        <div class="logo-title">Sage Pontus</div>
+        <div class="logo-sub">PT Red Flag Alert</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Username</label>
+      <input type="text" id="login-username" placeholder="your username" autocomplete="username" />
+    </div>
+    <div class="form-group">
+      <label>Password</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password" />
+    </div>
+    <div id="login-error" class="error-msg hidden"></div>
+    <button id="btn-login" class="btn btn-primary">Sign In</button>
+
+    <div class="settings-row">
+      <button id="btn-show-settings" class="btn-link">⚙ Server settings</button>
+    </div>
+    <div id="settings-panel" class="hidden">
+      <div class="form-group">
+        <label>Server URL</label>
+        <input type="text" id="server-url-input" placeholder="https://..." />
+      </div>
+      <button id="btn-save-settings" class="btn btn-ghost">Save</button>
+    </div>
+  </div>
+
+  <!-- ── 분석 화면 ────────────────────────────────────────── -->
+  <div id="screen-analyze" class="screen hidden">
+    <div class="top-bar">
+      <span class="top-title">🛡 PT Red Flag</span>
+      <div class="top-actions">
+        <span id="top-username" class="top-user"></span>
+        <button id="btn-logout" class="btn-link small">Sign out</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Patient ID <span class="hint">(anonymous)</span></label>
+      <input type="text" id="patient-id" placeholder="e.g. PT-2024-001" />
+    </div>
+
+    <div class="form-group">
+      <label>SOAP Note <span class="hint">— paste from EMR</span></label>
+      <textarea id="soap-text" rows="9"
+        placeholder="Paste the full SOAP note here...
+
+S: Patient reports...
+O: ROM, strength...
+A: Assessment...
+P: Plan..."></textarea>
+    </div>
+
+    <div class="btn-row">
+      <button id="btn-paste" class="btn btn-ghost">📋 Paste</button>
+      <button id="btn-clear" class="btn btn-ghost">✕ Clear</button>
+      <button id="btn-analyze" class="btn btn-primary">Analyze Red Flags →</button>
+    </div>
+
+    <div id="analyze-loading" class="loading hidden">
+      <div class="spinner"></div>
+      <span>Analyzing…</span>
+    </div>
+  </div>
+
+  <!-- ── 결과 화면 ─────────────────────────────────────────── -->
+  <div id="screen-result" class="screen hidden">
+    <div class="top-bar">
+      <button id="btn-back" class="btn-link">← New analysis</button>
+      <span id="top-username-result" class="top-user"></span>
+    </div>
+
+    <!-- 알람 배너 -->
+    <div id="alarm-banner" class="alarm-banner">
+      <div id="alarm-icon" class="alarm-icon"></div>
+      <div>
+        <div id="alarm-level-text" class="alarm-level-text"></div>
+        <div id="alarm-condition" class="alarm-condition"></div>
+      </div>
+    </div>
+
+    <!-- 트리거 -->
+    <div id="trigger-row" class="trigger-row hidden">
+      <span class="trigger-label">Primary trigger:</span>
+      <span id="trigger-text" class="trigger-text"></span>
+    </div>
+
+    <!-- 매칭된 지표 -->
+    <div id="matched-section" class="section hidden">
+      <div class="section-title">Detected indicators</div>
+      <ul id="matched-list" class="matched-list"></ul>
+    </div>
+
+    <!-- 이전 세션 컨텍스트 -->
+    <div id="context-section" class="section hidden">
+      <div class="section-title">Patient history</div>
+      <div id="context-text" class="context-text"></div>
+    </div>
+
+    <!-- 리퍼럴 레터 -->
+    <div id="referral-section" class="section hidden">
+      <button id="btn-referral" class="btn btn-danger-outline">
+        📄 Generate Referral Letter
+      </button>
+      <div id="referral-letter" class="referral-letter hidden"></div>
+      <button id="btn-copy-referral" class="btn btn-ghost hidden">📋 Copy letter</button>
+    </div>
+
+    <!-- Score -->
+    <div class="score-row">
+      <span class="score-label">Risk score</span>
+      <div class="score-bar-wrap">
+        <div id="score-bar" class="score-bar"></div>
+      </div>
+      <span id="score-value" class="score-value"></span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
