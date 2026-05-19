@@ -18,6 +18,7 @@ class PatientTimeline(models.Model):
 
     soap_text           = models.TextField()
     extracted_symptoms  = models.JSONField(default=dict)   # VPPS 출력
+    clinical_context    = models.JSONField(default=dict, blank=True)  # AI 임상 컨텍스트 추출
     critical_score      = models.FloatField(default=0.0)
     alarm_level         = models.CharField(max_length=10, choices=ALARM_CHOICES, default="NONE")
     triggered_condition = models.CharField(max_length=50, blank=True)

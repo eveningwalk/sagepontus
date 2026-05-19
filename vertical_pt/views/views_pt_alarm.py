@@ -23,6 +23,7 @@ from django.views.decorators.http import require_http_methods
 from vertical_pt.engine import score_soap, build_patient_context
 from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
 from vertical_pt.engine.documents import generate_document, DOC_TITLES
+from vertical_pt.engine.soap_extractor import extract_clinical_context
 from vertical_pt.models import PatientTimeline, RedFlagAlert
 
 
@@ -207,6 +208,15 @@ def save_soap_ajax(request):
         triggered_condition=result["condition"] or "",
     )
 
+    # SOAP 임상 컨텍스트 AI 추출 (temperature=0, 입력 분류만)
+    try:
+        clinical_ctx = extract_clinical_context(soap_text)
+        if any(v for v in clinical_ctx.values() if v):
+            timeline.clinical_context = clinical_ctx
+            timeline.save(update_fields=["clinical_context"])
+    except Exception:
+        pass
+
     alert = None
     referral_letter = ""
     active_conditions = result.get("conditions", [])
@@ -282,6 +292,13 @@ def generate_doc_ajax(request, patient_id):
     except Exception:
         pass
 
+    # 가장 최근 임상 컨텍스트 선택 (채워진 것 우선)
+    clinical_context = {}
+    for s in reversed(sessions):
+        if s.clinical_context:
+            clinical_context = s.clinical_context
+            break
+
     try:
         doc_text = generate_document(
             doc_type=doc_type,
@@ -290,6 +307,7 @@ def generate_doc_ajax(request, patient_id):
             therapist_name=therapist_name,
             patient_id=patient_id,
             clinic_name=clinic_name,
+            clinical_context=clinical_context,
         )
     except Exception as e:
         return JsonResponse({"error": f"Document generation failed: {e}"}, status=500)

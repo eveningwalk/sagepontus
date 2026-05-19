@@ -10,6 +10,7 @@
 
 import datetime
 import json
+import time
 from pathlib import Path
 
 from django.contrib.auth.models import User
@@ -17,6 +18,7 @@ from django.core.management.base import BaseCommand
 
 from vertical_pt.engine.scorer import score_soap
 from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
+from vertical_pt.engine.soap_extractor import extract_clinical_context
 from vertical_pt.models import PatientTimeline, RedFlagAlert
 
 _CASES_PATH = Path(__file__).resolve().parents[4] / "sagepontus" / "data" / "soap_samples" / "cases.json"
@@ -165,6 +167,24 @@ class Command(BaseCommand):
                 alert.referral_letter = referral_letter
                 alert.save(update_fields=["referral_letter"])
 
+            # ── AI 임상 컨텍스트 추출 (temperature=0, 최대 3회 재시도) ──
+            self.stdout.write(f"  [{case['id']:2d}] {patient_name:8s} — AI 추출 중...", ending="\r")
+            ctx_status = "- ctx"
+            for attempt in range(3):
+                try:
+                    if attempt > 0:
+                        time.sleep(2 ** attempt)  # 2s, 4s
+                    clinical_ctx = extract_clinical_context(soap_text)
+                    has_data = any(v for v in clinical_ctx.values() if v)
+                    if has_data:
+                        timeline.clinical_context = clinical_ctx
+                        timeline.save(update_fields=["clinical_context"])
+                        ctx_status = "✓ ctx"
+                        break
+                except Exception as e:
+                    ctx_status = f"✗ ({e})"
+            time.sleep(0.5)  # rate limit 방지
+
             alarm_display = {
                 "RED":    self.style.ERROR("RED"),
                 "YELLOW": self.style.WARNING("YELLOW"),
@@ -175,7 +195,7 @@ class Command(BaseCommand):
             self.stdout.write(
                 f"  [{case['id']:2d}] {patient_name:8s} {patient_id}  "
                 f"alarm={alarm_display}  hits={result['vpps']['hit_count']}  "
-                f"conditions=[{conds}]"
+                f"conditions=[{conds}]  {ctx_status}"
             )
 
-        self.stdout.write(self.style.SUCCESS(f"\n완료: {len(cases)}개 세션 적재됨 → {username}"))
+        self.stdout.write(self.style.SUCCESS(f"\n완료: {len(cases)}개 세션 적재 + AI 컨텍스트 추출 → {username}"))
