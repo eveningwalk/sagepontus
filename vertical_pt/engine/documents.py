@@ -43,18 +43,25 @@ def generate_document(
 
 # ── clinical_context 헬퍼 ──────────────────────────────────────────
 
+def _as_str(val, sep: str = ", ") -> str:
+    """list/tuple → 쉼표 구분 문자열, 이미 str이면 그대로."""
+    if isinstance(val, (list, tuple)):
+        return sep.join(str(v) for v in val if v)
+    return str(val) if val else ""
+
+
 def _patient_profile(ctx: dict) -> str:
     """patient_age + sex + diagnosis → 환자 설명 문자열."""
     parts = []
     if ctx.get("patient_age") and ctx.get("patient_sex"):
-        sex = "male" if ctx["patient_sex"] == "M" else "female"
+        sex = "male" if str(ctx["patient_sex"]).upper().startswith("M") else "female"
         parts.append(f"{ctx['patient_age']}-year-old {sex}")
     elif ctx.get("patient_age"):
         parts.append(f"{ctx['patient_age']}-year-old patient")
     if ctx.get("primary_diagnosis"):
-        parts.append(f"with {ctx['primary_diagnosis']}")
+        parts.append(f"with {_as_str(ctx['primary_diagnosis'])}")
     if ctx.get("comorbidities"):
-        co = ", ".join(ctx["comorbidities"])
+        co = _as_str(ctx["comorbidities"])
         parts.append(f"(comorbidities: {co})")
     return " ".join(parts) if parts else "Patient with musculoskeletal dysfunction"
 
@@ -98,6 +105,22 @@ def _red_flag_block(ctx: dict) -> str:
 def _precautions_block(ctx: dict) -> str:
     precs = ctx.get("precautions", [])
     return "\n".join(f"  • {p}" for p in precs) if precs else ""
+
+
+def _goals_block(ctx: dict) -> str:
+    """STG/LTG → 문서용 들여쓰기 블록. 데이터 없으면 빈 문자열."""
+    lines = []
+    stg = ctx.get("goals_stg") or []
+    ltg = ctx.get("goals_ltg") or []
+    if stg:
+        lines.append("  Short-Term Goals (STG):")
+        for g in stg:
+            lines.append(f"    • {g}")
+    if ltg:
+        lines.append("  Long-Term Goals (LTG):")
+        for g in ltg:
+            lines.append(f"    • {g}")
+    return "\n".join(lines)
 
 
 # ── 공통 헬퍼 ─────────────────────────────────────────────────────
@@ -153,7 +176,7 @@ def _medical_necessity(sessions, patient_ctx, therapist_name, patient_id, clinic
 
     patient_desc = _patient_profile(ctx)
     cond_str = (
-        ctx.get("primary_diagnosis")
+        _as_str(ctx.get("primary_diagnosis"))
         or ", ".join(c.replace("_", " ").title() for c in st["conditions"])
         or "Musculoskeletal dysfunction"
     )
@@ -193,8 +216,8 @@ provided to the above-referenced patient.
 
 PATIENT PROFILE:
   {patient_desc}{comorbidity_line}
-  Chief Complaint:    {ctx.get('chief_complaint') or 'Musculoskeletal pain and functional limitation'}
-  Onset / Duration:   {ctx.get('onset_duration') or 'As documented in initial evaluation'}
+  Chief Complaint:    {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal pain and functional limitation'}
+  Onset / Duration:   {_as_str(ctx.get('onset_duration')) or 'As documented in initial evaluation'}
 
 TREATMENT SUMMARY:
   Total Sessions:     {st['n']}
@@ -221,10 +244,13 @@ CLINICAL JUSTIFICATION:
   Goodman & Snyder Differential Diagnosis framework and APTA Clinical Practice
   Guidelines, ensuring patient safety and evidence-based care delivery.
 
+TREATMENT GOALS:
+{_goals_block(ctx) or "  (Refer to session SOAP documentation for goal details)"}
+
 MEDICAL NECESSITY CRITERIA MET:
   1. Patient presents with a condition requiring skilled PT expertise
   2. Objective measurements document functional deficits (see findings above)
-  3. Treatment goals are functional and measurable
+  3. Treatment goals are functional and measurable (see above)
   4. Red Flag screening performed at every session — safety maintained
 
 I certify that the services provided were medically necessary and performed
@@ -301,7 +327,7 @@ LEGAL NOTICE:
 
 PATIENT CLINICAL PROFILE:
   {_patient_profile(ctx)}
-  Chief Complaint:  {ctx.get('chief_complaint') or 'Musculoskeletal dysfunction'}
+  Chief Complaint:  {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal dysfunction'}
 {neuro_block}
 {("  Objective Red Flag Signs Documented:\n" + rf_specific) if rf_specific else ""}
 
@@ -373,7 +399,7 @@ def _clinical_chronology(sessions, patient_ctx, therapist_name, patient_id, clin
 
 PATIENT PROFILE:
   {_patient_profile(ctx)}
-  Chief Complaint:  {ctx.get('chief_complaint') or 'Musculoskeletal dysfunction'}
+  Chief Complaint:  {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal dysfunction'}
 
 EPISODE SUMMARY:
   Episode Duration:  {st['first']}  to  {st['last']}
@@ -407,7 +433,7 @@ Physical Therapist
 def _insurance_appeal(sessions, patient_ctx, therapist_name, patient_id, clinic_name, ctx) -> str:
     st       = _session_stats(sessions)
     cond_str = (
-        ctx.get("primary_diagnosis")
+        _as_str(ctx.get("primary_diagnosis"))
         or ", ".join(c.replace("_", " ").title() for c in st["conditions"])
         or "Musculoskeletal dysfunction"
     )
@@ -457,7 +483,7 @@ services rendered were medically necessary and clinically justified.
 
 PATIENT PROFILE:
   {_patient_profile(ctx)}
-  Chief Complaint:    {ctx.get('chief_complaint') or 'Musculoskeletal pain and dysfunction'}{comorbidity_note}
+  Chief Complaint:    {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal pain and dysfunction'}{comorbidity_note}
 
 TREATMENT DOCUMENTATION:
   Episode of Care:    {st['first']} to {st['last']}
@@ -551,7 +577,7 @@ def _functional_report(sessions, patient_ctx, therapist_name, patient_id, clinic
 
 PATIENT PROFILE:
   {_patient_profile(ctx)}
-  Chief Complaint:  {ctx.get('chief_complaint') or 'Musculoskeletal dysfunction'}
+  Chief Complaint:  {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal dysfunction'}
   Comorbidities:    {', '.join(ctx['comorbidities']) if ctx.get('comorbidities') else 'None documented'}
 
 REPORTING PERIOD:
@@ -582,8 +608,7 @@ CLINICAL RATIONALE FOR CONTINUED / COMPLETED SERVICES:
   {trend_clinical}
 
 TREATMENT GOALS:
-  Short-Term:  Reduce risk score below 0.25; resolve acute functional deficits
-  Long-Term:   Return to prior level of function; independent home program
+{_goals_block(ctx) or "  Short-Term:  Reduce risk score below 0.25; resolve acute functional deficits\n  Long-Term:   Return to prior level of function; independent home program"}
   Safety:      Complete Red Flag clearance; physician follow-up as indicated
 
 SKILLED CARE REQUIREMENT:

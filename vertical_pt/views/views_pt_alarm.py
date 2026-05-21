@@ -2,6 +2,7 @@
 
 import datetime
 import json
+import re
 
 from django.contrib.auth.decorators import login_required as _login_required
 from functools import wraps
@@ -104,6 +105,7 @@ def patient_sessions_json(request, patient_id):
             "triggered_condition": s.triggered_condition,
             "critical_score":      round((s.critical_score or 0) * 100),
             "soap_text":           s.soap_text,
+            "clinical_context":    s.clinical_context or {},
             "created_at":          s.created_at.strftime("%Y-%m-%d %H:%M"),
             "matched_indicators":  alert.matched_indicators if alert else [],
             "referral_letter":     alert.referral_letter if alert else "",
@@ -277,6 +279,96 @@ def save_soap_ajax(request):
 
 # ── AJAX: 문서 생성 (multi-session history 기반) ─────────────────
 
+_SOAP_SECTION_STOP = re.compile(
+    r'^(Plan|Assessment|Objective|Subjective|Diagnosis|Measurements|History|Chief|Observation)\s*:',
+    re.IGNORECASE,
+)
+
+_FUNC_LIM_RE = re.compile(
+    r'\b(antalgic\s+gait|unable\s+to|cannot|difficulty\s+(?:with|performing)|'
+    r'limited\s+by|restricted\s+to|decreased\s+(?:ability|function)|'
+    r'unable\s+to\s+perform|requires\s+assist|'
+    r'weakness|extremity\s+weakness|근력\s*저하|상지\s*약화|하지\s*약화|'
+    r'일상생활\s*(?:제한|불가|어려움))\b',
+    re.IGNORECASE,
+)
+_LOM_RE = re.compile(r'^(.{3,40}?)\s+LOM\b', re.IGNORECASE)
+# LOM 매칭 결과에서 "Measurements:", "STG:", "3. " 같은 접두어 제거
+_LOM_CLEANUP = re.compile(
+    r'^(?:(?:Measurements|Objective|Subjective|Plan|LTG|STG|History|Chief|Diagnosis)\s*:\s*)?'
+    r'(?:\d+[\.\)]\s*)?',
+    re.IGNORECASE,
+)
+
+
+def _soap_goals_fallback(sessions) -> dict:
+    """
+    clinical_context에 필드 누락 시 SOAP 텍스트 직접 파싱으로 보완 — API 재호출 없음.
+
+    - LTG/STG: 명시적 레이블 이후 다음 섹션까지 라인 수집 (최초 세션 기준)
+    - onset_duration: "Onset:" 레이블 값 (의미 없는 값 제외)
+    - functional_limitations: LOM 패턴 + 기능 제한 키워드 (전 세션 스캔)
+    """
+    ltg, stg, onset = [], [], None
+    func_lims: list[str] = []
+
+    for session in sessions:
+        soap = (session.soap_text or "").strip()
+        if not soap:
+            continue
+
+        current = None
+        for line in soap.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                current = None
+                continue
+
+            if re.match(r'^LTG\s*:', stripped, re.IGNORECASE):
+                current = 'ltg'
+                rest = re.sub(r'^LTG\s*:\s*', '', stripped, flags=re.IGNORECASE).strip()
+                if rest and rest not in ltg:
+                    ltg.append(rest)
+            elif re.match(r'^STG\s*:', stripped, re.IGNORECASE):
+                current = 'stg'
+                rest = re.sub(r'^STG\s*:\s*', '', stripped, flags=re.IGNORECASE).strip()
+                if rest and rest not in stg:
+                    stg.append(rest)
+            elif re.match(r'^Onset\s*:', stripped, re.IGNORECASE) and onset is None:
+                val = re.sub(r'^Onset\s*:\s*', '', stripped, flags=re.IGNORECASE).strip()
+                if val and val.lower() not in ('not certain', 'unknown', 'n/a', ''):
+                    onset = val
+                current = None
+            elif _SOAP_SECTION_STOP.match(stripped):
+                current = None
+            elif current == 'ltg' and stripped not in ltg:
+                ltg.append(stripped)
+            elif current == 'stg' and stripped not in stg:
+                stg.append(stripped)
+
+            # functional_limitations: LOM 패턴 — goals 섹션 제외, 접두어 클린업
+            lom_m = _LOM_RE.match(stripped)
+            if lom_m and current not in ('ltg', 'stg'):
+                body = _LOM_CLEANUP.sub('', lom_m.group(1)).strip()
+                if body and len(body) > 2:
+                    lim = f"{body} — limited range of motion"
+                    if lim not in func_lims:
+                        func_lims.append(lim)
+            # functional_limitations: 기능 제한 키워드 포함 라인 — goals 섹션 제외
+            elif current not in ('ltg', 'stg') and _FUNC_LIM_RE.search(stripped) and stripped not in func_lims:
+                func_lims.append(stripped)
+
+        if ltg or stg:
+            break  # 첫 번째(가장 초기) 세션에서 goals 발견 시 중단
+
+    return {
+        "goals_ltg":            ltg,
+        "goals_stg":            stg,
+        "onset_duration":       onset,
+        "functional_limitations": func_lims,
+    }
+
+
 @login_required
 @require_http_methods(["POST"])
 def generate_doc_ajax(request, patient_id):
@@ -307,12 +399,21 @@ def generate_doc_ajax(request, patient_id):
     except Exception:
         pass
 
-    # 가장 최근 임상 컨텍스트 선택 (채워진 것 우선)
+    # 가장 최근 임상 컨텍스트 선택 — 내부 전용 키 제외 후 실제 임상 필드가 있는 것만
+    _INTERNAL_KEYS = {"soap_section_overrides"}
     clinical_context = {}
     for s in reversed(sessions):
-        if s.clinical_context:
-            clinical_context = s.clinical_context
+        ctx = s.clinical_context or {}
+        clinical_fields = {k: v for k, v in ctx.items() if k not in _INTERNAL_KEYS}
+        if any(v for v in clinical_fields.values() if v):
+            clinical_context = clinical_fields
             break
+
+    # 누락 필드 SOAP 텍스트 직접 파싱으로 보완 (API 재호출 없음)
+    fallback = _soap_goals_fallback(sessions)
+    for key in ("goals_ltg", "goals_stg", "onset_duration", "functional_limitations"):
+        if not clinical_context.get(key) and fallback.get(key):
+            clinical_context[key] = fallback[key]
 
     try:
         doc_text = generate_document(
@@ -492,6 +593,198 @@ def referral_mark_followup(request, alert_id):
         "ok":          True,
         "followup_at": alert.referral_followup_at.isoformat(),
     })
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def admin_clear_sessions(request):
+    """전체 세션 삭제 (현재 유저)."""
+    deleted, _ = PatientTimeline.objects.filter(therapist=request.user).delete()
+    return JsonResponse({"ok": True, "deleted": deleted})
+
+
+@login_required
+@require_http_methods(["POST"])
+def admin_reseed_ajax(request):
+    """전체 삭제 + 실습 케이스 16개 + Margaret 10개 재적재 + 재스코어링."""
+    import time
+    import json as _json
+    from pathlib import Path
+    from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
+
+    # 1. 전체 삭제
+    PatientTimeline.objects.filter(therapist=request.user).delete()
+
+    results = {"seeded": 0, "errors": []}
+
+    # 2. 16개 실습 케이스
+    cases_path = Path(__file__).resolve().parents[2] / "data" / "soap_samples" / "cases.json"
+    if cases_path.exists():
+        cases = _json.loads(cases_path.read_text(encoding="utf-8"))
+        for case in cases:
+            try:
+                pt       = case.get("patient", {})
+                soap     = _build_soap_text(case)
+                age, sex = pt.get("age",""), pt.get("sex","")
+                if age:
+                    soap = f"Patient: {age}yo {sex}\n" + soap
+                try:
+                    session_date = datetime.date.fromisoformat(
+                        pt.get("eval_date","").replace("/","-"))
+                except Exception:
+                    session_date = datetime.date(2022,12,1) + datetime.timedelta(days=case["id"])
+
+                _create_session(request.user, f"PT-{case['id']:03d}",
+                                pt.get("name","Unknown"), session_date, soap)
+                results["seeded"] += 1
+            except Exception as e:
+                results["errors"].append(str(e))
+
+
+    # 3. Margaret Wilson 10회
+    from vertical_pt.management.commands.seed_multi_session_patient import SESSIONS, PATIENT_ID, PATIENT_NAME
+    for s in SESSIONS:
+        try:
+            _create_session(request.user, PATIENT_ID, PATIENT_NAME,
+                            s["date"], s["soap"].strip())
+            results["seeded"] += 1
+        except Exception as e:
+            results["errors"].append(str(e))
+
+    return JsonResponse({"ok": True, **results})
+
+
+def _build_soap_text(case: dict) -> str:
+    """seed_soap_samples.py의 _flatten_soap 인라인."""
+    s, o, a, p = (case.get(k, {}) for k in ("S","O","A","P"))
+    lines = []
+    for key, field in [("Chief complaint",s.get("chief_complaint","")),
+                       ("Onset",         s.get("onset","")),
+                       ("History",        s.get("history",""))]:
+        if field and field != "Not certain":
+            lines.append(f"{key}: {field}")
+    if s.get("additional"):  lines.append(s["additional"])
+    for key, field in [("Diagnosis",    o.get("diagnosis","")),
+                       ("Objective",    o.get("objective_data","")),
+                       ("Measurements", o.get("measurements",""))]:
+        if field: lines.append(f"{key}: {field}")
+    if isinstance(a, dict):
+        if a.get("ltg"): lines.append(f"LTG: {a['ltg']}")
+        if a.get("stg"): lines.append(f"STG: {a['stg']}")
+    if p: lines.append(f"Plan: {p}")
+    return "\n".join(lines)
+
+
+def _create_session(user, patient_id, patient_name, session_date, soap_text):
+    result = score_soap(soap_text)
+    timeline = PatientTimeline.objects.create(
+        therapist=user, patient_id=patient_id, patient_name=patient_name,
+        session_date=session_date, soap_text=soap_text,
+        extracted_symptoms=result.get("vpps",{}),
+        critical_score=result["score"], alarm_level=result["alarm"],
+        triggered_condition=result["condition"] or "",
+    )
+
+    # clinical_context AI 추출 — save_soap_ajax / seed_multi_session_patient 와 동일 경로
+    try:
+        clinical_ctx = extract_clinical_context(soap_text)
+        if any(v for v in clinical_ctx.values() if v):
+            timeline.clinical_context = clinical_ctx
+            timeline.save(update_fields=["clinical_context"])
+    except Exception:
+        pass
+
+    if result["alarm"] in ("RED","YELLOW"):
+        active = result.get("conditions",[])
+        name   = user.get_full_name() or user.username
+        alert  = RedFlagAlert.objects.create(
+            timeline=timeline, condition=result["condition"] or "",
+            alarm_level=result["alarm"], matched_indicators=result["matched"],
+            score=result["score"], trigger_label=result.get("trigger",""),
+        )
+        from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
+        letter = (generate_multi_referral_letter(active, patient_id=patient_id, therapist_name=name)
+                  if len(active) > 1 else
+                  generate_referral_letter(alert, patient_id=patient_id, therapist_name=name))
+        alert.referral_letter = letter
+        alert.save(update_fields=["referral_letter"])
+
+
+@login_required
+@require_http_methods(["POST"])
+def backfill_rescore_ajax(request):
+    """사이드바 임시 버튼 — 현재 유저의 세션을 최신 VPPS로 재스코어링."""
+    from vertical_pt.engine import score_soap
+    from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
+
+    qs = PatientTimeline.objects.filter(therapist=request.user)
+    changed = 0
+    for timeline in qs:
+        result   = score_soap(timeline.soap_text)
+        new_alarm = result["alarm"]
+        new_score = result["score"]
+        old_alarm = timeline.alarm_level
+
+        if new_alarm != old_alarm or abs((timeline.critical_score or 0) - (new_score or 0)) > 0.01:
+            timeline.alarm_level         = new_alarm
+            timeline.critical_score      = new_score
+            timeline.triggered_condition = result["condition"] or ""
+            timeline.extracted_symptoms  = result.get("vpps", {})
+            timeline.save(update_fields=[
+                "alarm_level", "critical_score",
+                "triggered_condition", "extracted_symptoms",
+            ])
+            timeline.alerts.all().delete()
+            if new_alarm in ("RED", "YELLOW"):
+                therapist_name    = request.user.get_full_name() or request.user.username
+                active_conditions = result.get("conditions", [])
+                alert = RedFlagAlert.objects.create(
+                    timeline=timeline,
+                    condition=result["condition"] or "",
+                    alarm_level=new_alarm,
+                    matched_indicators=result["matched"],
+                    score=new_score,
+                    trigger_label=result.get("trigger", ""),
+                )
+                if len(active_conditions) > 1:
+                    letter = generate_multi_referral_letter(
+                        active_conditions,
+                        patient_id=timeline.patient_id,
+                        therapist_name=therapist_name,
+                    )
+                else:
+                    letter = generate_referral_letter(
+                        alert,
+                        patient_id=timeline.patient_id,
+                        therapist_name=therapist_name,
+                    )
+                alert.referral_letter = letter
+                alert.save(update_fields=["referral_letter"])
+            changed += 1
+
+    total = qs.count()
+    return JsonResponse({"ok": True, "total": total, "changed": changed})
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_section_overrides(request, session_id):
+    """세션별 SOAP 섹션 오버라이드 저장 → clinical_context.soap_section_overrides."""
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    try:
+        timeline = PatientTimeline.objects.get(id=session_id, therapist=request.user)
+    except PatientTimeline.DoesNotExist:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    ctx = timeline.clinical_context or {}
+    ctx["soap_section_overrides"] = data.get("overrides", {})
+    timeline.clinical_context = ctx
+    timeline.save(update_fields=["clinical_context"])
+    return JsonResponse({"ok": True})
 
 
 @login_required

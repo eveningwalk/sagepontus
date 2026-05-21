@@ -24,6 +24,8 @@ urlpatterns = [
                                              views_pt_alarm.patient_sessions_json, name="pt_patient_sessions"),
     path("pt/api/sessions/<int:session_id>/delete/",
                                              views_pt_alarm.delete_session,        name="pt_session_delete"),
+    path("pt/api/sessions/<int:session_id>/overrides/",
+                                             views_pt_alarm.save_section_overrides, name="pt_section_overrides"),
     path("pt/api/generate-patient-id/",      views_pt_alarm.generate_patient_id,  name="pt_generate_pid"),
     path("pt/api/patients/<str:patient_id>/generate-doc/",
                                              views_pt_alarm.generate_doc_ajax,    name="pt_generate_doc"),
@@ -33,6 +35,10 @@ urlpatterns = [
     path("pt/api/alerts/<int:alert_id>/send/",      views_pt_alarm.referral_send,         name="pt_referral_send"),
     path("pt/api/alerts/<int:alert_id>/followup/",  views_pt_alarm.referral_mark_followup, name="pt_referral_followup"),
     path("pt/api/alerts/<int:alert_id>/print/",     views_pt_alarm.referral_print,         name="pt_referral_print"),
+
+    path("pt/api/backfill-rescore/",            views_pt_alarm.backfill_rescore_ajax,  name="pt_backfill_rescore"),
+    path("pt/api/admin/clear/",                 views_pt_alarm.admin_clear_sessions,   name="pt_admin_clear"),
+    path("pt/api/admin/reseed/",                views_pt_alarm.admin_reseed_ajax,      name="pt_admin_reseed"),
 
     # ── 웹 UI ─────────────────────────────────────────────────────────────
     path("pt/",          views_pt_alarm.index,        name="pt_index"),

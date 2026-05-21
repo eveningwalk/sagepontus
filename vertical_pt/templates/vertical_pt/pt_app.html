@@ -268,10 +268,68 @@
       display: flex; align-items: center; gap: 8px;
     }
     .pt-soap-body {
-      padding: 18px; font-family: monospace; font-size: 13px;
-      line-height: 1.75; color: #1f2937; white-space: pre-wrap;
-      word-break: break-word;
+      padding: 0;
     }
+    /* 비교 뷰 — 원본 / 섹션 제목 */
+    .soap-compare {
+      display: grid; grid-template-columns: 1fr 1fr;
+      border-top: 1px solid #f1f5f9;
+    }
+    .soap-compare-col {
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    .soap-compare-col + .soap-compare-col {
+      border-left: 2px solid #e2e8f0;
+    }
+    .soap-compare-label {
+      padding: 6px 14px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .7px;
+      background: #f1f5f9; color: #64748b; border-bottom: 1px solid #e2e8f0;
+    }
+    .soap-compare-label.formatted { color: #4f46e5; background: #eef2ff; }
+    .soap-compare-col .soap-display {
+      border-radius: 0; border: none; flex: 1;
+      max-height: 420px; overflow-y: auto;
+    }
+    /* Level 2: 섹션 picker — 모든 줄 hover 시 표시 */
+    .soap-line { display: block; }
+    .soap-pick-btn {
+      display: inline-block; margin-right: 5px; vertical-align: middle;
+      padding: 1px 5px; border-radius: 4px; border: 1px dashed #94a3b8;
+      background: #f8fafc; color: #94a3b8; font-size: 9px; font-weight: 700;
+      font-family: -apple-system, sans-serif; cursor: pointer; line-height: 1.6;
+      opacity: 0; transition: opacity .15s;
+    }
+    .soap-line:hover .soap-pick-btn { opacity: 1; }
+    .soap-pick-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    .soap-pick-btn.overridden { border-color: #6366f1; color: #6366f1; background: #eef2ff; opacity: 1; }
+    .soap-picker-popup {
+      display: inline-flex; gap: 3px; vertical-align: middle;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 3px 5px; box-shadow: 0 2px 8px rgba(0,0,0,.12); margin-left: 4px;
+    }
+    .soap-pick-opt {
+      padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;
+      background: #f8fafc; color: #475569; font-size: 11px;
+      font-weight: 700; cursor: pointer;
+    }
+    .soap-pick-opt:hover { background: #eef2ff; color: #4f46e5; border-color: #c7d2fe; }
+    .soap-pick-opt.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    /* 공통 SOAP 표시 박스 — 세 뷰 모두 사용 */
+    .soap-display {
+      background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 16px 20px; font-family: 'Courier New', monospace;
+      font-size: 12.5px; line-height: 1.85; color: #1e293b;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .soap-section-title {
+      display: block; margin-top: 18px; margin-bottom: 5px;
+      padding-bottom: 4px; border-bottom: 1.5px solid #cbd5e1;
+      font-family: -apple-system, sans-serif; font-size: 10.5px;
+      font-weight: 800; text-transform: uppercase; letter-spacing: .8px;
+      color: #475569;
+    }
+    .soap-section-title:first-child { margin-top: 0; }
 
     /* Indicators 카드 */
     .pt-indicators-card {
@@ -400,12 +458,7 @@
       font-size: 11px; font-weight: 700; color: #6b7280;
       text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
     }
-    .alarm-soap-box {
-      background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px;
-      padding: 16px 18px; font-family: 'Courier New', monospace;
-      font-size: 12.5px; line-height: 1.8; color: #334155;
-      white-space: pre-wrap; word-break: break-word;
-    }
+    .alarm-soap-box { } /* → soap-display 통합 */
     .alarm-letter-box {
       border-radius: 8px; padding: 20px 24px;
       font-family: 'Courier New', monospace;
@@ -605,6 +658,23 @@
     <nav class="app-sidebar__nav" id="patient-list" style="padding:0 6px;gap:0;">
       <div style="padding:12px;font-size:12px;color:#64748b;">불러오는 중...</div>
     </nav>
+
+    <!-- 임시 Dev Tools -->
+    <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:5px;">
+      <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.6px;text-transform:uppercase;padding:2px 0;">Dev Tools</div>
+      <button id="reseed-btn" onclick="runReseed()"
+        style="width:100%;padding:7px;border:1px solid rgba(255,255,255,.25);border-radius:7px;
+               background:transparent;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;transition:background .15s;"
+        onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
+        🌱 Clear &amp; Reseed All
+      </button>
+      <button id="rescore-btn" onclick="runBackfill()"
+        style="width:100%;padding:7px;border:1px solid rgba(255,255,255,.25);border-radius:7px;
+               background:transparent;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;transition:background .15s;"
+        onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
+        🔄 Re-score All
+      </button>
+    </div>
 
     <div class="app-sidebar__footer">
       <a href="{% url 'vertical_pt:pt_logout' %}" class="app-sidebar__footer-link">Sign out</a>
@@ -1118,6 +1188,7 @@ let _sessions = [];
 
 function renderHistory(d) {
   _sessions = d.sessions || [];
+  _loadSessionOverrides(_sessions);   // 저장된 섹션 오버라이드 복원
   const listEl = document.getElementById('session-list-items');
 
   if (!_sessions.length) {
@@ -1176,15 +1247,39 @@ function showSessionDetail(idx) {
         <span class="pt-session-badge badge-${s.alarm_level}" style="margin-left:4px;">${alarmLabel(s.alarm_level)}</span>
         ${s.triggered_condition ? `<span style="font-size:12px;color:#6b7280;margin-left:4px;">${esc(s.triggered_condition)}</span>` : ''}
         <span style="margin-left:auto;font-size:12px;color:#9ca3af;">Risk ${s.critical_score}%</span>
+        <button id="soap-compare-btn" onclick="toggleSoapCompare()"
+          style="margin-left:8px;padding:3px 9px;border:1px solid #c7d2fe;border-radius:5px;
+                 background:transparent;color:#6366f1;font-size:11px;cursor:pointer;
+                 transition:background .15s;"
+          onmouseover="this.style.background='#eef2ff'"
+          onmouseout="this.style.background='transparent'"
+          title="원본 / 섹션 제목 비교">⇄ 비교</button>
+        <button id="soap-copy-btn" onclick="copySessionSoap(this, ${JSON.stringify(s.soap_text)})"
+          style="margin-left:4px;padding:3px 9px;border:1px solid #d1d5db;border-radius:5px;
+                 background:transparent;color:#6b7280;font-size:11px;cursor:pointer;
+                 transition:background .15s;"
+          onmouseover="this.style.background='#f9fafb'"
+          onmouseout="this.style.background='transparent'"
+          title="SOAP 복사">⎘ 복사</button>
         <button onclick="deleteSession(${s.id}, '${currentPatientId}')"
-          style="margin-left:10px;padding:3px 8px;border:1px solid #fca5a5;border-radius:5px;
+          style="margin-left:4px;padding:3px 8px;border:1px solid #fca5a5;border-radius:5px;
                  background:transparent;color:#ef4444;font-size:11px;cursor:pointer;
                  transition:background .15s;"
           onmouseover="this.style.background='#fef2f2'"
           onmouseout="this.style.background='transparent'"
           title="이 세션 삭제">🗑 삭제</button>
       </div>
-      <div class="pt-soap-body">${esc(s.soap_text)}</div>
+      <div id="soap-body-single" class="pt-soap-body"><div class="soap-display">${formatSoap(s.soap_text, s.id)}</div></div>
+      <div id="soap-body-compare" class="soap-compare" style="display:none;">
+        <div class="soap-compare-col">
+          <div class="soap-compare-label">원본 (Raw)</div>
+          <div class="soap-display">${esc(s.soap_text)}</div>
+        </div>
+        <div class="soap-compare-col">
+          <div class="soap-compare-label formatted">섹션 제목 추가 (Formatted)</div>
+          <div class="soap-display">${formatSoap(s.soap_text, s.id)}</div>
+        </div>
+      </div>
     </div>`;
 
   // ── Detected Indicators 카드 (알람 있을 때만) ──
@@ -1260,10 +1355,7 @@ function openSlidePanel(s) {
   html += `
     <div class="slide-col" id="slide-left-col" style="flex:1;">
       <div class="slide-col-title">🩺 SOAP Note</div>
-      <div style="background:#f8fafc;border:1px solid #e5e7eb;color:#334155;
-           font-family:'Courier New',monospace;font-size:11.5px;border-radius:8px;
-           padding:14px;flex:1;min-height:0;overflow-y:auto;white-space:pre-wrap;
-           word-break:break-word;line-height:1.8;">${s.soap_text ? formatSoap(s.soap_text) : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
+      <div class="soap-display" style="flex:1;min-height:0;overflow-y:auto;">${s.soap_text ? formatSoap(s.soap_text) : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
     </div>`;
 
   // 드래그 핸들
@@ -1366,7 +1458,7 @@ function openAlarmModal(s) {
   html += `
     <div class="alarm-section">
       <div class="alarm-section-label">🩺 SOAP Note</div>
-      <div class="alarm-soap-box">${s.soap_text ? formatSoap(s.soap_text)
+      <div class="soap-display">${s.soap_text ? formatSoap(s.soap_text)
         : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
     </div>`;
 
@@ -1918,6 +2010,98 @@ function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function copySessionSoap(btn, soapText) {
+  navigator.clipboard.writeText(soapText).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ 복사됨';
+    btn.style.color  = '#16a34a';
+    btn.style.border = '1px solid #bbf7d0';
+    setTimeout(() => {
+      btn.textContent = '⎘ 복사';
+      btn.style.color  = '#6b7280';
+      btn.style.border = '1px solid #d1d5db';
+    }, 2000);
+  }).catch(() => {
+    btn.textContent = '❌ 실패';
+    setTimeout(() => { btn.textContent = '⎘ 복사'; }, 2000);
+  });
+}
+
+function toggleSoapCompare() {
+  const single  = document.getElementById('soap-body-single');
+  const compare = document.getElementById('soap-body-compare');
+  const btn     = document.getElementById('soap-compare-btn');
+  if (!single || !compare) return;
+  const isCompare = compare.style.display !== 'none';
+  single.style.display  = isCompare ? '' : 'none';
+  compare.style.display = isCompare ? 'none' : 'grid';
+  btn.textContent       = isCompare ? '⇄ 비교' : '✕ 비교 닫기';
+  btn.style.background  = isCompare ? 'transparent' : '#eef2ff';
+}
+
+async function runReseed() {
+  if (!confirm('전체 세션을 삭제하고 실습 데이터(16개 + Margaret 10회)를 재적재합니다. 계속할까요?')) return;
+  const btn = document.getElementById('reseed-btn');
+  btn.textContent = '⏳ Seeding...';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/pt/api/admin/reseed/', {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF},
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) {
+      btn.textContent = '❌ Error';
+      btn.title = JSON.stringify(d);
+      btn.disabled = false;
+      return;
+    }
+    const errNote = d.errors && d.errors.length ? ` (${d.errors.length} err)` : '';
+    btn.textContent = `✅ ${d.seeded} seeded${errNote}`;
+    setTimeout(() => { btn.textContent = '🌱 Clear & Reseed All'; btn.disabled = false; }, 3000);
+    // 뷰 완전 초기화 후 환자 목록 리로드
+    activePatientId  = null;
+    currentPatientId = null;
+    _sessions        = [];
+    _showView('view-new');
+    await loadPatients();
+  } catch(e) {
+    btn.textContent = '❌ ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+async function runBackfill() {
+  const btn = document.getElementById('rescore-btn');
+  btn.textContent = '⏳ Running...';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/pt/api/backfill-rescore/', {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF},
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) {
+      btn.textContent = '❌ Error';
+      btn.title = JSON.stringify(d);
+      btn.disabled = false;
+      return;
+    }
+    btn.textContent = `✅ ${d.changed}/${d.total} updated`;
+    setTimeout(() => { btn.textContent = '🔄 Re-score All'; btn.disabled = false; }, 3000);
+    if (d.changed > 0) {
+      activePatientId  = null;
+      currentPatientId = null;
+      _sessions        = [];
+      _showView('view-new');
+      await loadPatients();
+    }
+  } catch(e) {
+    btn.textContent = '❌ ' + e.message;
+    btn.disabled = false;
+  }
+}
+
 async function copyReferral() {
   const text = document.getElementById('referral-text')?.innerText || '';
   await navigator.clipboard.writeText(text);
@@ -1927,51 +2111,254 @@ async function copyReferral() {
 }
 
 // ── SOAP 포맷팅 ───────────────────────────────────────────────
-function formatSoap(rawText) {
-  if (!rawText) return '<span style="color:#9ca3af;">내용 없음</span>';
+function _soapTitle(label) {
+  return `<span class="soap-section-title">${label}</span>`;
+}
 
-  // 섹션 헤더 라벨 (굵은 배지 + 구분선)
-  const sectionLabels = /^(LTG|STG|Plan|Assessment|Intervention|Subjective|Objective)s?:/i;
-  // 환자 정보 라벨
-  const infoLabels = /^(Patient|Chief\s+complaint|Onset|History|Diagnosis|Measurements?|Precaution|Goal)s?:/i;
+// ── Path A: clinical_context (AI 분류) → 섹션 제목 + 추출값 ──────
+function _renderFromCtx(ctx) {
+  const rows = (vals) => {
+    const items = Array.isArray(vals) ? vals : (vals ? [String(vals)] : []);
+    return items.filter(Boolean).map(v =>
+      `<span style="display:block;">${esc(String(v))}</span>`
+    ).join('');
+  };
 
-  return rawText.split('\n').map(line => {
+  const S = [
+    ctx.chief_complaint,
+    ctx.onset_duration,
+    ctx.vas_score ? `Pain score: ${ctx.vas_score}` : null,
+    ...(ctx.comorbidities || []),
+  ].filter(Boolean);
+
+  const O = [
+    ...(ctx.mmt_findings         || []),
+    ...(ctx.rom_findings          || []),
+    ...(ctx.neurological_findings || []),
+    ...(ctx.special_tests         || []),
+  ];
+
+  const A = [
+    ctx.primary_diagnosis,
+    ...(ctx.red_flag_findings     || []),
+    ...(ctx.functional_limitations|| []),
+  ].filter(Boolean);
+
+  const P = [
+    ...(ctx.treatment_performed   || []),
+    ...(ctx.medications           || []),
+    ...(ctx.precautions           || []),
+  ];
+
+  let html = '';
+  if (S.length) html += _soapTitle('Subjective') + rows(S);
+  if (O.length) html += _soapTitle('Objective')  + rows(O);
+  if (A.length) html += _soapTitle('Assessment') + rows(A);
+  if (P.length) html += _soapTitle('Plan')       + rows(P);
+  return html;
+}
+
+// ── Path B: 키워드 감지 → 섹션 제목 삽입 ─────────────────────────
+const _KEYWORD_SECTION = [
+  { re: /^(Patient|Chief\s*complaint?|CC|Onset|History|PMH|HPI|Additional|Prior|Previous|Mechanism|MOI|Aggravat|Easing|Reliev|Exacerbat|Social\s*history|Occupation|Work\s*history|Complaint|Symptom|Duration|Sleep|Bowel|Bladder|Medication|Drug|Allerg|Report)/i,
+    sec: 'Subjective' },
+  { re: /^(Objective|Observation|Inspection|Measurements?|MMT|ROM|AROM|PROM|RROM|Posture|Gait|Palpation|SLR|Strength|Neurolog|Neuro|Special\s*test|Sensation|Reflex|DTR|Edema|Swelling|Vital|Functional\s*mobility)/i,
+    sec: 'Objective'  },
+  { re: /^(Diagnosis|Assessment|Clinical\s*impression|Progress|Response|Prognosis|Problem|Intervention|Functional\s*status)/i,
+    sec: 'Assessment' },
+  { re: /^(LTG|STG|Goal|Plan|Precaution|HEP|Home\s*exercise|Follow.?up|Frequency|Education|Discharge|Return|Next\s*visit|Treatment\s*plan|Rehab)/i,
+    sec: 'Plan'       },
+];
+
+function _sectionOf(t) {
+  for (const { re, sec } of _KEYWORD_SECTION) {
+    if (re.test(t)) return sec;
+  }
+  return null;
+}
+
+// Level 1: 알려진 키워드가 줄 중간에 나타나면 앞에 줄바꿈 삽입
+function _normalizeSoapLines(text) {
+  const kw = [
+    'Patient','Chief\\s+complaint?','CC','Onset','History','PMH','HPI','Additional',
+    'Prior','Previous','Mechanism','MOI','Aggravat','Easing','Reliev','Exacerbat',
+    'Social\\s+history','Occupation','Work\\s+history','Complaint','Symptom','Duration',
+    'Sleep','Bowel','Bladder','Medication','Drug','Allerg','Report',
+    'Objective','Observation','Inspection','Measurements?','MMT',
+    'ROM','AROM','PROM','RROM','Posture','Gait','Palpation','SLR','Strength',
+    'Neurolog','Neuro','Special\\s+test','Sensation','Reflex','DTR','Edema','Vital',
+    'Functional\\s+mobility',
+    'Diagnosis','Assessment','Clinical\\s+impression','Progress','Response',
+    'Prognosis','Problem','Intervention','Functional\\s+status',
+    'LTG','STG','Goal','Plan','Precaution','HEP','Home\\s+exercise',
+    'Follow.?up','Frequency','Education','Discharge','Return','Next\\s+visit',
+    'Treatment\\s+plan','Rehab',
+  ].join('|');
+  return text.replace(
+    new RegExp(`([^\\n])[ \\t]+((?:${kw})\\s*:)`, 'gi'),
+    '$1\n$2'
+  );
+}
+
+// Level 2: sessionId별 사용자 섹션 오버라이드 저장
+const _sectionOverrides = {};  // key: `${sessionId}_${lineIdx}`
+
+function _renderFromKeywords(rawText, sessionId) {
+  const normalized = _normalizeSoapLines(rawText);
+  let html = '';
+  let cur  = null;
+  const seenSections = new Set();   // 이미 타이틀을 출력한 섹션
+  let lineIdx = 0;
+
+  for (const line of normalized.split('\n')) {
     const t = line.trim();
-    if (!t) return '';
+    if (!t) { lineIdx++; continue; }
 
-    // 섹션 헤더 (LTG, STG, Plan 등) → 배경 있는 섹션 구분
-    if (sectionLabels.test(t)) {
+    const detectedSec = _sectionOf(t);
+
+    if (detectedSec) {
+      // 오버라이드 확인 — 사용자가 이 줄의 섹션을 변경했을 수 있음
+      const key         = `${sessionId}_${lineIdx}`;
+      const overrideSec = sessionId != null ? _sectionOverrides[key] : null;
+      const effectiveSec = overrideSec || detectedSec;
+
+      if (effectiveSec !== cur) {
+        // 이미 출력된 섹션이면 타이틀 중복 삽입 금지
+        if (!seenSections.has(effectiveSec)) {
+          html += _soapTitle(effectiveSec);
+          seenSections.add(effectiveSec);
+        }
+        cur = effectiveSec;
+      }
+
       const colon = t.indexOf(':');
-      const label = t.slice(0, colon);
-      const rest  = esc(t.slice(colon + 1).trim());
-      return `<span style="display:inline-block;margin-top:6px;padding:2px 10px;border-radius:4px;`
-           + `font-size:11px;font-weight:800;background:#1e293b;color:#f8fafc;letter-spacing:.4px;">`
-           + `${esc(label)}</span>${rest ? '<span style="color:#475569;"> — </span>' + rest : ''}`;
-    }
+      let lineContent = '';
+      if (colon > 0) {
+        const label = t.slice(0, colon).trim();
+        const rest  = esc(t.slice(colon + 1).trim());
+        lineContent = `<strong style="color:#374151;">${esc(label)}:</strong>${rest ? ' ' + rest : ''}`;
+      } else {
+        lineContent = esc(t);
+      }
 
-    // 환자 정보 라벨 (Patient:, Chief complaint: 등) → 파란 굵은 라벨
-    if (infoLabels.test(t)) {
-      const colon = t.indexOf(':');
-      const label = t.slice(0, colon);
-      const rest  = esc(t.slice(colon + 1).trim());
-      return `<strong style="color:#1d4ed8;font-weight:700;">${esc(label)}:</strong>`
-           + (rest ? ` <span style="color:#1e293b;">${rest}</span>` : '');
-    }
+      if (sessionId != null) {
+        const badge = effectiveSec[0];
+        const cls   = overrideSec ? ' overridden' : '';
+        html += `<span class="soap-line">` +
+                `<button class="soap-pick-btn${cls}" onclick="showSectionPick(event,'${sessionId}',${lineIdx},'${effectiveSec}')" title="섹션 변경">${badge}</button>` +
+                `${lineContent}</span>\n`;
+      } else {
+        html += lineContent + '\n';
+      }
+    } else {
+      // 키워드 없는 라인 — 오버라이드 또는 상속 섹션 사용
+      const key         = `${sessionId}_${lineIdx}`;
+      const overrideSec = sessionId != null ? _sectionOverrides[key] : null;
+      const effectiveSec = overrideSec || cur;
 
-    // 범용 Key: value (Urgency, Recommended, Guideline 등)
-    const m = t.match(/^([A-Za-z가-힣][^:]{0,30}):\s*(.+)$/);
-    if (m) {
-      return `<strong style="color:#374151;font-weight:700;">${esc(m[1])}:</strong> `
-           + `<span style="color:#1e293b;">${esc(m[2])}</span>`;
-    }
+      if (overrideSec && overrideSec !== cur) {
+        if (!seenSections.has(overrideSec)) {
+          html += _soapTitle(overrideSec);
+          seenSections.add(overrideSec);
+        }
+        cur = overrideSec;
+      }
 
-    // 번호 항목 (1. 2. 3.) → 약간 들여쓰기
-    if (/^\d+\./.test(t)) {
-      return `<span style="color:#64748b;padding-left:8px;display:inline-block;">${esc(line)}</span>`;
+      if (sessionId != null) {
+        const badge = effectiveSec ? effectiveSec[0] : '?';
+        const cls   = overrideSec ? ' overridden' : '';
+        html += `<span class="soap-line">` +
+                `<button class="soap-pick-btn${cls}" onclick="showSectionPick(event,'${sessionId}',${lineIdx},'${effectiveSec||''}')" title="섹션 변경">${badge}${overrideSec ? '' : '?'}</button>` +
+                `${esc(t)}</span>\n`;
+      } else {
+        html += esc(t) + '\n';
+      }
     }
+    lineIdx++;
+  }
+  return html;
+}
 
-    return `<span style="color:#334155;">${esc(line)}</span>`;
-  }).join('\n');
+// 섹션 picker 표시
+function showSectionPick(evt, sessionId, lineIdx, currentSec) {
+  evt.stopPropagation();
+  const popupId = 'soap-picker-popup';
+  const existing = document.getElementById(popupId);
+  if (existing) {
+    const isSame = existing.dataset.for === `${sessionId}_${lineIdx}`;
+    existing.remove();
+    if (isSame) return;
+  }
+  const sections = ['Subjective','Objective','Assessment','Plan'];
+  const popup = document.createElement('span');
+  popup.id = popupId;
+  popup.dataset.for = `${sessionId}_${lineIdx}`;
+  popup.className = 'soap-picker-popup';
+  popup.innerHTML = sections.map(s =>
+    `<button class="soap-pick-opt${s===currentSec?' active':''}" ` +
+    `onclick="applySectionPick('${sessionId}',${lineIdx},'${s}')">${s[0]}</button>`
+  ).join('');
+  evt.currentTarget.insertAdjacentElement('afterend', popup);
+}
+
+// 외부 클릭 시 picker 닫기
+document.addEventListener('click', () => document.getElementById('soap-picker-popup')?.remove());
+
+// 섹션 선택 적용 + 자동 저장
+function applySectionPick(sessionId, lineIdx, sec) {
+  _sectionOverrides[`${sessionId}_${lineIdx}`] = sec;
+  document.getElementById('soap-picker-popup')?.remove();
+  _refreshSoapDisplay(sessionId);
+  _saveSessionOverrides(sessionId);
+}
+
+// 오버라이드 서버 저장
+async function _saveSessionOverrides(sessionId) {
+  const prefix   = `${sessionId}_`;
+  const overrides = {};
+  for (const [key, sec] of Object.entries(_sectionOverrides)) {
+    if (key.startsWith(prefix)) {
+      overrides[key.slice(prefix.length)] = sec;
+    }
+  }
+  try {
+    await fetch(`/pt/api/sessions/${sessionId}/overrides/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ overrides }),
+    });
+  } catch(e) {
+    console.warn('Section overrides save failed:', e);
+  }
+}
+
+// 세션 로드 시 저장된 오버라이드 복원
+function _loadSessionOverrides(sessions) {
+  for (const s of sessions) {
+    const saved = (s.clinical_context || {}).soap_section_overrides || {};
+    for (const [lineIdx, sec] of Object.entries(saved)) {
+      _sectionOverrides[`${s.id}_${lineIdx}`] = sec;
+    }
+  }
+}
+
+// SOAP 표시 영역만 재렌더링
+function _refreshSoapDisplay(sessionId) {
+  const s = _sessions.find(x => String(x.id) === String(sessionId));
+  if (!s) return;
+  const formatted = formatSoap(s.soap_text, s.id);
+  const single = document.getElementById('soap-body-single');
+  if (single && single.style.display !== 'none') {
+    single.querySelector('.soap-display').innerHTML = formatted;
+  }
+  const compareRight = document.querySelector('#soap-body-compare .soap-compare-col:last-child .soap-display');
+  if (compareRight) compareRight.innerHTML = formatted;
+}
+
+// ── 진입점 ────────────────────────────────────────────────────────
+function formatSoap(rawText, sessionId) {
+  if (!rawText) return '<span style="color:#9ca3af;">내용 없음</span>';
+  return _renderFromKeywords(rawText, sessionId ?? null);
 }
 
 // ── Letter 포맷팅 ─────────────────────────────────────────────

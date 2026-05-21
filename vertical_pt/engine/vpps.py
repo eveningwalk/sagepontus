@@ -28,7 +28,7 @@ _NEGATION_RE = re.compile(
     r"not experiencing|not having|no history of|no evidence of)"
     r"\s+"
     r"(?!improvement|improving|relief|response|change|comfortable)"
-    r"(?:\w+\s+){0,3}",
+    r"(?:\w+\s*){1,4}",
     re.IGNORECASE,
 )
 
