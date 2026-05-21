@@ -1254,7 +1254,7 @@ function showSessionDetail(idx) {
           onmouseover="this.style.background='#eef2ff'"
           onmouseout="this.style.background='transparent'"
           title="원본 / 섹션 제목 비교">⇄ 비교</button>
-        <button id="soap-copy-btn" onclick="copySessionSoap(this, ${JSON.stringify(s.soap_text)})"
+        <button id="soap-copy-btn" onclick="copySessionSoap(this, ${s.id})"
           style="margin-left:4px;padding:3px 9px;border:1px solid #d1d5db;border-radius:5px;
                  background:transparent;color:#6b7280;font-size:11px;cursor:pointer;
                  transition:background .15s;"
@@ -2010,7 +2010,9 @@ function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function copySessionSoap(btn, soapText) {
+function copySessionSoap(btn, sessionId) {
+  const sess = _sessions.find(s => s.id === sessionId);
+  const soapText = sess?.soap_text || '';
   navigator.clipboard.writeText(soapText).then(() => {
     const orig = btn.textContent;
     btn.textContent = '✓ 복사됨';
