@@ -305,25 +305,60 @@ def _soap_goals_fallback(sessions) -> dict:
     """
     clinical_context에 필드 누락 시 SOAP 텍스트 직접 파싱으로 보완 — API 재호출 없음.
 
-    - LTG/STG: 명시적 레이블 이후 다음 섹션까지 라인 수집 (최초 세션 기준)
-    - onset_duration: "Onset:" 레이블 값 (의미 없는 값 제외)
-    - functional_limitations: LOM 패턴 + 기능 제한 키워드 (전 세션 스캔)
+    - LTG/STG: 역순 탐색 — 가장 최근 세션의 목표 우선 (목표 업데이트 반영)
+    - onset_duration: 순방향 — 초진 기록 우선
+    - functional_limitations: 전 세션 스캔 (LOM 패턴 + 기능 제한 키워드)
     """
-    ltg, stg, onset = [], [], None
+    onset: str | None = None
     func_lims: list[str] = []
 
+    # Pass 1 (forward): onset + functional_limitations — 전 세션 스캔
     for session in sessions:
         soap = (session.soap_text or "").strip()
         if not soap:
             continue
-
         current = None
         for line in soap.splitlines():
             stripped = line.strip()
             if not stripped:
                 current = None
                 continue
+            if re.match(r'^(LTG|STG)\s*:', stripped, re.IGNORECASE):
+                current = 'goals'
+            elif re.match(r'^Onset\s*:', stripped, re.IGNORECASE) and onset is None:
+                val = re.sub(r'^Onset\s*:\s*', '', stripped, flags=re.IGNORECASE).strip()
+                if val and val.lower() not in ('not certain', 'unknown', 'n/a', ''):
+                    onset = val
+                current = None
+            elif _SOAP_SECTION_STOP.match(stripped):
+                current = None
 
+            if current == 'goals':
+                continue  # goals 라인은 Pass 2에서 처리
+
+            lom_m = _LOM_RE.match(stripped)
+            if lom_m:
+                body = _LOM_CLEANUP.sub('', lom_m.group(1)).strip()
+                if body and len(body) > 2:
+                    lim = f"{body} — limited range of motion"
+                    if lim not in func_lims:
+                        func_lims.append(lim)
+            elif _FUNC_LIM_RE.search(stripped) and stripped not in func_lims:
+                func_lims.append(stripped)
+
+    # Pass 2 (reverse): LTG/STG — 가장 최근 세션의 명시적 목표를 우선 사용
+    ltg: list[str] = []
+    stg: list[str] = []
+    for session in reversed(sessions):
+        soap = (session.soap_text or "").strip()
+        if not soap:
+            continue
+        current = None
+        for line in soap.splitlines():
+            stripped = line.strip()
+            if not stripped:
+                current = None
+                continue
             if re.match(r'^LTG\s*:', stripped, re.IGNORECASE):
                 current = 'ltg'
                 rest = re.sub(r'^LTG\s*:\s*', '', stripped, flags=re.IGNORECASE).strip()
@@ -334,37 +369,19 @@ def _soap_goals_fallback(sessions) -> dict:
                 rest = re.sub(r'^STG\s*:\s*', '', stripped, flags=re.IGNORECASE).strip()
                 if rest and rest not in stg:
                     stg.append(rest)
-            elif re.match(r'^Onset\s*:', stripped, re.IGNORECASE) and onset is None:
-                val = re.sub(r'^Onset\s*:\s*', '', stripped, flags=re.IGNORECASE).strip()
-                if val and val.lower() not in ('not certain', 'unknown', 'n/a', ''):
-                    onset = val
-                current = None
             elif _SOAP_SECTION_STOP.match(stripped):
                 current = None
             elif current == 'ltg' and stripped not in ltg:
                 ltg.append(stripped)
             elif current == 'stg' and stripped not in stg:
                 stg.append(stripped)
-
-            # functional_limitations: LOM 패턴 — goals 섹션 제외, 접두어 클린업
-            lom_m = _LOM_RE.match(stripped)
-            if lom_m and current not in ('ltg', 'stg'):
-                body = _LOM_CLEANUP.sub('', lom_m.group(1)).strip()
-                if body and len(body) > 2:
-                    lim = f"{body} — limited range of motion"
-                    if lim not in func_lims:
-                        func_lims.append(lim)
-            # functional_limitations: 기능 제한 키워드 포함 라인 — goals 섹션 제외
-            elif current not in ('ltg', 'stg') and _FUNC_LIM_RE.search(stripped) and stripped not in func_lims:
-                func_lims.append(stripped)
-
         if ltg or stg:
-            break  # 첫 번째(가장 초기) 세션에서 goals 발견 시 중단
+            break  # 가장 최근 세션의 goals 발견 시 중단
 
     return {
-        "goals_ltg":            ltg,
-        "goals_stg":            stg,
-        "onset_duration":       onset,
+        "goals_ltg":              ltg,
+        "goals_stg":              stg,
+        "onset_duration":         onset,
         "functional_limitations": func_lims,
     }
 

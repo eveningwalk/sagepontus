@@ -174,14 +174,21 @@ def _session_stats(sessions: list) -> dict:
 def _medical_necessity(sessions, patient_ctx, therapist_name, patient_id, clinic_name, ctx) -> str:
     st = _session_stats(sessions)
 
-    patient_desc = _patient_profile(ctx)
+    # Use initial session's clinical context for "at initial evaluation" sections.
+    # ctx is the most recent session's data — wrong baseline for multi-session patients.
+    init_ctx = (sessions[0].clinical_context or {}) if sessions else {}
+    _init = init_ctx if any(
+        init_ctx.get(k) for k in ("primary_diagnosis", "vas_score", "mmt_findings", "chief_complaint")
+    ) else ctx
+
+    patient_desc = _patient_profile(_init)
     cond_str = (
-        _as_str(ctx.get("primary_diagnosis"))
+        _as_str(_init.get("primary_diagnosis"))
         or ", ".join(c.replace("_", " ").title() for c in st["conditions"])
         or "Musculoskeletal dysfunction"
     )
 
-    obj_block  = _objective_findings_block(ctx)
+    obj_block  = _objective_findings_block(_init)
     func_block = _functional_lims_block(ctx)
     prec_block = _precautions_block(ctx)
 
@@ -201,9 +208,15 @@ def _medical_necessity(sessions, patient_ctx, therapist_name, patient_id, clinic
         for s in sessions
     )
 
-    comorbidity_line = ""
-    if ctx.get("comorbidities"):
-        comorbidity_line = f"\n  Comorbidities:      {', '.join(ctx['comorbidities'])}"
+    co = _init.get("comorbidities") or ctx.get("comorbidities")
+    comorbidity_line = f"\n  Comorbidities:      {', '.join(co)}" if co else ""
+
+    chief = (_as_str(_init.get('chief_complaint'))
+             or _as_str(ctx.get('chief_complaint'))
+             or 'Musculoskeletal pain and functional limitation')
+    onset = (_as_str(_init.get('onset_duration'))
+             or _as_str(ctx.get('onset_duration'))
+             or 'As documented in initial evaluation')
 
     return (
         _header("PHYSICAL THERAPY — MEDICAL NECESSITY LETTER", therapist_name, patient_id, clinic_name)
@@ -216,8 +229,8 @@ provided to the above-referenced patient.
 
 PATIENT PROFILE:
   {patient_desc}{comorbidity_line}
-  Chief Complaint:    {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal pain and functional limitation'}
-  Onset / Duration:   {_as_str(ctx.get('onset_duration')) or 'As documented in initial evaluation'}
+  Chief Complaint:    {chief}
+  Onset / Duration:   {onset}
 
 TREATMENT SUMMARY:
   Total Sessions:     {st['n']}
@@ -431,25 +444,32 @@ Physical Therapist
 # ── 4. Insurance Appeal Letter ────────────────────────────────────
 
 def _insurance_appeal(sessions, patient_ctx, therapist_name, patient_id, clinic_name, ctx) -> str:
-    st       = _session_stats(sessions)
+    st = _session_stats(sessions)
+
+    # Use initial session's clinical context for baseline measurements (Bug #1 fix)
+    init_ctx = (sessions[0].clinical_context or {}) if sessions else {}
+    _init = init_ctx if any(
+        init_ctx.get(k) for k in ("primary_diagnosis", "vas_score", "mmt_findings", "chief_complaint")
+    ) else ctx
+
     cond_str = (
-        _as_str(ctx.get("primary_diagnosis"))
+        _as_str(_init.get("primary_diagnosis"))
         or ", ".join(c.replace("_", " ").title() for c in st["conditions"])
         or "Musculoskeletal dysfunction"
     )
 
-    # Quantified evidence from clinical context
+    # Baseline objective measurements from initial evaluation
     quantified_lines = []
-    if ctx.get("vas_score"):
-        quantified_lines.append(f"  • Pain Level (VAS): {ctx['vas_score']} — documented functional pain interference")
-    if ctx.get("mmt_findings"):
-        for m in ctx["mmt_findings"]:
+    if _init.get("vas_score"):
+        quantified_lines.append(f"  • Pain Level (VAS): {_init['vas_score']} — documented functional pain interference")
+    if _init.get("mmt_findings"):
+        for m in _init["mmt_findings"]:
             quantified_lines.append(f"  • Strength Deficit: {m}")
-    if ctx.get("rom_findings"):
-        for r in ctx["rom_findings"]:
+    if _init.get("rom_findings"):
+        for r in _init["rom_findings"]:
             quantified_lines.append(f"  • ROM Finding: {r}")
-    if ctx.get("neurological_findings"):
-        for n in ctx["neurological_findings"]:
+    if _init.get("neurological_findings"):
+        for n in _init["neurological_findings"]:
             quantified_lines.append(f"  • Neurological: {n}")
     if ctx.get("functional_limitations"):
         for l in ctx["functional_limitations"]:
@@ -458,15 +478,30 @@ def _insurance_appeal(sessions, patient_ctx, therapist_name, patient_id, clinic_
     quantified_str = "\n".join(quantified_lines) if quantified_lines else \
         "  (Refer to session SOAP documentation for objective measurements)"
 
+    # Bug #2: only reference "VAS, MMT, ROM data above" when that data actually exists
+    has_obj_data = bool(quantified_lines and any(
+        _init.get(k) for k in ("vas_score", "mmt_findings", "rom_findings")
+    ))
+    grounds_1 = (
+        "  1. Objective measurements document measurable deficits requiring skilled PT\n"
+        "     (VAS, MMT, ROM data above — see initial evaluation findings)."
+        if has_obj_data else
+        "  1. Patient presents with functional deficits requiring skilled physical therapy\n"
+        "     evaluation and treatment, as documented in session SOAP notes."
+    )
+
     evidence_lines = "\n".join(
         f"  • Session {s.session_date}: Risk Score {s.critical_score*100:.0f}%  [{s.alarm_level}]"
         + (f" — {s.triggered_condition.replace('_',' ').title()} flagged" if s.triggered_condition else "")
         for s in sessions
     )
 
-    comorbidity_note = ""
-    if ctx.get("comorbidities"):
-        comorbidity_note = f"\n  Comorbidities:      {', '.join(ctx['comorbidities'])}"
+    co = _init.get("comorbidities") or ctx.get("comorbidities")
+    comorbidity_note = f"\n  Comorbidities:      {', '.join(co)}" if co else ""
+
+    chief = (_as_str(_init.get('chief_complaint'))
+             or _as_str(ctx.get('chief_complaint'))
+             or 'Musculoskeletal pain and dysfunction')
 
     return (
         _header("PHYSICAL THERAPY — INSURANCE APPEAL LETTER", therapist_name, patient_id, clinic_name)
@@ -482,8 +517,8 @@ the above-referenced patient. The following evidence demonstrates that all
 services rendered were medically necessary and clinically justified.
 
 PATIENT PROFILE:
-  {_patient_profile(ctx)}
-  Chief Complaint:    {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal pain and dysfunction'}{comorbidity_note}
+  {_patient_profile(_init)}
+  Chief Complaint:    {chief}{comorbidity_note}
 
 TREATMENT DOCUMENTATION:
   Episode of Care:    {st['first']} to {st['last']}
@@ -504,8 +539,7 @@ APPLICABLE CLINICAL GUIDELINES:
   • CMS Medicare Benefit Policy Manual, Chapter 15 — Skilled Physical Therapy criteria
 
 GROUNDS FOR APPEAL:
-  1. Objective measurements document measurable deficits requiring skilled PT
-     (VAS, MMT, ROM data above).
+{grounds_1}
   2. All services were delivered by a licensed physical therapist in accordance
      with accepted clinical practice standards.
   3. Standardized Red Flag screening was performed at every session — a level
