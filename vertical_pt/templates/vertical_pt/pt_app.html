@@ -1188,6 +1188,7 @@ let _sessions = [];
 
 function renderHistory(d) {
   _sessions = d.sessions || [];
+  _sessions.forEach(s => { if (s.clinical_context) _sessionCtxCache[s.id] = s.clinical_context; });
   _loadSessionOverrides(_sessions);   // 저장된 섹션 오버라이드 복원
   const listEl = document.getElementById('session-list-items');
 
@@ -1269,7 +1270,7 @@ function showSessionDetail(idx) {
           onmouseout="this.style.background='transparent'"
           title="이 세션 삭제">🗑 삭제</button>
       </div>
-      <div id="soap-body-single" class="pt-soap-body"><div class="soap-display">${formatSoap(s.soap_text, s.id)}</div></div>
+      <div id="soap-body-single" class="pt-soap-body"><div class="soap-display">${formatSoap(s.soap_text, s.id, s.clinical_context)}</div></div>
       <div id="soap-body-compare" class="soap-compare" style="display:none;">
         <div class="soap-compare-col">
           <div class="soap-compare-label">원본 (Raw)</div>
@@ -1277,7 +1278,7 @@ function showSessionDetail(idx) {
         </div>
         <div class="soap-compare-col">
           <div class="soap-compare-label formatted">섹션 제목 추가 (Formatted)</div>
-          <div class="soap-display">${formatSoap(s.soap_text, s.id)}</div>
+          <div class="soap-display">${formatSoap(s.soap_text, s.id, s.clinical_context)}</div>
         </div>
       </div>
     </div>`;
@@ -1355,7 +1356,7 @@ function openSlidePanel(s) {
   html += `
     <div class="slide-col" id="slide-left-col" style="flex:1;">
       <div class="slide-col-title">🩺 SOAP Note</div>
-      <div class="soap-display" style="flex:1;min-height:0;overflow-y:auto;">${s.soap_text ? formatSoap(s.soap_text) : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
+      <div class="soap-display" style="flex:1;min-height:0;overflow-y:auto;">${s.soap_text ? formatSoap(s.soap_text, s.id, s.clinical_context) : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
     </div>`;
 
   // 드래그 핸들
@@ -1458,23 +1459,56 @@ function openAlarmModal(s) {
   html += `
     <div class="alarm-section">
       <div class="alarm-section-label">🩺 SOAP Note</div>
-      <div class="soap-display">${s.soap_text ? formatSoap(s.soap_text)
+      <div class="soap-display">${s.soap_text ? formatSoap(s.soap_text, s.id, s.clinical_context)
         : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
     </div>`;
 
   // ── Referral Letter ──
-  if (s.referral_letter) {
-    html += `
-      <div class="alarm-section">
-        <div class="alarm-section-label">📄 Physician Referral Letter</div>
-        <div class="alarm-letter-box" style="border:2px solid ${color};">
+  if (s.alarm_level === 'RED') {
+    html += `<div class="alarm-section" id="referral-section-${s.id}">
+      <div class="alarm-section-label">📄 Physician Referral Letter</div>`;
+    if (s.referral_letter) {
+      html += `<div class="alarm-letter-box" style="border:2px solid ${color};">
           ${formatLetter(s.referral_letter)}
-        </div>
-      </div>`;
+        </div>`;
+    } else {
+      html += `<button class="btn-generate-referral" onclick="generateReferralFromWeb(${s.alert_id}, ${s.id})"
+        style="margin-top:6px;padding:8px 16px;background:#fff;color:#dc2626;
+               border:1.5px solid #dc2626;border-radius:6px;font-size:13px;
+               font-weight:600;cursor:pointer;">
+        📄 Generate Referral Letter
+      </button>
+      <div id="referral-letter-${s.id}" style="margin-top:8px;"></div>`;
+    }
+    html += `</div>`;
   }
 
   body.innerHTML = html;
   document.getElementById('doc-modal-overlay').classList.add('open');
+}
+
+async function generateReferralFromWeb(alertId, sessionId) {
+  const btn = document.querySelector(`#referral-section-${sessionId} button`);
+  if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
+  try {
+    const res = await fetch(`/pt/api/alerts/${alertId}/generate/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    const data = await res.json();
+    if (data.referral_letter) {
+      const box = document.getElementById(`referral-letter-${sessionId}`);
+      if (box) {
+        if (btn) btn.style.display = 'none';
+        box.innerHTML = `<div class="alarm-letter-box" style="border:2px solid #dc2626;">${formatLetter(data.referral_letter)}</div>`;
+      }
+      // _sessions 캐시도 업데이트
+      const s = _sessions.find(s => s.id === sessionId);
+      if (s) s.referral_letter = data.referral_letter;
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = '📄 Generate Referral Letter'; btn.disabled = false; }
+  }
 }
 
 function closeSlidePanel() {
@@ -2152,11 +2186,14 @@ function _renderFromCtx(ctx) {
     ...(ctx.precautions           || []),
   ];
 
+  const Other = ctx.other_findings || [];
+
   let html = '';
   if (S.length) html += _soapTitle('Subjective') + rows(S);
   if (O.length) html += _soapTitle('Objective')  + rows(O);
   if (A.length) html += _soapTitle('Assessment') + rows(A);
   if (P.length) html += _soapTitle('Plan')       + rows(P);
+  if (Other.length) html += _soapTitle('Other')  + rows(Other);
   return html;
 }
 
@@ -2348,7 +2385,7 @@ function _loadSessionOverrides(sessions) {
 function _refreshSoapDisplay(sessionId) {
   const s = _sessions.find(x => String(x.id) === String(sessionId));
   if (!s) return;
-  const formatted = formatSoap(s.soap_text, s.id);
+  const formatted = formatSoap(s.soap_text, s.id, s.clinical_context);
   const single = document.getElementById('soap-body-single');
   if (single && single.style.display !== 'none') {
     single.querySelector('.soap-display').innerHTML = formatted;
@@ -2358,10 +2395,26 @@ function _refreshSoapDisplay(sessionId) {
 }
 
 // ── 진입점 ────────────────────────────────────────────────────────
-function formatSoap(rawText, sessionId) {
+function formatSoap(rawText, sessionId, clinicalCtx) {
   if (!rawText) return '<span style="color:#9ca3af;">내용 없음</span>';
+  const ctx = clinicalCtx || (sessionId != null ? (_sessionCtxCache[sessionId] || null) : null);
+  if (ctx && _hasCtxContent(ctx)) return _renderFromCtx(ctx);
   return _renderFromKeywords(rawText, sessionId ?? null);
 }
+
+function _hasCtxContent(ctx) {
+  return !!(
+    ctx.chief_complaint || ctx.primary_diagnosis ||
+    (ctx.rom_findings      && ctx.rom_findings.length)      ||
+    (ctx.mmt_findings      && ctx.mmt_findings.length)      ||
+    (ctx.special_tests     && ctx.special_tests.length)     ||
+    (ctx.treatment_performed && ctx.treatment_performed.length) ||
+    (ctx.goals_stg         && ctx.goals_stg.length)         ||
+    (ctx.other_findings    && ctx.other_findings.length)
+  );
+}
+
+const _sessionCtxCache = {};
 
 // ── Letter 포맷팅 ─────────────────────────────────────────────
 function formatLetter(rawText) {

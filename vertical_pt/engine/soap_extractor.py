@@ -33,6 +33,7 @@ _EMPTY: dict[str, Any] = {
     "precautions":            [],
     "goals_stg":              [],
     "goals_ltg":              [],
+    "other_findings":         [],
 }
 
 _SYSTEM = (
@@ -54,6 +55,7 @@ Rules:
 - red_flag_findings: only objective signs that constitute red flags
 - goals_stg: Short-Term Goals — copy verbatim as a list (e.g. ["Reduce pain to 3/10", "Improve SLR to 60 deg"])
 - goals_ltg: Long-Term Goals — copy verbatim as a list (e.g. ["Return to work", "Independent ADLs without pain"])
+- other_findings: ONLY content that does NOT fit any field above (e.g. psychosocial factors, FABQ scores, fear-avoidance beliefs, yellow flag screening results, occupation/work history). Fill other fields first; put leftovers here.
 - If a field has no data in the note, return null or []
 
 SOAP Note:
@@ -62,7 +64,7 @@ SOAP Note:
 _PROMPT_SUFFIX = """
 
 Return ONLY valid JSON (no markdown fences, no extra text):
-{"patient_age": null, "patient_sex": null, "primary_diagnosis": null, "comorbidities": [], "chief_complaint": null, "onset_duration": null, "vas_score": null, "mmt_findings": [], "rom_findings": [], "neurological_findings": [], "special_tests": [], "functional_limitations": [], "red_flag_findings": [], "treatment_performed": [], "medications": [], "precautions": [], "goals_stg": [], "goals_ltg": []}"""
+{"patient_age": null, "patient_sex": null, "primary_diagnosis": null, "comorbidities": [], "chief_complaint": null, "onset_duration": null, "vas_score": null, "mmt_findings": [], "rom_findings": [], "neurological_findings": [], "special_tests": [], "functional_limitations": [], "red_flag_findings": [], "treatment_performed": [], "medications": [], "precautions": [], "goals_stg": [], "goals_ltg": [], "other_findings": []}"""
 
 
 def extract_clinical_context(soap_text: str) -> dict[str, Any]:
