@@ -1,0 +1,7 @@
+# 로컬 개발 전용
+-r requirements-base.in
+
+jupyterlab
+matplotlib
+torch
+debugpy
