@@ -24,6 +24,7 @@ sentencepiece
 tokenizers
 tqdm
 transformers
+python-dotenv
 python-json-logger
 python-docx
 beautifulsoup4

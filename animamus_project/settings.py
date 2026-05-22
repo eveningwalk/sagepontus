@@ -15,6 +15,9 @@ import importlib.util
 import os
 
 import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -116,6 +119,7 @@ HF_MODEL_ID = os.environ.get("HF_MODEL_ID", "").strip()
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'adminsortable2',
     'django_extensions',
     'rest_framework',
@@ -134,6 +138,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 # Gunicorn/Cloud Run 등에서는 runserver 가 없어 정적 파일이 404 가 됨 → WhiteNoise(Docker 이미지에 포함)
 if importlib.util.find_spec("whitenoise"):
@@ -281,3 +286,16 @@ LOGGING = {
         "questionnaire": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }
+
+# ── CORS (Chrome Extension + 외부 클라이언트) ──────────────────────────────────
+# Token 인증 기반 API는 쿠키를 사용하지 않으므로 credentials 불필요
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "origin",
+    "x-csrftoken",
+    "x-requested-with",
+]
