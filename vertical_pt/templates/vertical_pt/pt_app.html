@@ -848,6 +848,7 @@
       <div class="doc-modal-title" id="doc-modal-title">Document</div>
       <div class="doc-modal-actions">
         <button class="pt-letter-btn" onclick="printDocModal()">🖨️ Print</button>
+        <button class="pt-letter-btn" id="doc-modal-edit-btn" onclick="toggleDocEdit(this)" style="display:none;">✏ 수정</button>
         <button class="pt-letter-btn pt-letter-btn-primary" id="doc-modal-copy-btn"
                 onclick="copyDocModal(this)">📋 Copy</button>
         <button class="pt-letter-btn" onclick="closeDocModal()">✕</button>
@@ -1269,6 +1270,13 @@ function showSessionDetail(idx) {
           onmouseover="this.style.background='#fef2f2'"
           onmouseout="this.style.background='transparent'"
           title="이 세션 삭제">🗑 삭제</button>
+        <button onclick="openSoapEditor(${s.id})"
+          style="margin-left:4px;padding:3px 8px;border:1px solid #c7d2fe;border-radius:5px;
+                 background:transparent;color:#6366f1;font-size:11px;cursor:pointer;
+                 transition:background .15s;"
+          onmouseover="this.style.background='#eef2ff'"
+          onmouseout="this.style.background='transparent'"
+          title="SOAP 수정 저장">✏ 수정</button>
       </div>
       <div id="soap-body-single" class="pt-soap-body"><div class="soap-display">${formatSoap(s.soap_text, s.id, s.clinical_context)}</div></div>
       <div id="soap-body-compare" class="soap-compare" style="display:none;">
@@ -1279,6 +1287,20 @@ function showSessionDetail(idx) {
         <div class="soap-compare-col">
           <div class="soap-compare-label formatted">섹션 제목 추가 (Formatted)</div>
           <div class="soap-display">${formatSoap(s.soap_text, s.id, s.clinical_context)}</div>
+        </div>
+      </div>
+      <div id="soap-editor-${s.id}" style="display:none;padding:12px 14px;border-top:1px solid #f1f5f9;">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">✏ SOAP 수정 — 원본과 수정본이 paired data로 저장됩니다</div>
+        <textarea id="soap-edit-ta-${s.id}"
+          style="width:100%;height:180px;padding:10px;border:1.5px solid #a5b4fc;border-radius:8px;
+                 font-size:12px;font-family:'Courier New',monospace;resize:vertical;box-sizing:border-box;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+          <button onclick="closeSoapEditor(${s.id})"
+            style="padding:5px 14px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;
+                   background:#fff;cursor:pointer;">취소</button>
+          <button onclick="saveSoapEdit(${s.id})"
+            style="padding:5px 14px;background:#6366f1;color:#fff;border:none;border-radius:6px;
+                   font-size:12px;font-weight:600;cursor:pointer;">저장</button>
         </div>
       </div>
     </div>`;
@@ -1390,7 +1412,11 @@ function openSlidePanel(s) {
 }
 
 // ── Alarm 세션 상세 모달 (doc-modal 재사용) ───────────────────────
+let _currentAlertId  = null;
+let _pendingDecision = null;
+
 function openAlarmModal(s) {
+  _currentAlertId = s.alert_id || null;
   const color  = {RED:'#dc2626', YELLOW:'#d97706'}[s.alarm_level] || '#16a34a';
   const bg     = {RED:'#fef2f2', YELLOW:'#fffbeb'}[s.alarm_level] || '#f0fdf4';
   const icon   = {RED:'🚨', YELLOW:'⚠️'}[s.alarm_level] || '✅';
@@ -1439,6 +1465,35 @@ function openAlarmModal(s) {
         <div style="font-size:20px;font-weight:800;color:${color};">${s.critical_score}%</div>
       </div>
     </div>`;
+
+  // ── 임상 결정 패널 ──
+  if (_currentAlertId) {
+    html += `
+      <div class="alarm-section" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">📋 임상 결정</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="alarm-decision-btns">
+          <button onclick="submitAlarmDecision('ADOPTED')"
+            style="padding:6px 14px;background:#dcfce7;color:#16a34a;border:1.5px solid #86efac;
+                   border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">✅ 채택</button>
+          <button onclick="submitAlarmDecision('MODIFIED')"
+            style="padding:6px 14px;background:#eff6ff;color:#2563eb;border:1.5px solid #93c5fd;
+                   border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">✏ 수정 후 채택</button>
+          <button onclick="submitAlarmDecision('REJECTED')"
+            style="padding:6px 14px;background:#fff1f2;color:#e11d48;border:1.5px solid #fda4af;
+                   border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">❌ 기각</button>
+        </div>
+        <div id="alarm-decision-reason" style="display:none;margin-top:10px;">
+          <textarea id="alarm-decision-text" placeholder="사유 입력 (선택사항)"
+            style="width:100%;height:60px;padding:8px;border:1px solid #d1d5db;border-radius:6px;
+                   font-size:12px;resize:none;box-sizing:border-box;"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+            <button onclick="confirmAlarmDecision()"
+              style="padding:5px 14px;background:#6366f1;color:#fff;border:none;border-radius:6px;
+                     font-size:12px;font-weight:600;cursor:pointer;">확인</button>
+          </div>
+        </div>
+      </div>`;
+  }
 
   // ── Detected Indicators ──
   if (s.matched_indicators && s.matched_indicators.length) {
@@ -1669,7 +1724,7 @@ async function generateDoc(patientId, docType, btnEl) {
     });
     const d = await r.json();
     if (!r.ok || d.error) throw new Error(d.error || 'Server error');
-    openDocModal(d.doc, d.title);
+    openDocModal(d.doc, d.title, docType, patientId);
   } catch(e) {
     alert('문서 생성 실패: ' + e.message);
   } finally {
@@ -1678,10 +1733,14 @@ async function generateDoc(patientId, docType, btnEl) {
   }
 }
 
-let _docModalCopyText = '';
+let _docModalCopyText   = '';
+let _currentDocType     = '';
+let _currentDocPatientId = '';
 
-function openDocModal(docText, title) {
-  _docModalCopyText = docText;
+function openDocModal(docText, title, docType, patientId) {
+  _docModalCopyText    = docText;
+  _currentDocType      = docType || '';
+  _currentDocPatientId = patientId || '';
   document.getElementById('doc-modal-title').textContent = title || 'Document';
   const body = document.getElementById('doc-modal-body');
   body.classList.add('text-mode');
@@ -1689,6 +1748,8 @@ function openDocModal(docText, title) {
   const copyBtn = document.getElementById('doc-modal-copy-btn');
   copyBtn.textContent = '📋 Copy';
   copyBtn.style.display = '';
+  const editBtn = document.getElementById('doc-modal-edit-btn');
+  if (editBtn) editBtn.style.display = _currentDocType ? '' : 'none';
   document.getElementById('doc-modal-overlay').classList.add('open');
 }
 
@@ -2046,7 +2107,10 @@ function esc(str) {
 
 function copySessionSoap(btn, sessionId) {
   const sess = _sessions.find(s => s.id === sessionId);
-  const soapText = sess?.soap_text || '';
+  const formattedHtml = formatSoap(sess?.soap_text, sess?.id, sess?.clinical_context);
+  const tmp = document.createElement('div');
+  tmp.innerHTML = formattedHtml;
+  const soapText = tmp.innerText || sess?.soap_text || '';
   navigator.clipboard.writeText(soapText).then(() => {
     const orig = btn.textContent;
     btn.textContent = '✓ 복사됨';
@@ -2397,8 +2461,9 @@ function _refreshSoapDisplay(sessionId) {
 // ── 진입점 ────────────────────────────────────────────────────────
 function formatSoap(rawText, sessionId, clinicalCtx) {
   if (!rawText) return '<span style="color:#9ca3af;">내용 없음</span>';
-  const ctx = clinicalCtx || (sessionId != null ? (_sessionCtxCache[sessionId] || null) : null);
-  if (ctx && _hasCtxContent(ctx)) return _renderFromCtx(ctx);
+  // Path B 고정: 항상 라인별 원문 + pick 버튼 렌더링.
+  // clinical_context(AI 분류)는 문서 생성·스코어링에서만 사용.
+  // 라인별 섹션 오버라이드 = AI 분류 vs 치료사 교정 paired data.
   return _renderFromKeywords(rawText, sessionId ?? null);
 }
 
@@ -2507,6 +2572,148 @@ document.addEventListener('mouseup', () => {
   _slideDrag.divider.classList.remove('dragging');
   _slideDrag = null;
 });
+
+// ── Phase 7: Audit Loop ──────────────────────────────────────────────
+
+// SOAP 편집
+function openSoapEditor(sessionId) {
+  const s = _sessions.find(x => String(x.id) === String(sessionId));
+  if (!s) return;
+  const panel = document.getElementById(`soap-editor-${sessionId}`);
+  const ta    = document.getElementById(`soap-edit-ta-${sessionId}`);
+  if (!panel || !ta) return;
+  ta.value = s.soap_text || '';
+  panel.style.display = 'block';
+  ta.focus();
+}
+
+function closeSoapEditor(sessionId) {
+  const panel = document.getElementById(`soap-editor-${sessionId}`);
+  if (panel) panel.style.display = 'none';
+}
+
+async function saveSoapEdit(sessionId) {
+  const ta = document.getElementById(`soap-edit-ta-${sessionId}`);
+  if (!ta) return;
+  const edited = ta.value.trim();
+  if (!edited) return;
+  const saveBtn = ta.closest('div[id^="soap-editor"]')?.querySelector('button:last-child');
+  if (saveBtn) { saveBtn.textContent = '저장 중…'; saveBtn.disabled = true; }
+  try {
+    const r = await fetch(`/pt/api/sessions/${sessionId}/soap-edit/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body:    JSON.stringify({ edited_soap: edited }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      closeSoapEditor(sessionId);
+      if (saveBtn) { saveBtn.textContent = '✅ 저장됨'; saveBtn.disabled = false; setTimeout(() => saveBtn.textContent = '저장', 2000); }
+    }
+  } catch(e) {
+    alert('저장 실패: ' + e.message);
+    if (saveBtn) { saveBtn.textContent = '저장'; saveBtn.disabled = false; }
+  }
+}
+
+// Alarm 결정
+async function submitAlarmDecision(decision) {
+  _pendingDecision = decision;
+  const reasonEl = document.getElementById('alarm-decision-reason');
+  if (reasonEl) reasonEl.style.display = 'block';
+}
+
+async function confirmAlarmDecision() {
+  if (!_currentAlertId || !_pendingDecision) return;
+  const reason  = (document.getElementById('alarm-decision-text')?.value || '').trim();
+  const confirmBtn = document.querySelector('#alarm-decision-reason button');
+  if (confirmBtn) { confirmBtn.textContent = '저장 중…'; confirmBtn.disabled = true; }
+  try {
+    const r = await fetch(`/pt/api/alerts/${_currentAlertId}/decision/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body:    JSON.stringify({ decision: _pendingDecision, reason }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      const labels = { ADOPTED:'✅ 채택됨', REJECTED:'❌ 기각됨', MODIFIED:'✏ 수정 후 채택됨' };
+      const btnsEl   = document.getElementById('alarm-decision-btns');
+      const reasonEl = document.getElementById('alarm-decision-reason');
+      if (btnsEl) btnsEl.innerHTML = `<span style="font-size:13px;font-weight:700;color:#16a34a;">${labels[_pendingDecision] || '저장됨'}</span>`;
+      if (reasonEl) reasonEl.style.display = 'none';
+      _pendingDecision = null;
+    }
+  } catch(e) {
+    alert('저장 실패: ' + e.message);
+    if (confirmBtn) { confirmBtn.textContent = '확인'; confirmBtn.disabled = false; }
+  }
+}
+
+// 문서 편집
+function toggleDocEdit(btn) {
+  const body = document.getElementById('doc-modal-body');
+  if (!body) return;
+
+  if (btn.dataset.editing === '1') {
+    // 편집 모드 → 읽기 모드 (저장 없이 취소)
+    body.classList.add('text-mode');
+    body.innerHTML = formatLetter(_docModalCopyText);
+    btn.textContent = '✏ 수정';
+    btn.dataset.editing = '0';
+  } else {
+    // 읽기 모드 → 편집 모드
+    body.classList.remove('text-mode');
+    const ta = document.createElement('textarea');
+    ta.id = 'doc-edit-ta';
+    ta.value = _docModalCopyText;
+    ta.style.cssText = 'width:100%;height:100%;padding:12px;border:none;outline:none;' +
+                       'font-size:12px;font-family:"Courier New",monospace;resize:none;box-sizing:border-box;';
+    body.innerHTML = '';
+    body.appendChild(ta);
+
+    const saveBar = document.createElement('div');
+    saveBar.style.cssText = 'padding:10px 16px;display:flex;justify-content:flex-end;gap:8px;' +
+                            'border-top:1px solid #e2e8f0;background:#f8fafc;';
+    saveBar.innerHTML = `<button onclick="saveDocEdit()"
+      style="padding:6px 16px;background:#6366f1;color:#fff;border:none;border-radius:6px;
+             font-size:12px;font-weight:600;cursor:pointer;">수정본 저장</button>`;
+    body.appendChild(saveBar);
+
+    btn.textContent = '✕ 취소';
+    btn.dataset.editing = '1';
+    ta.focus();
+  }
+}
+
+async function saveDocEdit() {
+  const ta = document.getElementById('doc-edit-ta');
+  if (!ta || !_currentDocType || !_currentDocPatientId) return;
+  const edited = ta.value.trim();
+  if (!edited) return;
+  const saveBtn = document.querySelector('#doc-modal-body button');
+  if (saveBtn) { saveBtn.textContent = '저장 중…'; saveBtn.disabled = true; }
+  try {
+    const r = await fetch(
+      `/pt/api/patients/${encodeURIComponent(_currentDocPatientId)}/doc/${encodeURIComponent(_currentDocType)}/edit/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body:    JSON.stringify({ original_doc: _docModalCopyText, edited_doc: edited }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      _docModalCopyText = edited;
+      const editBtn = document.getElementById('doc-modal-edit-btn');
+      if (editBtn) { editBtn.dataset.editing = '0'; editBtn.textContent = '✏ 수정'; }
+      const body = document.getElementById('doc-modal-body');
+      body.classList.add('text-mode');
+      body.innerHTML = formatLetter(edited);
+      if (saveBtn) { saveBtn.textContent = '✅ 저장됨'; setTimeout(() => saveBtn.disabled = false, 1500); }
+    }
+  } catch(e) {
+    alert('저장 실패: ' + e.message);
+    if (saveBtn) { saveBtn.textContent = '수정본 저장'; saveBtn.disabled = false; }
+  }
+}
 </script>
 </body>
 </html>

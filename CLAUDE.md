@@ -110,6 +110,20 @@ sagepontus/
 | 4 | Chrome Extension API 엔드포인트 | `vertical_pt/api/` |
 | 5 | Chrome Extension UI | `chrome_extension/` |
 | 6 | PT Red Flag 전용 랜딩 페이지 | `landingpage_source/app/pt-alarm/` |
+| 7 | Audit Loop + Paired Data 수집 구조 | DB 스키마 + UI 3종 + 추출 파이프라인 |
+
+### Phase 7 상세
+
+**목적**: AI 출력물에 대한 임상가 교정 행위를 데이터로 축적 → copy cat 대비 데이터 해자 구축 + Alarm weight 개인화 기반 마련
+
+| 작업 | 설명 |
+|------|------|
+| SOAP 수정 UI | AI 생성 SOAP를 치료사가 직접 편집, (원본, 수정본) 쌍 저장 |
+| Alarm 채택 확인 workflow | 알람 발생 후 "채택/기각" 결정 스텝 추가, 결과 저장 |
+| 문서 검토/수정 UI | 의뢰서 등 생성 문서를 치료사가 검토·수정, 변경분 저장 |
+| Paired data 추출 파이프라인 | 위 3종 데이터를 (raw, improved) 형태로 export 가능한 구조 |
+
+**다음 단계 연결**: 수집된 paired data → Alarm 프로토콜 weight 갱신(Phase 8) → 클리닉별 개인화(Phase 9)
 
 ---
 

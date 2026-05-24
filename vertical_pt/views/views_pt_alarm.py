@@ -29,7 +29,7 @@ from vertical_pt.engine.scribe import process_audio
 from vertical_pt.engine.referral_tracker import (
     send_referral_email, mark_sent, mark_followup,
 )
-from vertical_pt.models import PatientTimeline, RedFlagAlert
+from vertical_pt.models import AuditPair, PatientTimeline, RedFlagAlert
 
 
 # ── 사이드바 앱 셸 ─────────────────────────────────────────────────
@@ -566,6 +566,28 @@ def _get_alert_for_user(alert_id: int, user):
 
 @login_required
 @require_http_methods(["POST"])
+def referral_generate(request, alert_id):
+    """웹앱에서 referral letter 생성 (Extension에서 안 만들었을 때)."""
+    alert = _get_alert_for_user(alert_id, request.user)
+    if not alert:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    if not alert.referral_letter:
+        therapist_name = request.user.get_full_name() or request.user.username
+        letter = generate_referral_letter(
+            alert,
+            patient_id=alert.timeline.patient_id,
+            therapist_name=therapist_name,
+            session_date=alert.timeline.session_date,
+        )
+        alert.referral_letter = letter
+        alert.save(update_fields=["referral_letter"])
+
+    return JsonResponse({"referral_letter": alert.referral_letter})
+
+
+@login_required
+@require_http_methods(["POST"])
 def referral_send(request, alert_id):
     """리퍼럴 레터 이메일 발송 + '보냈음' 상태 기록."""
     alert = _get_alert_for_user(alert_id, request.user)
@@ -797,11 +819,158 @@ def save_section_overrides(request, session_id):
     except PatientTimeline.DoesNotExist:
         return JsonResponse({"error": "Not found"}, status=404)
 
+    overrides = data.get("overrides", {})
+
     ctx = timeline.clinical_context or {}
-    ctx["soap_section_overrides"] = data.get("overrides", {})
+    ctx["soap_section_overrides"] = overrides
     timeline.clinical_context = ctx
     timeline.save(update_fields=["clinical_context"])
+
+    # 섹션 교정이 있을 때만 AuditPair 기록
+    # original_content = 원본 SOAP 텍스트, edited_content = 치료사 섹션 배정 JSON
+    if overrides:
+        import json as _json
+        AuditPair.objects.create(
+            type=AuditPair.TYPE_SOAP,
+            timeline=timeline,
+            therapist=request.user,
+            doc_type="section_override",
+            original_content=timeline.soap_text,
+            edited_content=_json.dumps(overrides, ensure_ascii=False),
+        )
+
     return JsonResponse({"ok": True})
+
+
+# ── Phase 7: Audit Loop ──────────────────────────────────────────────
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_soap_edit(request, timeline_id):
+    """치료사가 수정한 SOAP을 (원본, 수정본) 쌍으로 저장."""
+    try:
+        timeline = PatientTimeline.objects.get(id=timeline_id, therapist=request.user)
+    except PatientTimeline.DoesNotExist:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    edited = data.get("edited_soap", "").strip()
+    if not edited:
+        return JsonResponse({"error": "edited_soap required"}, status=400)
+
+    AuditPair.objects.create(
+        type=AuditPair.TYPE_SOAP,
+        timeline=timeline,
+        therapist=request.user,
+        original_content=timeline.soap_text,
+        edited_content=edited,
+    )
+    return JsonResponse({"ok": True})
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_alarm_decision(request, alert_id):
+    """Alarm 채택/기각/수정 결정을 저장."""
+    alert = _get_alert_for_user(alert_id, request.user)
+    if not alert:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    decision = data.get("decision", "").upper()
+    if decision not in (AuditPair.DECISION_ADOPTED, AuditPair.DECISION_REJECTED, AuditPair.DECISION_MODIFIED):
+        return JsonResponse({"error": "decision must be ADOPTED / REJECTED / MODIFIED"}, status=400)
+
+    AuditPair.objects.create(
+        type=AuditPair.TYPE_ALARM,
+        timeline=alert.timeline,
+        alert=alert,
+        therapist=request.user,
+        decision=decision,
+        decision_reason=data.get("reason", "").strip(),
+        original_content=alert.referral_letter,
+        edited_content=data.get("edited_referral", "").strip(),
+    )
+    return JsonResponse({"ok": True, "decision": decision})
+
+
+@login_required
+@require_http_methods(["POST"])
+def save_doc_edit(request, patient_id, doc_type):
+    """치료사가 수정한 문서를 (원본, 수정본) 쌍으로 저장."""
+    from vertical_pt.engine.documents import DOC_TITLES
+    if doc_type not in DOC_TITLES:
+        return JsonResponse({"error": f"Unknown doc_type: {doc_type}"}, status=400)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    original = data.get("original_doc", "").strip()
+    edited   = data.get("edited_doc", "").strip()
+    if not edited:
+        return JsonResponse({"error": "edited_doc required"}, status=400)
+
+    # 가장 최근 세션을 timeline 참조로 사용
+    timeline = (
+        PatientTimeline.objects
+        .filter(therapist=request.user, patient_id=patient_id)
+        .order_by("-session_date", "-created_at")
+        .first()
+    )
+    if not timeline:
+        return JsonResponse({"error": "No sessions found"}, status=404)
+
+    AuditPair.objects.create(
+        type=AuditPair.TYPE_DOCUMENT,
+        timeline=timeline,
+        therapist=request.user,
+        doc_type=doc_type,
+        original_content=original,
+        edited_content=edited,
+    )
+    return JsonResponse({"ok": True})
+
+
+@login_required
+def export_audit_pairs(request):
+    """수집된 paired data를 JSON으로 export."""
+    pair_type = request.GET.get("type")
+    qs = AuditPair.objects.filter(therapist=request.user).select_related("timeline", "alert")
+    if pair_type:
+        qs = qs.filter(type=pair_type)
+
+    rows = []
+    for p in qs.order_by("-created_at")[:500]:
+        rows.append({
+            "id":               p.id,
+            "type":             p.type,
+            "timeline_id":      p.timeline_id,
+            "patient_id":       p.timeline.patient_id,
+            "session_date":     str(p.timeline.session_date),
+            "alert_id":         p.alert_id,
+            "original_content": p.original_content,
+            "edited_content":   p.edited_content,
+            "decision":         p.decision,
+            "decision_reason":  p.decision_reason,
+            "doc_type":         p.doc_type,
+            "created_at":       p.created_at.strftime("%Y-%m-%d %H:%M"),
+        })
+
+    return JsonResponse({
+        "count": len(rows),
+        "pairs": rows,
+    })
 
 
 @login_required

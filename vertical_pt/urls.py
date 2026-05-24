@@ -15,6 +15,7 @@ urlpatterns = [
     path("api/pt/timeline/",                 views_api.patient_timeline,  name="timeline"),
     path("api/pt/alerts/",                   views_api.alerts_list,       name="alerts"),
     path("api/pt/alerts/<int:alert_id>/acknowledge/", views_api.acknowledge_alert, name="acknowledge"),
+    path("api/pt/alerts/<int:alert_id>/referral/",   views_api.generate_referral,  name="api_referral"),
 
     # ── 사이드바 앱 AJAX 엔드포인트 ──────────────────────────────────────
     path("pt/api/alarms/",                   views_pt_alarm.alarm_dashboard_json,  name="pt_alarms"),
@@ -32,9 +33,19 @@ urlpatterns = [
     path("pt/api/transcribe/",               views_pt_alarm.transcribe_audio,     name="pt_transcribe"),
 
     # ── 리퍼럴 추적 Phase 1 ────────────────────────────────────────
+    path("pt/api/alerts/<int:alert_id>/generate/",   views_pt_alarm.referral_generate,  name="pt_referral_generate"),
     path("pt/api/alerts/<int:alert_id>/send/",      views_pt_alarm.referral_send,         name="pt_referral_send"),
     path("pt/api/alerts/<int:alert_id>/followup/",  views_pt_alarm.referral_mark_followup, name="pt_referral_followup"),
     path("pt/api/alerts/<int:alert_id>/print/",     views_pt_alarm.referral_print,         name="pt_referral_print"),
+
+    # ── Phase 7: Audit Loop ────────────────────────────────────────
+    path("pt/api/sessions/<int:timeline_id>/soap-edit/",
+                                             views_pt_alarm.save_soap_edit,          name="pt_soap_edit"),
+    path("pt/api/alerts/<int:alert_id>/decision/",
+                                             views_pt_alarm.save_alarm_decision,     name="pt_alarm_decision"),
+    path("pt/api/patients/<str:patient_id>/doc/<str:doc_type>/edit/",
+                                             views_pt_alarm.save_doc_edit,           name="pt_doc_edit"),
+    path("pt/api/audit/export/",             views_pt_alarm.export_audit_pairs,      name="pt_audit_export"),
 
     path("pt/api/backfill-rescore/",            views_pt_alarm.backfill_rescore_ajax,  name="pt_backfill_rescore"),
     path("pt/api/admin/clear/",                 views_pt_alarm.admin_clear_sessions,   name="pt_admin_clear"),
