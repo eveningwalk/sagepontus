@@ -908,6 +908,8 @@ function openDocModal(docText, title, docType, patientId) {
   const body = document.getElementById('doc-modal-body');
   body.style.padding = '';
   body.style.overflow = '';
+  body.style.display = '';
+  body.style.flexDirection = '';
   const modal = body.closest('.doc-modal');
   if (modal) modal.style.maxWidth = '';
   body.classList.add('text-mode');
@@ -916,7 +918,11 @@ function openDocModal(docText, title, docType, patientId) {
   copyBtn.textContent = '📋 Copy';
   copyBtn.style.display = '';
   const editBtn = document.getElementById('doc-modal-edit-btn');
-  if (editBtn) editBtn.style.display = _currentDocType ? '' : 'none';
+  if (editBtn) {
+    editBtn.style.display   = _currentDocType ? '' : 'none';
+    editBtn.textContent     = '✏ 수정';
+    editBtn.dataset.editing = '0';
+  }
   document.getElementById('doc-modal-overlay').classList.add('open');
 }
 
