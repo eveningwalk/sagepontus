@@ -17,18 +17,21 @@ import re
 from pathlib import Path
 from typing import Any
 
+from vertical_pt.engine.normalizer import normalize, Source
+
 logger = logging.getLogger(__name__)
 
 _KB_PATH = Path(__file__).resolve().parents[1] / "prompts" / "kb_red_flag.json"
 _FALLBACK_KB_PATH = Path(__file__).resolve().parents[2] / "questionnaire/prompts/kb/pt_red_flag.json"
 
 # 부정 표현 — "no improvement" 같이 자체가 Red Flag인 표현은 제외
+# 쉼표 리스트 패턴 지원: "negative for headaches, nausea, vomiting, fevers"
 _NEGATION_RE = re.compile(
     r"(?:no|without|denies?|absence of|negative for|ruled out|"
     r"not experiencing|not having|no history of|no evidence of)"
     r"\s+"
     r"(?!improvement|improving|relief|response|change|comfortable)"
-    r"(?:\w+\s*){1,4}",
+    r"(?:\w+(?:,\s*\w+)*\s*){1,8}",
     re.IGNORECASE,
 )
 
@@ -72,8 +75,9 @@ def _rule_match(text: str, kb: dict) -> list[dict]:
     for syn_lower, kb_id, entry in entries:
         if kb_id in seen:
             continue
-        # 단어 경계 보호: 짧은 약어(≤5자)는 \b 매칭, 긴 구문은 substring
-        if len(syn_lower) <= 5:
+        # 단일 단어: \b 매칭 ("febrile" → "afebrile" 오탐 방지)
+        # 다단어 구문: substring (공백 포함 구문은 부분 매칭이 안전)
+        if " " not in syn_lower:
             if re.search(r'\b' + re.escape(syn_lower) + r'\b', clean):
                 seen.add(kb_id)
                 hits.append(_make_hit(kb_id, entry))
@@ -109,9 +113,14 @@ def _regex_match(text: str, kb: dict, seen: set[str]) -> list[dict]:
 
 
 def extract_symptoms(soap_text: str, use_ai: bool = False,
-                     pre_confirmed_ids: list[str] | None = None) -> dict[str, Any]:
+                     pre_confirmed_ids: list[str] | None = None,
+                     source: Source = "raw") -> dict[str, Any]:
     """
     SOAP 텍스트에서 Red Flag 증상 팩트 추출.
+
+    Args:
+        source: 입력 소스 ("mtsamples" | "webpt" | "raw").
+                "raw" 이외의 값을 지정하면 normalizer가 먼저 실행된다.
 
     Returns:
         {
@@ -121,6 +130,9 @@ def extract_symptoms(soap_text: str, use_ai: bool = False,
             "source": "rule" | "ai",
         }
     """
+    if source != "raw":
+        soap_text = normalize(soap_text, source=source).text
+
     kb = _load_kb()
 
     # 1차: substring 매칭
