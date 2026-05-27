@@ -24,12 +24,13 @@ from django.views.decorators.http import require_http_methods
 from vertical_pt.engine import score_soap, build_patient_context
 from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
 from vertical_pt.engine.documents import generate_document, DOC_TITLES
+from vertical_pt.engine.documents_ai import generate_document_ai
 from vertical_pt.engine.soap_extractor import extract_clinical_context
 from vertical_pt.engine.scribe import process_audio
 from vertical_pt.engine.referral_tracker import (
     send_referral_email, mark_sent, mark_followup,
 )
-from vertical_pt.models import AuditPair, PatientTimeline, RedFlagAlert
+from vertical_pt.models import AuditPair, GeneratedDocument, PatientTimeline, RedFlagAlert
 
 
 # ── 사이드바 앱 셸 ─────────────────────────────────────────────────
@@ -433,7 +434,7 @@ def generate_doc_ajax(request, patient_id):
             clinical_context[key] = fallback[key]
 
     try:
-        doc_text = generate_document(
+        template_text = generate_document(
             doc_type=doc_type,
             sessions=sessions,
             patient_ctx=patient_ctx,
@@ -445,13 +446,54 @@ def generate_doc_ajax(request, patient_id):
     except Exception as e:
         return JsonResponse({"error": f"Document generation failed: {e}"}, status=500)
 
+    # ── AI 버전 생성 ──────────────────────────────────────────────────
+    ai_text = None
+    try:
+        few_shots = list(
+            GeneratedDocument.objects
+            .filter(therapist=request.user, doc_type=doc_type, chosen=True)
+            .order_by("-chosen_at")
+            .values_list("content", flat=True)[:3]
+        )
+        ai_text = generate_document_ai(
+            doc_type=doc_type,
+            sessions=sessions,
+            therapist_name=therapist_name,
+            patient_id=patient_id,
+            clinic_name=clinic_name,
+            clinical_context=clinical_context,
+            few_shot_examples=few_shots or None,
+        )
+    except Exception as e:
+        logger.warning("AI document generation failed for %s: %s", doc_type, e)
+
+    # ── 두 버전 DB 저장 ───────────────────────────────────────────────
+    latest_timeline = sessions[-1]
+    tmpl_doc = GeneratedDocument.objects.create(
+        timeline=latest_timeline,
+        therapist=request.user,
+        doc_type=doc_type,
+        version=GeneratedDocument.VERSION_TEMPLATE,
+        content=template_text,
+    )
+    ai_doc = None
+    if ai_text:
+        ai_doc = GeneratedDocument.objects.create(
+            timeline=latest_timeline,
+            therapist=request.user,
+            doc_type=doc_type,
+            version=GeneratedDocument.VERSION_AI,
+            content=ai_text,
+        )
+
     return JsonResponse({
         "ok":           True,
         "doc_type":     doc_type,
-        "doc":          doc_text,
         "title":        DOC_TITLES[doc_type],
         "generated_at": datetime.date.today().strftime("%B %d, %Y"),
         "session_count": len(sessions),
+        "template": {"id": tmpl_doc.id, "content": template_text},
+        "ai":        {"id": ai_doc.id, "content": ai_text} if ai_doc else None,
     })
 
 
@@ -993,3 +1035,19 @@ def referral_print(request, alert_id):
 </head><body>{letter}</body></html>"""
     from django.http import HttpResponse
     return HttpResponse(html, content_type="text/html")
+
+
+@login_required
+@require_http_methods(["POST"])
+def choose_doc_version(request, doc_id: int):
+    """PT가 선택한 문서 버전을 chosen=True로 저장 — Flywheel few-shot 공급원."""
+    from django.utils import timezone
+    try:
+        doc = GeneratedDocument.objects.get(id=doc_id, therapist=request.user)
+    except GeneratedDocument.DoesNotExist:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    doc.chosen    = True
+    doc.chosen_at = timezone.now()
+    doc.save(update_fields=["chosen", "chosen_at"])
+    return JsonResponse({"ok": True, "chosen_id": doc_id, "version": doc.version})

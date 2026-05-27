@@ -859,7 +859,12 @@ async function generateDoc(patientId, docType, btnEl) {
     });
     const d = await r.json();
     if (!r.ok || d.error) throw new Error(d.error || 'Server error');
-    openDocModal(d.doc, d.title, docType, patientId);
+
+    if (d.ai) {
+      openDocModalAB(d.template, d.ai, d.title, docType, patientId);
+    } else {
+      openDocModal(d.template.content, d.title, docType, patientId);
+    }
   } catch(e) {
     alert('문서 생성 실패: ' + e.message);
   } finally {
@@ -878,6 +883,10 @@ function openDocModal(docText, title, docType, patientId) {
   _currentDocPatientId = patientId || '';
   document.getElementById('doc-modal-title').textContent = title || 'Document';
   const body = document.getElementById('doc-modal-body');
+  body.style.padding = '';
+  body.style.overflow = '';
+  const modal = body.closest('.doc-modal');
+  if (modal) modal.style.maxWidth = '';
   body.classList.add('text-mode');
   body.innerHTML = formatLetter(docText);
   const copyBtn = document.getElementById('doc-modal-copy-btn');
@@ -886,6 +895,97 @@ function openDocModal(docText, title, docType, patientId) {
   const editBtn = document.getElementById('doc-modal-edit-btn');
   if (editBtn) editBtn.style.display = _currentDocType ? '' : 'none';
   document.getElementById('doc-modal-overlay').classList.add('open');
+}
+
+function openDocModalAB(tmpl, ai, title, docType, patientId) {
+  _docModalCopyText    = tmpl.content;
+  _currentDocType      = docType || '';
+  _currentDocPatientId = patientId || '';
+  document.getElementById('doc-modal-title').textContent = (title || 'Document') + ' — 버전 비교';
+  const copyBtn = document.getElementById('doc-modal-copy-btn');
+  copyBtn.style.display = 'none';
+  const editBtn = document.getElementById('doc-modal-edit-btn');
+  if (editBtn) editBtn.style.display = 'none';
+
+  const body = document.getElementById('doc-modal-body');
+  body.classList.remove('text-mode');
+  body.style.padding = '0';
+  body.style.overflow = 'hidden';
+  body.style.display = 'flex';
+  body.style.flexDirection = 'column';
+  // A/B 비교는 더 넓은 모달이 필요
+  const modal = body.closest('.doc-modal');
+  if (modal) modal.style.maxWidth = '1100px';
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;min-height:0;">
+      <div style="border-right:1px solid #e2e8f0;display:flex;flex-direction:column;min-height:0;">
+        <div style="padding:8px 14px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;
+                    display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">
+            Template
+          </span>
+          <button id="choose-tmpl-btn" onclick="chooseDocVersion(${tmpl.id},'template',this)"
+            style="padding:4px 12px;font-size:11px;font-weight:600;border:none;border-radius:5px;
+                   cursor:pointer;background:#e0e7ff;color:#4338ca;">
+            Use this
+          </button>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:14px;font-family:'Courier New',monospace;
+                    font-size:11.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;">
+          ${esc(tmpl.content)}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0;">
+        <div style="padding:8px 14px;background:#f0fdf4;border-bottom:1px solid #e2e8f0;
+                    display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <span style="font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.05em;">
+            ✨ AI
+          </span>
+          <button id="choose-ai-btn" onclick="chooseDocVersion(${ai.id},'ai',this)"
+            style="padding:4px 12px;font-size:11px;font-weight:600;border:none;border-radius:5px;
+                   cursor:pointer;background:#dcfce7;color:#15803d;">
+            Use this
+          </button>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:14px;font-family:'Courier New',monospace;
+                    font-size:11.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;">
+          ${esc(ai.content)}
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('doc-modal-overlay').classList.add('open');
+}
+
+async function chooseDocVersion(docId, version, btn) {
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+  try {
+    const r = await fetch(`/pt/api/docs/${docId}/choose/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error('Failed');
+
+    // 선택된 버튼 하이라이트, 반대 버튼 비활성화
+    const otherBtnId = version === 'template' ? 'choose-ai-btn' : 'choose-tmpl-btn';
+    const otherBtn   = document.getElementById(otherBtnId);
+    btn.textContent  = '✅ Selected';
+    btn.style.background = version === 'ai' ? '#16a34a' : '#4338ca';
+    btn.style.color = '#fff';
+    if (otherBtn) { otherBtn.disabled = true; otherBtn.style.opacity = '0.4'; }
+
+    // copy 버튼 복원 — 선택된 버전 텍스트로
+    _docModalCopyText = version === 'template'
+      ? btn.closest('div').parentElement.querySelector('div:last-child').textContent
+      : btn.closest('div').parentElement.querySelector('div:last-child').textContent;
+    const copyBtn = document.getElementById('doc-modal-copy-btn');
+    if (copyBtn) { copyBtn.style.display = ''; copyBtn.textContent = '📋 Copy'; }
+  } catch(e) {
+    btn.textContent = 'Use this';
+    btn.disabled = false;
+    alert('선택 저장 실패: ' + e.message);
+  }
 }
 
 function closeDocModal() {
