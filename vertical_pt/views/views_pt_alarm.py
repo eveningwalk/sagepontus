@@ -433,58 +433,70 @@ def generate_doc_ajax(request, patient_id):
         if not clinical_context.get(key) and fallback.get(key):
             clinical_context[key] = fallback[key]
 
-    try:
-        template_text = generate_document(
-            doc_type=doc_type,
-            sessions=sessions,
-            patient_ctx=patient_ctx,
-            therapist_name=therapist_name,
-            patient_id=patient_id,
-            clinic_name=clinic_name,
-            clinical_context=clinical_context,
-        )
-    except Exception as e:
-        return JsonResponse({"error": f"Document generation failed: {e}"}, status=500)
-
-    # ── AI 버전 생성 ──────────────────────────────────────────────────
-    ai_text = None
-    try:
-        few_shots = list(
-            GeneratedDocument.objects
-            .filter(therapist=request.user, doc_type=doc_type, chosen=True)
-            .order_by("-chosen_at")
-            .values_list("content", flat=True)[:3]
-        )
-        ai_text = generate_document_ai(
-            doc_type=doc_type,
-            sessions=sessions,
-            therapist_name=therapist_name,
-            patient_id=patient_id,
-            clinic_name=clinic_name,
-            clinical_context=clinical_context,
-            few_shot_examples=few_shots or None,
-        )
-    except Exception as e:
-        logger.warning("AI document generation failed for %s: %s", doc_type, e)
-
-    # ── 두 버전 DB 저장 ───────────────────────────────────────────────
     latest_timeline = sessions[-1]
-    tmpl_doc = GeneratedDocument.objects.create(
-        timeline=latest_timeline,
-        therapist=request.user,
-        doc_type=doc_type,
-        version=GeneratedDocument.VERSION_TEMPLATE,
-        content=template_text,
-    )
-    ai_doc = None
-    if ai_text:
-        ai_doc = GeneratedDocument.objects.create(
+
+    # ── 캐시 확인: 같은 latest_timeline + doc_type으로 이미 생성된 문서 재사용 ──
+    # 새 세션이 추가되면 latest_timeline이 바뀌므로 자동 무효화됨
+    cached = {
+        doc.version: doc
+        for doc in GeneratedDocument.objects.filter(
+            therapist=request.user,
+            timeline=latest_timeline,
+            doc_type=doc_type,
+        ).order_by("-created_at")
+    }
+
+    # ── Template 버전 ─────────────────────────────────────────────────
+    tmpl_doc = cached.get(GeneratedDocument.VERSION_TEMPLATE)
+    if not tmpl_doc:
+        try:
+            template_text = generate_document(
+                doc_type=doc_type,
+                sessions=sessions,
+                patient_ctx=patient_ctx,
+                therapist_name=therapist_name,
+                patient_id=patient_id,
+                clinic_name=clinic_name,
+                clinical_context=clinical_context,
+            )
+        except Exception as e:
+            return JsonResponse({"error": f"Document generation failed: {e}"}, status=500)
+        tmpl_doc = GeneratedDocument.objects.create(
             timeline=latest_timeline,
             therapist=request.user,
             doc_type=doc_type,
-            version=GeneratedDocument.VERSION_AI,
-            content=ai_text,
+            version=GeneratedDocument.VERSION_TEMPLATE,
+            content=template_text,
         )
+
+    # ── AI 버전: 캐시 없을 때만 Gemini 호출 ──────────────────────────
+    ai_doc = cached.get(GeneratedDocument.VERSION_AI)
+    if not ai_doc:
+        try:
+            few_shots = list(
+                GeneratedDocument.objects
+                .filter(therapist=request.user, doc_type=doc_type, chosen=True)
+                .order_by("-chosen_at")
+                .values_list("content", flat=True)[:3]
+            )
+            ai_text = generate_document_ai(
+                doc_type=doc_type,
+                sessions=sessions,
+                therapist_name=therapist_name,
+                patient_id=patient_id,
+                clinic_name=clinic_name,
+                clinical_context=clinical_context,
+                few_shot_examples=few_shots or None,
+            )
+            ai_doc = GeneratedDocument.objects.create(
+                timeline=latest_timeline,
+                therapist=request.user,
+                doc_type=doc_type,
+                version=GeneratedDocument.VERSION_AI,
+                content=ai_text,
+            )
+        except Exception as e:
+            logger.warning("AI document generation failed for %s: %s", doc_type, e)
 
     return JsonResponse({
         "ok":           True,
@@ -492,8 +504,8 @@ def generate_doc_ajax(request, patient_id):
         "title":        DOC_TITLES[doc_type],
         "generated_at": datetime.date.today().strftime("%B %d, %Y"),
         "session_count": len(sessions),
-        "template": {"id": tmpl_doc.id, "content": template_text},
-        "ai":        {"id": ai_doc.id, "content": ai_text} if ai_doc else None,
+        "template": {"id": tmpl_doc.id, "content": tmpl_doc.content},
+        "ai":        {"id": ai_doc.id, "content": ai_doc.content} if ai_doc else None,
     })
 
 

@@ -959,6 +959,11 @@ function openDocModalAB(tmpl, ai, title, docType, patientId) {
 async function chooseDocVersion(docId, version, btn) {
   btn.disabled = true;
   btn.textContent = '저장 중…';
+
+  // 선택된 컬럼의 content div 텍스트 미리 확보
+  const contentDiv = btn.closest('[style*="flex-direction:column"]').querySelector('[style*="overflow-y:auto"]');
+  const chosenText = contentDiv ? contentDiv.textContent.trim() : '';
+
   try {
     const r = await fetch(`/pt/api/docs/${docId}/choose/`, {
       method:  'POST',
@@ -967,20 +972,9 @@ async function chooseDocVersion(docId, version, btn) {
     const d = await r.json();
     if (!d.ok) throw new Error('Failed');
 
-    // 선택된 버튼 하이라이트, 반대 버튼 비활성화
-    const otherBtnId = version === 'template' ? 'choose-ai-btn' : 'choose-tmpl-btn';
-    const otherBtn   = document.getElementById(otherBtnId);
-    btn.textContent  = '✅ Selected';
-    btn.style.background = version === 'ai' ? '#16a34a' : '#4338ca';
-    btn.style.color = '#fff';
-    if (otherBtn) { otherBtn.disabled = true; otherBtn.style.opacity = '0.4'; }
-
-    // copy 버튼 복원 — 선택된 버전 텍스트로
-    _docModalCopyText = version === 'template'
-      ? btn.closest('div').parentElement.querySelector('div:last-child').textContent
-      : btn.closest('div').parentElement.querySelector('div:last-child').textContent;
-    const copyBtn = document.getElementById('doc-modal-copy-btn');
-    if (copyBtn) { copyBtn.style.display = ''; copyBtn.textContent = '📋 Copy'; }
+    // 선택 완료 → 단일 문서 편집 모달로 전환 (기존 수정 플로우 재사용)
+    const title = document.getElementById('doc-modal-title').textContent.replace(' — 버전 비교', '');
+    openDocModal(chosenText, title, _currentDocType, _currentDocPatientId);
   } catch(e) {
     btn.textContent = 'Use this';
     btn.disabled = false;
