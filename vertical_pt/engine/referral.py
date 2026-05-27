@@ -8,9 +8,18 @@ Red Flag 알람 → 의사 리퍼럴 레터 자동 생성
 from __future__ import annotations
 
 import logging
+import re
 from datetime import date
 
 logger = logging.getLogger(__name__)
+
+
+def _strip_md(text: str) -> str:
+    text = re.sub(r'\*{1,3}(.*?)\*{1,3}', r'\1', text)
+    text = re.sub(r'_{1,2}(.*?)_{1,2}',   r'\1', text)
+    text = re.sub(r'^#{1,6}\s+(.+)$', lambda m: m.group(1).upper() + ':', text, flags=re.MULTILINE)
+    text = re.sub(r'`{1,3}', '', text)
+    return text.strip()
 
 _CONDITION_META = {
     "cauda_equina": {
@@ -223,28 +232,62 @@ Physical Therapist
     return letter
 
 
-def generate_referral_with_ai(alert, patient_id: str, therapist_name: str,
-                               soap_text: str, clinic_name: str = "") -> str:
-    """AI 강화 리퍼럴 레터 — SOAP 내용 기반 더 구체적인 서술."""
-    try:
-        from questionnaire.prompts.service import _chat_generate
+def generate_referral_letter_ai(
+    alert,
+    patient_id: str,
+    therapist_name: str,
+    clinic_name: str = "",
+    few_shot_examples: list[str] | None = None,
+) -> str:
+    """AI 버전 리퍼럴 레터 — Gemini 2.5 Flash + few-shot."""
+    from questionnaire.prompts.gemini_client import chat_completion_generate
 
-        base = generate_referral_letter(alert, patient_id, therapist_name, clinic_name)
-        prompt = (
-            "You are a clinical documentation assistant. "
-            "Enhance the following referral letter by incorporating specific clinical "
-            "observations from the SOAP note. Do NOT add diagnoses or speculate beyond "
-            "what is documented. Keep the letter professional and concise.\n\n"
-            f"SOAP NOTE:\n{soap_text}\n\n"
-            f"BASE REFERRAL:\n{base}\n\n"
-            "Return ONLY the enhanced letter text."
+    meta = _CONDITION_META.get(alert.condition, {
+        "title":    alert.condition.replace("_", " ").title(),
+        "urgency":  "Medical evaluation recommended",
+        "guideline":"Clinical judgment",
+        "action":   "Physician evaluation",
+    })
+
+    indicators_str = "\n".join(f"  • {label}" for label in alert.matched_indicators)
+
+    few_shot_block = ""
+    if few_shot_examples:
+        joined = "\n\n---\n\n".join(few_shot_examples[:3])
+        few_shot_block = (
+            "\n\nEXAMPLE LETTERS (previously approved by this therapist — match this style):\n\n"
+            + joined + "\n\n---\n\n"
         )
-        enhanced = _chat_generate()(
-            "gemini-2.5-flash",
-            prompt,
-            {"max_tokens": 1024, "temperature": 0.2},
-        )
-        return enhanced.strip()
-    except Exception as e:
-        logger.warning("AI referral 생성 실패, 기본 레터 반환: %s", e)
-        return generate_referral_letter(alert, patient_id, therapist_name, clinic_name)
+
+    system = (
+        "You are an expert physical therapy clinical documentation specialist. "
+        "Write a professional, medically precise physician referral letter. "
+        "Output plain text only — do NOT use markdown (**, *, #, ```). "
+        "Use ALL CAPS for section headers and plain bullet points (•) for lists."
+    )
+
+    user_prompt = (
+        f"Write a Physician Referral Letter for the following red flag alert.{few_shot_block}\n"
+        f"THERAPIST: {therapist_name}, PT\n"
+        f"CLINIC: {clinic_name or 'N/A'}\n"
+        f"PATIENT ID: {patient_id} (anonymous — no PHI)\n"
+        f"SESSION DATE: {alert.timeline.session_date}\n\n"
+        f"RED FLAG ALERT:\n"
+        f"  Alarm Level:          {alert.alarm_level}\n"
+        f"  Suspected Condition:  {meta['title']}\n"
+        f"  Urgency:              {meta['urgency']}\n"
+        f"  Risk Score:           {alert.score:.2f} / 1.00\n\n"
+        f"OBSERVED INDICATORS:\n{indicators_str}\n\n"
+        f"RECOMMENDED EVALUATION:\n  {meta['action']}\n\n"
+        f"CLINICAL GUIDELINE:\n  {meta['guideline']}\n\n"
+        "IMPORTANT: Use only the anonymous patient ID above. "
+        "Output a complete referral letter ready to send. No markdown formatting."
+    )
+
+    raw = chat_completion_generate(
+        model_id="gemini-2.5-flash",
+        user=user_prompt,
+        generation={"max_tokens": 1500, "temperature": 0.3},
+        system=system,
+    )
+    return _strip_md(raw)

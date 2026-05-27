@@ -686,15 +686,22 @@ async function generateReferralFromWeb(alertId, sessionId) {
       headers: { 'X-CSRFToken': CSRF },
     });
     const data = await res.json();
-    if (data.referral_letter) {
-      const box = document.getElementById(`referral-letter-${sessionId}`);
-      if (box) {
-        if (btn) btn.style.display = 'none';
-        box.innerHTML = `<div class="alarm-letter-box" style="border:2px solid #dc2626;">${formatLetter(data.referral_letter)}</div>`;
-      }
-      // _sessions 캐시도 업데이트
+    if (data.template) {
+      // _sessions 캐시 업데이트
       const s = _sessions.find(s => s.id === sessionId);
       if (s) s.referral_letter = data.referral_letter;
+
+      if (data.ai) {
+        // A/B 비교 모달
+        openDocModalAB(data.template, data.ai, '📄 Physician Referral Letter', 'referral', activePatientId);
+      } else {
+        // AI 실패 fallback — 기존 박스 렌더링
+        const box = document.getElementById(`referral-letter-${sessionId}`);
+        if (box) {
+          if (btn) btn.style.display = 'none';
+          box.innerHTML = `<div class="alarm-letter-box" style="border:2px solid #dc2626;">${formatLetter(data.referral_letter)}</div>`;
+        }
+      }
     }
   } catch(e) {
     if (btn) { btn.textContent = '📄 Generate Referral Letter'; btn.disabled = false; }

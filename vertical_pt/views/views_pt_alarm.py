@@ -22,7 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from vertical_pt.engine import score_soap, build_patient_context
-from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
+from vertical_pt.engine.referral import generate_referral_letter, generate_referral_letter_ai, generate_multi_referral_letter
 from vertical_pt.engine.documents import generate_document, DOC_TITLES
 from vertical_pt.engine.documents_ai import generate_document_ai
 from vertical_pt.engine.soap_extractor import extract_clinical_context
@@ -621,23 +621,83 @@ def _get_alert_for_user(alert_id: int, user):
 @login_required
 @require_http_methods(["POST"])
 def referral_generate(request, alert_id):
-    """웹앱에서 referral letter 생성 (Extension에서 안 만들었을 때)."""
+    """웹앱에서 referral letter 생성 — template + AI 버전 비교, DB 캐싱."""
     alert = _get_alert_for_user(alert_id, request.user)
     if not alert:
         return JsonResponse({"error": "Not found"}, status=404)
 
-    if not alert.referral_letter:
-        therapist_name = request.user.get_full_name() or request.user.username
-        letter = generate_referral_letter(
-            alert,
-            patient_id=alert.timeline.patient_id,
-            therapist_name=therapist_name,
-            session_date=alert.timeline.session_date,
-        )
-        alert.referral_letter = letter
-        alert.save(update_fields=["referral_letter"])
+    therapist_name = request.user.get_full_name() or request.user.username
+    clinic_name = ""
+    try:
+        if request.user.pt_profile:
+            clinic_name = request.user.pt_profile.clinic_name or ""
+    except Exception:
+        pass
 
-    return JsonResponse({"referral_letter": alert.referral_letter})
+    # ── 캐시 확인 ─────────────────────────────────────────────────────
+    cached = {
+        doc.version: doc
+        for doc in GeneratedDocument.objects.filter(
+            therapist=request.user,
+            timeline=alert.timeline,
+            doc_type="referral",
+        ).order_by("-created_at")
+    }
+
+    # ── Template 버전 ─────────────────────────────────────────────────
+    tmpl_doc = cached.get(GeneratedDocument.VERSION_TEMPLATE)
+    if not tmpl_doc:
+        if not alert.referral_letter:
+            letter = generate_referral_letter(
+                alert,
+                patient_id=alert.timeline.patient_id,
+                therapist_name=therapist_name,
+                session_date=alert.timeline.session_date,
+            )
+            alert.referral_letter = letter
+            alert.save(update_fields=["referral_letter"])
+        tmpl_doc = GeneratedDocument.objects.create(
+            timeline=alert.timeline,
+            therapist=request.user,
+            doc_type="referral",
+            version=GeneratedDocument.VERSION_TEMPLATE,
+            content=alert.referral_letter,
+            generation_params={"alert_id": alert.id},
+        )
+
+    # ── AI 버전: 캐시 없을 때만 Gemini 호출 ──────────────────────────
+    ai_doc = cached.get(GeneratedDocument.VERSION_AI)
+    if not ai_doc:
+        try:
+            few_shots = list(
+                GeneratedDocument.objects
+                .filter(therapist=request.user, doc_type="referral", chosen=True)
+                .order_by("-chosen_at")
+                .values_list("content", flat=True)[:3]
+            )
+            ai_text = generate_referral_letter_ai(
+                alert,
+                patient_id=alert.timeline.patient_id,
+                therapist_name=therapist_name,
+                clinic_name=clinic_name,
+                few_shot_examples=few_shots or None,
+            )
+            ai_doc = GeneratedDocument.objects.create(
+                timeline=alert.timeline,
+                therapist=request.user,
+                doc_type="referral",
+                version=GeneratedDocument.VERSION_AI,
+                content=ai_text,
+                generation_params={"alert_id": alert.id},
+            )
+        except Exception as e:
+            logger.warning("AI referral generation failed for alert %s: %s", alert_id, e)
+
+    return JsonResponse({
+        "referral_letter": tmpl_doc.content,   # backward compat
+        "template": {"id": tmpl_doc.id, "content": tmpl_doc.content},
+        "ai":        {"id": ai_doc.id, "content": ai_doc.content} if ai_doc else None,
+    })
 
 
 @login_required
@@ -1062,4 +1122,16 @@ def choose_doc_version(request, doc_id: int):
     doc.chosen    = True
     doc.chosen_at = timezone.now()
     doc.save(update_fields=["chosen", "chosen_at"])
+
+    # 리퍼럴 레터 선택 시 alert.referral_letter도 동기화 (이메일 발송 등 downstream 보호)
+    if doc.doc_type == "referral":
+        alert_id = doc.generation_params.get("alert_id")
+        if alert_id:
+            try:
+                alert = RedFlagAlert.objects.get(id=alert_id, timeline__therapist=request.user)
+                alert.referral_letter = doc.content
+                alert.save(update_fields=["referral_letter"])
+            except RedFlagAlert.DoesNotExist:
+                pass
+
     return JsonResponse({"ok": True, "chosen_id": doc_id, "version": doc.version})
