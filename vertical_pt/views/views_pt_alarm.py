@@ -1275,3 +1275,30 @@ def send_document_email(request):
         )
 
     return JsonResponse({"ok": True, "sent_to": sent_to, "failed": failed})
+
+
+# ── Pilot Feedback ────────────────────────────────────────────────────────────
+
+@require_http_methods(["POST"])
+def submit_feedback(request):
+    """파일럿 챗봇 피드백 수집 — 비인증도 허용 (익명 피드백)."""
+    from vertical_pt.models import PilotFeedback
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    msg = data.get("message", "").strip()
+    if not msg:
+        return JsonResponse({"error": "message required"}, status=400)
+
+    PilotFeedback.objects.create(
+        user       = request.user if request.user.is_authenticated else None,
+        category   = data.get("category", PilotFeedback.CAT_IMPROVEMENT),
+        message    = msg,
+        page_url   = data.get("page_url", "")[:300],
+        patient_id = data.get("patient_id", "")[:100],
+        doc_type   = data.get("doc_type", "")[:50],
+        action_log = data.get("action_log", [])[:5],
+    )
+    return JsonResponse({"ok": True})

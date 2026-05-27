@@ -56,6 +56,9 @@ urlpatterns = [
                                              views_pt_alarm.patient_contact_delete,  name="pt_contact_delete"),
     path("pt/api/docs/send-email/",          views_pt_alarm.send_document_email,     name="pt_doc_send_email"),
 
+    # ── Pilot Feedback ─────────────────────────────────────────────────
+    path("pt/api/feedback/",                 views_pt_alarm.submit_feedback,         name="pt_feedback"),
+
     path("pt/api/backfill-rescore/",            views_pt_alarm.backfill_rescore_ajax,  name="pt_backfill_rescore"),
     path("pt/api/admin/clear/",                 views_pt_alarm.admin_clear_sessions,   name="pt_admin_clear"),
     path("pt/api/admin/reseed/",                views_pt_alarm.admin_reseed_ajax,      name="pt_admin_reseed"),

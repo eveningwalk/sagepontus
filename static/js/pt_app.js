@@ -2109,3 +2109,105 @@ async function sendDocumentEmail() {
     btn.disabled = false;
   }
 }
+
+
+// ── Pilot Feedback 챗봇 ───────────────────────────────────────────────────────
+
+let _fbCat      = 'improvement';
+let _fbOpened   = false;
+let _actionLog  = [];
+
+function _logAction(action) {
+  _actionLog.push({ action, ts: Date.now() });
+  if (_actionLog.length > 5) _actionLog.shift();
+}
+
+function _fbAddMsg(text, role = 'bot') {
+  const box = document.getElementById('feedback-messages');
+  const el  = document.createElement('div');
+  if (role === 'bot') {
+    el.className = 'fb-msg-bot';
+    el.innerHTML = `<div class="fb-msg-bot-avatar">SP</div>
+                    <div class="fb-msg-bot-bubble">${text}</div>`;
+  } else {
+    el.className = 'fb-msg-user';
+    el.innerHTML = `<div class="fb-msg-user-bubble">${text}</div>`;
+  }
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function _fbSetQuickReplies(items) {
+  const box = document.getElementById('feedback-quick-replies');
+  box.innerHTML = items.map(i =>
+    `<button class="fb-quick-btn" onclick="fbQuickSelect('${i.cat}','${i.label}')">${i.label}</button>`
+  ).join('');
+}
+
+function fbQuickSelect(cat, label) {
+  _fbCat = cat;
+  _fbAddMsg(label, 'user');
+  document.getElementById('feedback-quick-replies').innerHTML = '';
+  setTimeout(() => {
+    _fbAddMsg('어떤 점인지 자유롭게 입력해 주세요. 😊');
+    document.getElementById('feedback-text').focus();
+  }, 300);
+}
+
+function toggleFeedback() {
+  const panel = document.getElementById('feedback-panel');
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    setTimeout(() => { panel.style.cssText = ''; }, 230);
+    return;
+  }
+  panel.style.cssText = 'display:flex;flex-direction:column;width:320px;height:480px;';
+  requestAnimationFrame(() => panel.classList.add('open'));
+
+  if (!_fbOpened) {
+    _fbOpened = true;
+    setTimeout(() => {
+      _fbAddMsg('안녕하세요! 👋<br>파일럿 사용 중 느끼신 점을 알려주세요.');
+      setTimeout(() => _fbSetQuickReplies([
+        { cat: 'improvement', label: '💡 개선 제안' },
+        { cat: 'bug',         label: '🐛 버그 신고' },
+        { cat: 'praise',      label: '👍 칭찬'     },
+        { cat: 'question',    label: '❓ 질문'     },
+      ]), 500);
+    }, 200);
+  }
+}
+
+async function submitFeedback() {
+  const ta  = document.getElementById('feedback-text');
+  const msg = ta.value.trim();
+  if (!msg) { ta.focus(); return; }
+
+  _fbAddMsg(msg, 'user');
+  ta.value = '';
+  document.getElementById('feedback-send-btn').disabled = true;
+
+  try {
+    await fetch('/pt/api/feedback/', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({
+        category:   _fbCat,
+        message:    msg,
+        page_url:   location.pathname,
+        patient_id: typeof _currentDocPatientId !== 'undefined' ? _currentDocPatientId : '',
+        doc_type:   typeof _currentDocType      !== 'undefined' ? _currentDocType      : '',
+        action_log: _actionLog,
+      }),
+    });
+    setTimeout(() => {
+      _fbAddMsg('소중한 의견 감사합니다! 개발팀에 전달하겠습니다. 🙏');
+      _fbSetQuickReplies([{ cat: 'improvement', label: '+ 추가 의견' }]);
+      document.getElementById('feedback-send-btn').disabled = false;
+      _fbCat = 'improvement';
+    }, 300);
+  } catch(e) {
+    _fbAddMsg('전송에 실패했습니다. 다시 시도해 주세요.');
+    document.getElementById('feedback-send-btn').disabled = false;
+  }
+}

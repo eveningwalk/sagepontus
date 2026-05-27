@@ -1,0 +1,62 @@
+services:
+  metabase:
+    image: metabase/metabase:latest
+    ports:
+      - "3000:3000"
+    environment:
+      # Metabase 자체 설정 DB (로컬 H2 — 프로덕션엔 별도 PG 권장)
+      MB_DB_TYPE: h2
+      MB_DB_FILE: /metabase-data/metabase.db
+      # 선택: 타임존
+      JAVA_TIMEZONE: America/New_York
+    volumes:
+      - metabase-data:/metabase-data
+
+volumes:
+  metabase-data:
+
+# ── 사용법 ──────────────────────────────────────────────────────────────
+# 1. 시작:   docker compose -f docker-compose.metabase.yml up -d
+# 2. 접속:   http://localhost:3000
+# 3. 초기 설정 완료 후 DB 연결:
+#      Database type: PostgreSQL
+#      Host: (DATABASE_URL에서 host 부분)
+#      Database name: postgres
+#      Username / Password: DATABASE_URL에서 추출
+#
+# ── 주요 대시보드 SQL (아래 쿼리를 Metabase에서 "New Question > SQL" 로 추가) ──
+#
+# [1] AI vs Template 선택 비율
+#   SELECT version, COUNT(*) as cnt
+#   FROM vertical_pt_generateddocument
+#   WHERE chosen = true
+#   GROUP BY version;
+#
+# [2] 문서 타입별 생성 횟수
+#   SELECT doc_type, COUNT(*) as cnt
+#   FROM vertical_pt_generateddocument
+#   GROUP BY doc_type ORDER BY cnt DESC;
+#
+# [3] 섹션별 수정 빈도 (상위 10개)
+#   SELECT s->>'section' as section, COUNT(*) as cnt
+#   FROM vertical_pt_auditpair,
+#        jsonb_array_elements(section_diffs) s
+#   WHERE s->>'status' = 'modified'
+#   GROUP BY section ORDER BY cnt DESC LIMIT 10;
+#
+# [4] 알람 채택 vs 기각률
+#   SELECT decision, COUNT(*) as cnt
+#   FROM vertical_pt_auditpair
+#   WHERE type = 'alarm'
+#   GROUP BY decision;
+#
+# [5] 파일럿 피드백 카테고리별 분포
+#   SELECT category, COUNT(*) as cnt
+#   FROM vertical_pt_pilotfeedback
+#   GROUP BY category ORDER BY cnt DESC;
+#
+# [6] 일별 세션 수 (최근 30일)
+#   SELECT DATE(session_date) as day, COUNT(*) as sessions
+#   FROM vertical_pt_patienttimeline
+#   WHERE session_date >= NOW() - INTERVAL '30 days'
+#   GROUP BY day ORDER BY day;
