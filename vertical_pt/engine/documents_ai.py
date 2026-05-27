@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+import re
 
 from questionnaire.prompts.gemini_client import chat_completion_generate
 
@@ -13,8 +13,23 @@ _SYSTEM = (
     "You are an expert physical therapy documentation specialist. "
     "Generate professional, legally defensible PT documents based on the clinical data. "
     "If example documents are provided, match their style and tone exactly. "
-    "Use the patient's anonymous ID throughout — never invent or include PHI."
+    "Use the patient's anonymous ID throughout — never invent or include PHI. "
+    "Output plain text only — do NOT use markdown formatting such as **, *, #, >, ```. "
+    "Use ALL CAPS for section headers (e.g. PATIENT PROFILE:) and plain hyphens or spaces for lists."
 )
+
+
+def _strip_markdown(text: str) -> str:
+    """Gemini가 무시하고 쓴 markdown 기호 제거."""
+    # **bold** / __bold__ → 텍스트만
+    text = re.sub(r'\*{1,3}(.*?)\*{1,3}', r'\1', text)
+    text = re.sub(r'_{1,2}(.*?)_{1,2}',   r'\1', text)
+    # ## Heading → HEADING:
+    text = re.sub(r'^#{1,6}\s+(.+)$', lambda m: m.group(1).upper() + ':', text, flags=re.MULTILINE)
+    # 남은 단독 * / # 제거
+    text = re.sub(r'(?m)^[\*\-]{3,}\s*$', '', text)   # 구분선 --- ***
+    text = re.sub(r'`{1,3}', '', text)                 # backtick
+    return text.strip()
 
 _DOC_LABELS = {
     "medical_necessity":   "Medical Necessity Letter",
@@ -83,9 +98,10 @@ def generate_document_ai(
         "Format as a complete, professional clinical document ready to send."
     )
 
-    return chat_completion_generate(
+    raw = chat_completion_generate(
         model_id="gemini-2.5-flash",
         user=user_prompt,
         generation={"max_tokens": 3000, "temperature": 0.3},
         system=_SYSTEM,
     )
+    return _strip_markdown(raw)
