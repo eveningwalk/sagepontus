@@ -838,10 +838,26 @@ function renderDocumentsTab(patientId, patientName) {
   el.innerHTML = ctxHtml + referralHtml + cardsHtml;
 }
 
-function viewReferralInModal(idx) {
+async function viewReferralInModal(idx) {
   const s = _sessions[idx];
   if (!s || !s.referral_letter) return;
-  openDocModal(s.referral_letter, '📄 Physician Referral Letter');
+
+  if (s.alert_id) {
+    try {
+      const res = await fetch(`/pt/api/alerts/${s.alert_id}/generate/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+      });
+      const data = await res.json();
+      if (data.ai) {
+        openDocModalAB(data.template, data.ai, '📄 Physician Referral Letter', 'referral', activePatientId);
+        return;
+      }
+    } catch(e) {
+      // AI 실패 시 단일 모달 fallback
+    }
+  }
+  openDocModal(s.referral_letter, '📄 Physician Referral Letter', 'referral', activePatientId);
 }
 
 function _computeClientTrend(scores) {
