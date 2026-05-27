@@ -310,6 +310,7 @@
       <div class="doc-modal-actions">
         <button class="pt-letter-btn" onclick="printDocModal()">🖨️ Print</button>
         <button class="pt-letter-btn" id="doc-modal-edit-btn" onclick="toggleDocEdit(this)" style="display:none;">✏ 수정</button>
+        {% if FEATURES.email_send %}<button class="pt-letter-btn" id="doc-modal-send-btn" onclick="openEmailModal()" style="display:none;">✉ Send</button>{% endif %}
         <button class="pt-letter-btn pt-letter-btn-primary" id="doc-modal-copy-btn"
                 onclick="copyDocModal(this)">📋 Copy</button>
         <button class="pt-letter-btn" onclick="closeDocModal()">✕</button>
@@ -318,6 +319,44 @@
     <div class="doc-modal-body" id="doc-modal-body"></div>
   </div>
 </div>
+
+{% if FEATURES.email_send %}
+<!-- ── Email 발송 모달 ──────────────────────────────────────────────── -->
+<div class="email-modal-overlay" id="email-modal-overlay" onclick="if(event.target===this)closeEmailModal()">
+  <div class="email-modal">
+    <div class="email-modal-header">
+      <span class="email-modal-title">Send Document</span>
+      <button class="pt-letter-btn" onclick="closeEmailModal()">✕</button>
+    </div>
+    <div class="email-modal-body">
+      <!-- 저장된 수신자 -->
+      <div class="email-section-label">수신자</div>
+      <div id="email-contact-list"></div>
+
+      <!-- 수신자 추가 폼 -->
+      <div id="email-add-form" style="margin-top:12px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <select id="email-add-role" class="pt-input" style="width:140px;">
+            <option value="physician">Physician</option>
+            <option value="lawyer">Lawyer</option>
+            <option value="insurance">Insurance</option>
+            <option value="other">Other</option>
+          </select>
+          <input id="email-add-name"  class="pt-input" style="flex:1;min-width:120px;" placeholder="Name">
+          <input id="email-add-email" class="pt-input" style="flex:1;min-width:160px;" placeholder="Email address" type="email">
+          <input id="email-add-org"   class="pt-input" style="flex:1;min-width:120px;" placeholder="Organization (optional)">
+          <button class="pt-btn pt-btn-sm" onclick="addEmailContact()">+ Add</button>
+        </div>
+      </div>
+    </div>
+    <div class="email-modal-footer">
+      <span id="email-send-status" style="font-size:12px;color:#6b7280;flex:1;"></span>
+      <button class="pt-letter-btn" onclick="closeEmailModal()">취소</button>
+      <button class="pt-letter-btn pt-letter-btn-primary" id="email-send-btn" onclick="sendDocumentEmail()">✉ 발송</button>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endif %}
 
 {% endif %}
@@ -330,6 +369,11 @@
   };
   const APP_CONTEXT = {
     isAuthenticated: {{ user.is_authenticated|lower }},
+  };
+  const FEATURES = {
+    ab_comparison:     {{ FEATURES.ab_comparison|lower }},
+    email_send:        {{ FEATURES.email_send|lower }},
+    schedule_tracking: {{ FEATURES.schedule_tracking|lower }},
   };
 </script>
 <script src="{% static 'js/pt_app.js' %}"></script>

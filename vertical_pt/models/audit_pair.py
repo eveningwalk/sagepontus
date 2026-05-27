@@ -45,6 +45,9 @@ class AuditPair(models.Model):
     # Document 구분자
     doc_type = models.CharField(max_length=50, blank=True)
 
+    # 섹션별 diff — [{section, status, original, edited}, ...]
+    section_diffs = models.JSONField(default=list, blank=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

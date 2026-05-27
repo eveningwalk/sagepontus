@@ -691,7 +691,7 @@ async function generateReferralFromWeb(alertId, sessionId) {
       const s = _sessions.find(s => s.id === sessionId);
       if (s) s.referral_letter = data.referral_letter;
 
-      if (data.ai) {
+      if (data.ai && FEATURES.ab_comparison) {
         // A/B 비교 모달
         openDocModalAB(data.template, data.ai, '📄 Physician Referral Letter', 'referral', activePatientId);
       } else {
@@ -849,7 +849,7 @@ async function viewReferralInModal(idx) {
         headers: { 'X-CSRFToken': CSRF },
       });
       const data = await res.json();
-      if (data.ai) {
+      if (data.ai && FEATURES.ab_comparison) {
         openDocModalAB(data.template, data.ai, '📄 Physician Referral Letter', 'referral', activePatientId);
         return;
       }
@@ -883,10 +883,10 @@ async function generateDoc(patientId, docType, btnEl) {
     const d = await r.json();
     if (!r.ok || d.error) throw new Error(d.error || 'Server error');
 
-    if (d.ai) {
+    if (d.ai && FEATURES.ab_comparison) {
       openDocModalAB(d.template, d.ai, d.title, docType, patientId);
     } else {
-      openDocModal(d.template.content, d.title, docType, patientId);
+      openDocModal((d.template || d).content || d.template?.content, d.title, docType, patientId);
     }
   } catch(e) {
     alert('문서 생성 실패: ' + e.message);
@@ -923,6 +923,8 @@ function openDocModal(docText, title, docType, patientId) {
     editBtn.textContent     = '✏ 수정';
     editBtn.dataset.editing = '0';
   }
+  const sendBtn = document.getElementById('doc-modal-send-btn');
+  if (sendBtn) sendBtn.style.display = _currentDocPatientId ? '' : 'none';
   document.getElementById('doc-modal-overlay').classList.add('open');
 }
 
@@ -935,6 +937,8 @@ function openDocModalAB(tmpl, ai, title, docType, patientId) {
   copyBtn.style.display = 'none';
   const editBtn = document.getElementById('doc-modal-edit-btn');
   if (editBtn) editBtn.style.display = 'none';
+  const sendBtn2 = document.getElementById('doc-modal-send-btn');
+  if (sendBtn2) sendBtn2.style.display = 'none';
 
   const body = document.getElementById('doc-modal-body');
   body.classList.remove('text-mode');
@@ -1914,6 +1918,7 @@ function toggleDocEdit(btn) {
 
   if (btn.dataset.editing === '1') {
     // 편집 모드 → 읽기 모드 (저장 없이 취소)
+    body.style.cssText = '';
     body.classList.add('text-mode');
     body.innerHTML = formatLetter(_docModalCopyText);
     btn.textContent = '✏ 수정';
@@ -1921,23 +1926,25 @@ function toggleDocEdit(btn) {
   } else {
     // 읽기 모드 → 편집 모드
     body.classList.remove('text-mode');
+    body.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;padding:0;overflow:hidden;';
     const ta = document.createElement('textarea');
     ta.id = 'doc-edit-ta';
     ta.value = _docModalCopyText;
-    ta.style.cssText = 'width:100%;height:100%;padding:12px;border:none;outline:none;' +
+    ta.style.cssText = 'flex:1;min-height:calc(65vh - 110px);width:100%;padding:16px 20px;' +
+                       'border:none;outline:none;' +
                        'font-size:12px;font-family:"Courier New",monospace;resize:none;box-sizing:border-box;';
     body.innerHTML = '';
     body.appendChild(ta);
 
     const saveBar = document.createElement('div');
     saveBar.style.cssText = 'padding:10px 16px;display:flex;justify-content:flex-end;gap:8px;' +
-                            'border-top:1px solid #e2e8f0;background:#f8fafc;';
+                            'border-top:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0;';
     saveBar.innerHTML = `<button onclick="saveDocEdit()"
       style="padding:6px 16px;background:#6366f1;color:#fff;border:none;border-radius:6px;
              font-size:12px;font-weight:600;cursor:pointer;">수정본 저장</button>`;
     body.appendChild(saveBar);
 
-    btn.textContent = '✕ 취소';
+    btn.textContent = '취소';
     btn.dataset.editing = '1';
     ta.focus();
   }
@@ -1963,6 +1970,7 @@ async function saveDocEdit() {
       const editBtn = document.getElementById('doc-modal-edit-btn');
       if (editBtn) { editBtn.dataset.editing = '0'; editBtn.textContent = '✏ 수정'; }
       const body = document.getElementById('doc-modal-body');
+      body.style.cssText = '';
       body.classList.add('text-mode');
       body.innerHTML = formatLetter(edited);
       if (saveBtn) { saveBtn.textContent = '✅ 저장됨'; setTimeout(() => saveBtn.disabled = false, 1500); }
@@ -1970,5 +1978,134 @@ async function saveDocEdit() {
   } catch(e) {
     alert('저장 실패: ' + e.message);
     if (saveBtn) { saveBtn.textContent = '수정본 저장'; saveBtn.disabled = false; }
+  }
+}
+
+
+// ── Email 발송 ────────────────────────────────────────────────────────────────
+
+let _emailContacts = [];   // 현재 환자의 저장된 수신자
+
+async function openEmailModal() {
+  _emailContacts = [];
+  const overlay = document.getElementById('email-modal-overlay');
+  document.getElementById('email-send-status').textContent = '';
+  document.getElementById('email-add-name').value  = '';
+  document.getElementById('email-add-email').value = '';
+  document.getElementById('email-add-org').value   = '';
+  overlay.classList.add('open');
+
+  if (_currentDocPatientId) {
+    try {
+      const r = await fetch(`/pt/api/patients/${encodeURIComponent(_currentDocPatientId)}/contacts/`);
+      const d = await r.json();
+      _emailContacts = d.contacts || [];
+    } catch(_) {}
+  }
+  renderEmailContacts();
+}
+
+function closeEmailModal() {
+  document.getElementById('email-modal-overlay').classList.remove('open');
+}
+
+const _ROLE_LABEL = { physician:'Physician', lawyer:'Lawyer', insurance:'Insurance', other:'Other' };
+
+function renderEmailContacts() {
+  const el = document.getElementById('email-contact-list');
+  if (!_emailContacts.length) {
+    el.innerHTML = '<p style="font-size:12px;color:#9ca3af;margin:0 0 8px;">저장된 수신자 없음. 아래에서 추가하세요.</p>';
+    return;
+  }
+  el.innerHTML = _emailContacts.map(c => `
+    <div class="email-contact-item">
+      <input type="checkbox" id="ec-${c.id}" value="${c.id}" checked>
+      <span class="email-contact-role ${c.role}">${_ROLE_LABEL[c.role] || c.role}</span>
+      <div class="email-contact-info">
+        <div class="email-contact-name">${esc(c.name)}${c.organization ? ' · ' + esc(c.organization) : ''}</div>
+        <div class="email-contact-email">${esc(c.email)}</div>
+      </div>
+      <button class="email-contact-del" onclick="deleteEmailContact(${c.id})" title="삭제">✕</button>
+    </div>`).join('');
+}
+
+async function addEmailContact() {
+  const role  = document.getElementById('email-add-role').value;
+  const name  = document.getElementById('email-add-name').value.trim();
+  const email = document.getElementById('email-add-email').value.trim();
+  const org   = document.getElementById('email-add-org').value.trim();
+  if (!name || !email) { alert('이름과 이메일은 필수입니다.'); return; }
+  const r = await fetch(`/pt/api/patients/${encodeURIComponent(_currentDocPatientId)}/contacts/`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body: JSON.stringify({role, name, email, organization: org}),
+  });
+  const d = await r.json();
+  if (d.ok) {
+    _emailContacts = _emailContacts.filter(c => c.role !== role);
+    _emailContacts.push({id: d.id, role, name, email, organization: org});
+    document.getElementById('email-add-name').value  = '';
+    document.getElementById('email-add-email').value = '';
+    document.getElementById('email-add-org').value   = '';
+    renderEmailContacts();
+  }
+}
+
+async function deleteEmailContact(contactId) {
+  await fetch(`/pt/api/contacts/${contactId}/delete/`, {
+    method: 'DELETE', headers: {'X-CSRFToken': CSRF},
+  });
+  _emailContacts = _emailContacts.filter(c => c.id !== contactId);
+  renderEmailContacts();
+}
+
+async function sendDocumentEmail() {
+  const checked = [...document.querySelectorAll('#email-contact-list input[type=checkbox]:checked')]
+    .map(cb => _emailContacts.find(c => c.id == cb.value))
+    .filter(Boolean);
+  if (!checked.length) { alert('수신자를 선택하세요.'); return; }
+
+  const btn    = document.getElementById('email-send-btn');
+  const status = document.getElementById('email-send-status');
+  btn.disabled = true;
+  btn.textContent = '발송 중…';
+  status.textContent = '';
+
+  const title = document.getElementById('doc-modal-title')?.textContent || 'Document';
+
+  try {
+    const r = await fetch('/pt/api/docs/send-email/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({
+        patient_id: _currentDocPatientId,
+        doc_type:   _currentDocType,
+        doc_title:  title,
+        content:    _docModalCopyText,
+        recipients: checked.map(c => ({id:c.id, name:c.name, email:c.email, role:c.role})),
+      }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      const names = d.sent_to.map(s => s.name || s.email).join(', ');
+      status.style.color = '#16a34a';
+      status.textContent = `✓ 발송 완료: ${names}`;
+      btn.textContent = '✉ 발송';
+      btn.disabled = false;
+      if (d.failed?.length) {
+        status.textContent += ` (실패: ${d.failed.map(f=>f.email).join(', ')})`;
+        status.style.color = '#b45309';
+      }
+    } else {
+      status.style.color = '#dc2626';
+      status.textContent = `오류: ${d.error || '발송 실패'}`;
+      btn.textContent = '✉ 발송';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    status.style.color = '#dc2626';
+    status.textContent = `네트워크 오류: ${e.message}`;
+    btn.textContent = '✉ 발송';
+    btn.disabled = false;
   }
 }

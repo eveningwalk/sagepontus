@@ -49,6 +49,13 @@ urlpatterns = [
                                              views_pt_alarm.save_doc_edit,           name="pt_doc_edit"),
     path("pt/api/audit/export/",             views_pt_alarm.export_audit_pairs,      name="pt_audit_export"),
 
+    # ── 이메일 발송 ────────────────────────────────────────────────────
+    path("pt/api/patients/<str:patient_id>/contacts/",
+                                             views_pt_alarm.patient_contacts,        name="pt_contacts"),
+    path("pt/api/contacts/<int:contact_id>/delete/",
+                                             views_pt_alarm.patient_contact_delete,  name="pt_contact_delete"),
+    path("pt/api/docs/send-email/",          views_pt_alarm.send_document_email,     name="pt_doc_send_email"),
+
     path("pt/api/backfill-rescore/",            views_pt_alarm.backfill_rescore_ajax,  name="pt_backfill_rescore"),
     path("pt/api/admin/clear/",                 views_pt_alarm.admin_clear_sessions,   name="pt_admin_clear"),
     path("pt/api/admin/reseed/",                views_pt_alarm.admin_reseed_ajax,      name="pt_admin_reseed"),

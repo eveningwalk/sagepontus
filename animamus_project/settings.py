@@ -172,6 +172,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'questionnaire.context_processors.demo_flags',
+                'animamus_project.context_processors.feature_flags',
             ],
         },
     },
@@ -275,6 +276,16 @@ EMAIL_USE_TLS       = os.environ.get("EMAIL_USE_TLS", "True").lower() != "false"
 EMAIL_HOST_USER     = os.environ.get("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 DEFAULT_FROM_EMAIL  = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply@sagepontus.com")
+
+# ── Feature Flags ──────────────────────────────────────────────────────────────
+def _flag(name, default="false"):
+    return os.environ.get(name, default).lower() == "true"
+
+FEATURES = {
+    "ab_comparison":     _flag("FEAT_AB_COMPARE",  "true"),
+    "email_send":        _flag("FEAT_EMAIL_SEND",  "false"),
+    "schedule_tracking": _flag("FEAT_SCHEDULE",    "false"),
+}
 
 LOGGING = {
     "version": 1,
