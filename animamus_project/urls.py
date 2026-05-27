@@ -17,13 +17,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from questionnaire import views
-from rest_framework.authtoken.views import obtain_auth_token
+from .auth_views import email_token_auth
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('questionnaire/', include('questionnaire.urls')),
     path('accounts/', include('accounts.urls')),
-    path('api/auth/token/', obtain_auth_token, name='api_token'),
+    path('api/auth/token/', email_token_auth, name='api_token'),
     path('', include('vertical_pt.urls')),
     path('landing/', views.landing, name='landing'),
     path('demo/', views.demo_entry, name='demo'),

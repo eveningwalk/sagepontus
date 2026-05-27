@@ -3,5 +3,4 @@
 
 jupyterlab
 matplotlib
-torch
 debugpy

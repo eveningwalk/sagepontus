@@ -72,7 +72,12 @@ def _rule_match(text: str, kb: dict) -> list[dict]:
     for syn_lower, kb_id, entry in entries:
         if kb_id in seen:
             continue
-        if syn_lower in clean:
+        # 단어 경계 보호: 짧은 약어(≤5자)는 \b 매칭, 긴 구문은 substring
+        if len(syn_lower) <= 5:
+            if re.search(r'\b' + re.escape(syn_lower) + r'\b', clean):
+                seen.add(kb_id)
+                hits.append(_make_hit(kb_id, entry))
+        elif syn_lower in clean:
             seen.add(kb_id)
             hits.append(_make_hit(kb_id, entry))
 

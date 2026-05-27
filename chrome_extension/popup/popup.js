@@ -287,10 +287,8 @@ function renderResult(data, soapText, patientId) {
 
 // ── 리퍼럴 레터 생성 ─────────────────────────────────────────────────
 async function handleGenerateReferral() {
-  const btn       = $("btn-referral");
-  const alertId   = btn.dataset.alertId;
-  const patientId = btn.dataset.patientId;
-  const soapText  = btn.dataset.soapText;
+  const btn     = $("btn-referral");
+  const alertId = btn.dataset.alertId;
 
   if (!alertId) return;
 
@@ -298,22 +296,17 @@ async function handleGenerateReferral() {
   btn.disabled    = true;
 
   try {
-    const res = await fetch(`${state.serverUrl}/api/pt/analyze/`, {
+    const res = await fetch(`${state.serverUrl}/api/pt/alerts/${alertId}/referral/`, {
       method:  "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Token ${state.token}`,
       },
-      body: JSON.stringify({
-        patient_id:        patientId,
-        soap_text:         soapText,
-        generate_referral: true,
-      }),
     });
 
     if (!res.ok) throw new Error("Failed to generate letter");
 
-    const data = await res.json();
+    const data   = await res.json();
     const letter = data.referral_letter || "";
 
     if (letter) {

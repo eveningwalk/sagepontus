@@ -13,12 +13,14 @@ from datetime import date
 
 from django.utils import timezone
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from vertical_pt.engine import score_soap, build_patient_context
 from vertical_pt.engine.referral import generate_referral_letter
+from vertical_pt.engine.soap_extractor import extract_clinical_context
 from vertical_pt.models import PatientTimeline, RedFlagAlert
 from .serializers import (
     AnalyzeRequestSerializer,
@@ -31,6 +33,7 @@ logger = logging.getLogger(__name__)
 
 
 @api_view(["POST"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def analyze(request):
     """
@@ -56,12 +59,23 @@ def analyze(request):
     # ── VPPS + Scorer ─────────────────────────────────────────────────────
     result = score_soap(soap_text, use_ai=use_ai)
 
+    # ── clinical_context 추출 (Gemini) ───────────────────────────────────
+    clinical_ctx = {}
+    try:
+        clinical_ctx = extract_clinical_context(soap_text) or {}
+        import sys
+        print(f"[ANALYZE_DEBUG] clinical_ctx keys={list(clinical_ctx.keys())} primary_dx={clinical_ctx.get('primary_diagnosis','')}", flush=True, file=sys.stderr)
+    except Exception as e:
+        import sys
+        print(f"[ANALYZE_DEBUG] extract_clinical_context FAILED: {e}", flush=True, file=sys.stderr)
+
     # ── PatientTimeline 저장 ──────────────────────────────────────────────
     timeline = PatientTimeline.objects.create(
         therapist=request.user,
         patient_id=patient_id,
         session_date=session_date,
         soap_text=soap_text,
+        clinical_context=clinical_ctx,
         extracted_symptoms=result.get("vpps", {}),
         critical_score=result["score"],
         alarm_level=result["alarm"],
@@ -113,6 +127,7 @@ def analyze(request):
 
 
 @api_view(["GET"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def patient_timeline(request):
     """환자 세션 이력 조회. ?patient_id=XXX&limit=20"""
@@ -128,6 +143,7 @@ def patient_timeline(request):
 
 
 @api_view(["GET"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def alerts_list(request):
     """미확인 알람 목록. ?acknowledged=false (기본)"""
@@ -141,6 +157,37 @@ def alerts_list(request):
 
 
 @api_view(["POST"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def generate_referral(request, alert_id: int):
+    """
+    기존 alert에 대한 리퍼럴 레터 생성/반환.
+    세션 중복 생성 없이 alert_id만으로 처리.
+    """
+    try:
+        alert = RedFlagAlert.objects.get(
+            id=alert_id,
+            timeline__therapist=request.user,
+        )
+    except RedFlagAlert.DoesNotExist:
+        return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if not alert.referral_letter:
+        therapist_name = request.user.get_full_name() or request.user.username
+        letter = generate_referral_letter(
+            alert,
+            patient_id=alert.timeline.patient_id,
+            therapist_name=therapist_name,
+            session_date=alert.timeline.session_date,
+        )
+        alert.referral_letter = letter
+        alert.save(update_fields=["referral_letter"])
+
+    return Response({"referral_letter": alert.referral_letter})
+
+
+@api_view(["POST"])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def acknowledge_alert(request, alert_id: int):
     """알람 확인 처리 (센터장 → 확인 완료)."""
