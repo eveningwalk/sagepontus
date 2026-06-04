@@ -7,7 +7,7 @@
   "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed., Ch.13; Henschke et al. Screen of 5 Clinical Prediction Rule",
   "decision_logic": "SCREEN_OF_5",
   "threshold": {
-    "red": 3,
+    "red": 4,
     "yellow": 2,
     "note": "5개 항목 중 해당 수로 판단. 암 기왕력 단독으로 RED."
   },

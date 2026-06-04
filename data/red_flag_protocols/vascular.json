@@ -6,7 +6,7 @@
   "alarm_level": "RED",
   "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed., Ch.6",
   "decision_logic": "WEIGHTED_SUM",
-  "threshold": { "red": 0.70, "yellow": 0.45 },
+  "threshold": { "red": 0.85, "yellow": 0.45 },
   "description": "복부 대동맥류. 허리통증으로 위장하여 PT에 내원하는 대표적 내과적 응급. 파열 시 사망률 80% 이상. 즉각 응급 처치 필요.",
   "action": {
     "RED": "즉시 치료 중단 — 119 또는 응급실 이송. 복부 촉진 금지. 운동/조작 금지.",

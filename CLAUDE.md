@@ -111,6 +111,9 @@ sagepontus/
 | 5 | Chrome Extension UI | `chrome_extension/` |
 | 6 | PT Red Flag 전용 랜딩 페이지 | `landingpage_source/app/pt-alarm/` |
 | 7 | Audit Loop + Paired Data 수집 구조 | DB 스키마 + UI 3종 + 추출 파이프라인 |
+| 8 | Temporal Red Flag — 시계열 알람 고도화 | CRA→scorer 연동, 연속 상승 선제 경보, 가성 호전 경보 |
+| 9 | Treatment Response Tracking | 세션 간 VAS/ROM 추적, 정체 알람, Progress Note 자동화 |
+| 10 | Clinic Analytics Dashboard | 치료사별 정확도, 회복 곡선, 소송 방지 ROI 시뮬레이션 |
 
 ### Phase 7 상세
 
@@ -124,6 +127,84 @@ sagepontus/
 | Paired data 추출 파이프라인 | 위 3종 데이터를 (raw, improved) 형태로 export 가능한 구조 |
 
 **다음 단계 연결**: 수집된 paired data → Alarm 프로토콜 weight 갱신(Phase 8) → 클리닉별 개인화(Phase 9)
+
+### Phase 8 상세 — Temporal Red Flag (시계열 알람 고도화)
+
+**목적**: 단일 세션 점수 임계치 초과 방식에서, 세션 간 추세 패턴을 scorer에 반영
+
+| 작업 | 설명 |
+|------|------|
+| CRA → scorer 연동 | `scorer.py`에 `patient_context` 인자 추가, trend=escalating 시 score +0.2 보정 |
+| 가성 호전 경보 | 이전 RED → 현재 NONE 패턴 → "주의: 갑작스러운 점수 하락" 경고 |
+| 연속 상승 선제 경보 | 아직 YELLOW 미달이지만 N주 연속 소폭 상승 시 조기 YELLOW 발령 |
+
+**핵심 원칙**: CRA는 이미 trend/peak_score를 계산하나 scorer에 전혀 반영 안 됨 → 연결만으로 즉시 차별화 가능
+
+---
+
+### Phase 9 상세 — Treatment Response Tracking (치료 목표 달성률)
+
+**목적**: `clinical_context` JSON 세션 간 비교 → progress note 자동화 + 치료 플랜 재설정 알람
+
+| 작업 | 설명 |
+|------|------|
+| 세션 간 VAS/ROM 추적 | clinical_context의 통증 점수·관절가동범위를 시계열로 비교 |
+| 목표 달성률 자동 계산 | 초기 설정 목표 대비 현재 수치 → % 달성률 |
+| 정체 알람 | N주 연속 개선 없음 → "치료 플랜 재검토 권장" 알람 |
+| Progress Note 초안 | 세션 변화량 기반으로 SOAP A/P 섹션 자동 생성 |
+
+**GeneratedDocument 연결**: Phase 7 flywheel 구조를 progress note에도 적용 (chosen 선택 → few-shot 주입)
+
+---
+
+### Phase 10 상세 — Clinic Analytics Dashboard (센터장 대시보드)
+
+**목적**: 누적 시계열 데이터 → 센터장 의사결정 지원 + 소송 방지 ROI 가시화
+
+| 작업 | 설명 |
+|------|------|
+| 치료사별 리퍼럴 정확도 | 알람 채택/기각 이력 → 치료사별 민감도/특이도 |
+| 평균 회복 세션 수 | 환자군·조건별 회복 곡선 집계 |
+| 조기 리퍼럴 판단 근거 | "X주 이상 치료 시 회복 확률 Y% 이하" 임계점 자동 산출 |
+| 소송 방지 금액 시뮬레이션 | 리퍼럴 건수 × 소송 평균 합의금 → "이번 분기 Z달러 리스크 방지" |
+| Alarm weight 개인화 | 클리닉별 환자군 패턴 → 해당 클리닉 최적 임계치 자동 갱신 |
+
+**데이터 해자 연결**: 클리닉별 개인화 weight는 경쟁자가 복제 불가한 핵심 IP
+
+---
+
+## RAG 로드맵 (전문용어 사전 기반 지식 검색)
+
+RAG 인프라는 pgvector(기존 PostgreSQL 활용) + Gemini Embedding으로 구성. 3개 use case가 같은 벡터 DB를 공유.
+
+| # | 목적 | 지식 소스 | 연결 지점 |
+|---|------|-----------|-----------|
+| RAG-1 | MCID / Skilled Care 입증 → 보험 승인율 향상 | MCID 공개 테이블 (ODI, NPRS, PSFS 등) | `documents.py` — progress note / discharge summary 생성 시 주입 |
+| RAG-2 | Audit Defense → 법적 방어력 / 감사 대응 | APTA Clinical Practice Guidelines (공개 PDF) | 리퍼럴 레터 + 생성 문서에 가이드라인 조항 인용 + 링크 |
+| RAG-3 | Goodman's 원문 근거 retrieval → 알람 신뢰도 향상 | Goodman & Snyder 챕터 (저작권 처리 후) | `referral.py` — triggered_condition → 관련 챕터 검색 → 레터에 원문 인용 |
+
+### MVP 포함 여부
+
+| # | MVP? | 판단 근거 |
+|---|------|-----------|
+| RAG-1 | MVP 제외 (v1.1) | 첫 고객 확보에 필수는 아님. JSON KB로 빠르게 추가 가능하므로 MVP 직후 투입 |
+| RAG-2 | **v1.1 우선순위** | 현재 코드에 책 이름만 하드코딩 → 실제 원문 인용으로 바꾸면 보험 감사·소송 대응력 압도적 향상. 의미 있는 업그레이드 |
+| RAG-3 | v1.2 | 저작권 해결 후. RAG-2와 동일 인프라 공유하므로 RAG-2 완료 후 빠르게 추가 가능 |
+
+> **RAG-2 주의**: 현재 `referral.py`의 `"guideline": "Goodman & Snyder Ch.14"`는 책 이름 한 줄뿐.
+> RAG-2 적용 후에는 실제 APTA CPG 원문 발췌 + 섹션 번호 인용이 레터에 포함됨 — 의사/보험사 신뢰도가 다른 차원.
+
+### 구현 순서
+
+1. **RAG-1 먼저** — MCID 테이블은 작은 JSON KB로도 충분, 벡터 DB 없이 즉시 가능
+2. **RAG-2** — APTA CPG PDF 수집 → pgvector 청킹 → 감사 대응 인용 삽입
+3. **RAG-3** — Goodman's 저작권 처리(출판사 라이선스 or 공개 인용 범위) → 챕터별 임베딩
+
+### 핵심 원칙
+
+- RAG는 **할루시네이션 방지 도구가 아님** — VPPS KB 매칭이 그 역할. RAG는 "근거 제시" 용도
+- 생성이 아닌 **검색 후 인용** — LLM이 내용을 만들지 않고 원문 발췌 후 출처 표기
+- 저작권 우선 해결 — Goodman's는 공개 인용 범위 확인 전까지 APTA CPG로 대체
 
 ---
 

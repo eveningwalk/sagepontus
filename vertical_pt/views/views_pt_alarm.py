@@ -1279,6 +1279,285 @@ def send_document_email(request):
 
 # ── Pilot Feedback ────────────────────────────────────────────────────────────
 
+# ── Compliance Dashboard ──────────────────────────────────────────────────────
+
+@login_required
+def compliance_dashboard_json(request):
+    """
+    클리닉 전체 Compliance 현황 — 기한 임박/초과 항목 포함.
+
+    Returns:
+        urgent_count  : D-3 이내 마감 항목 수
+        overdue_count : 기한 초과 항목 수
+        sections      : direct_access / insurance / red_flags / documents / exposure
+    """
+    import datetime as _dt
+    from vertical_pt.models import ComplianceCase
+    from vertical_pt.engine.documents import DOC_TITLES
+
+    today = _dt.date.today()
+    URGENT_DAYS = 3
+
+    cases = list(ComplianceCase.objects.filter(therapist=request.user))
+
+    # ── Section 1: Direct Access ──────────────────────────────────────────────
+    da_items = []
+    for c in cases:
+        da_dl = c.da_physician_deadline()
+        if da_dl is None:
+            continue
+        days_left = (da_dl - today).days
+        item = {
+            "patient_id":            c.patient_id,
+            "state":                 c.state,
+            "treatment_start_date":  str(c.treatment_start_date) if c.treatment_start_date else None,
+            "da_deadline_date":      str(da_dl),
+            "da_days_left":          days_left,
+            "physician_notified_at": str(c.physician_notified_at) if c.physician_notified_at else None,
+            "plan_of_care_sent_at":  str(c.plan_of_care_sent_at) if c.plan_of_care_sent_at else None,
+            "status": (
+                "done"    if c.physician_notified_at else
+                "overdue" if days_left < 0 else
+                "urgent"  if days_left <= URGENT_DAYS else
+                "ok"
+            ),
+        }
+        da_items.append(item)
+
+    da_pending        = [x for x in da_items if x["status"] in ("ok", "urgent", "overdue")]
+    poc_pending_count = sum(1 for c in cases if c.treatment_start_date and not c.plan_of_care_sent_at)
+
+    da_urgent   = [x for x in da_pending if x["status"] == "urgent"]
+    da_overdue  = [x for x in da_pending if x["status"] == "overdue"]
+
+    # ── Section 2: Insurance ─────────────────────────────────────────────────
+    ins_items = []
+    for c in cases:
+        filing_dl = c.insurance_filing_deadline()
+        appeal_dl = c.appeal_deadline()
+
+        # Claim pending
+        if filing_dl and not c.claim_submitted_at:
+            days_left = (filing_dl - today).days
+            ins_items.append({
+                "patient_id":          c.patient_id,
+                "insurer_type":        c.insurer_type,
+                "insurer_name":        c.insurer_name,
+                "kind":                "filing",
+                "deadline_date":       str(filing_dl),
+                "days_left":           days_left,
+                "status": (
+                    "overdue" if days_left < 0 else
+                    "urgent"  if days_left <= URGENT_DAYS else
+                    "ok"
+                ),
+            })
+
+        # Appeal pending
+        if c.claim_rejected_at and appeal_dl and not c.appeal_submitted_at:
+            days_left = (appeal_dl - today).days
+            ins_items.append({
+                "patient_id":          c.patient_id,
+                "insurer_type":        c.insurer_type,
+                "insurer_name":        c.insurer_name,
+                "kind":                "appeal",
+                "deadline_date":       str(appeal_dl),
+                "days_left":           days_left,
+                "status": (
+                    "overdue" if days_left < 0 else
+                    "urgent"  if days_left <= URGENT_DAYS else
+                    "ok"
+                ),
+            })
+
+    ins_urgent  = [x for x in ins_items if x["status"] == "urgent"]
+    ins_overdue = [x for x in ins_items if x["status"] == "overdue"]
+
+    # ── Section 3: Red Flags ─────────────────────────────────────────────────
+    open_alerts = list(
+        RedFlagAlert.objects
+        .filter(timeline__therapist=request.user, acknowledged=False)
+        .select_related("timeline")
+        .order_by("-created_at")
+    )
+    referral_not_sent  = [a for a in open_alerts if not a.referral_sent_at]
+    followup_incomplete = [
+        a for a in open_alerts
+        if a.referral_sent_at and not a.referral_followup_checked
+    ]
+
+    # ── Section 4: Documents ─────────────────────────────────────────────────
+    # All unique patients who have at least one session
+    all_patient_ids = set(
+        PatientTimeline.objects
+        .filter(therapist=request.user)
+        .values_list("patient_id", flat=True)
+        .distinct()
+    )
+
+    from vertical_pt.models import GeneratedDocument as GD
+    doc_stats = {}
+    for dt, title in DOC_TITLES.items():
+        generated_ids = set(
+            GD.objects
+            .filter(therapist=request.user, doc_type=dt)
+            .values_list("timeline__patient_id", flat=True)
+            .distinct()
+        )
+        chosen_ids = set(
+            GD.objects
+            .filter(therapist=request.user, doc_type=dt, chosen=True)
+            .values_list("timeline__patient_id", flat=True)
+            .distinct()
+        )
+        doc_stats[dt] = {
+            "title":          title,
+            "generated":      len(generated_ids),
+            "chosen":         len(chosen_ids),
+            "not_generated":  len(all_patient_ids - generated_ids),
+        }
+
+    # Patients with RED/YELLOW alarm but no referral doc generated
+    alarmed_ids = set(
+        PatientTimeline.objects
+        .filter(therapist=request.user)
+        .exclude(alarm_level="NONE")
+        .values_list("patient_id", flat=True)
+        .distinct()
+    )
+    referral_generated_ids = set(
+        GD.objects
+        .filter(therapist=request.user, doc_type="referral")
+        .values_list("timeline__patient_id", flat=True)
+        .distinct()
+    )
+    doc_incomplete = list(alarmed_ids - referral_generated_ids)
+
+    # ── Section 5: Exposure Summary ──────────────────────────────────────────
+    score = 0
+    red_count    = sum(1 for a in open_alerts if a.alarm_level == "RED")
+    yellow_count = sum(1 for a in open_alerts if a.alarm_level == "YELLOW")
+    score += min(red_count * 20, 60)
+    score += min(yellow_count * 10, 30)
+    score += min(len(referral_not_sent) * 15, 30)
+    score += min(len(da_overdue) * 20, 40)
+    score += min(len(ins_overdue) * 15, 30)
+    score = min(score, 100)
+
+    # ── Aggregate counts ─────────────────────────────────────────────────────
+    urgent_count  = len(da_urgent) + len(ins_urgent)
+    overdue_count = len(da_overdue) + len(ins_overdue)
+
+    return JsonResponse({
+        "urgent_count":  urgent_count,
+        "overdue_count": overdue_count,
+        "sections": {
+            "direct_access": {
+                "total":                  len(cases),
+                "physician_pending":      len([x for x in da_items if not x["physician_notified_at"]]),
+                "plan_of_care_pending":   poc_pending_count,
+                "urgent":                 da_urgent,
+                "overdue":                da_overdue,
+                "all":                    da_items,
+            },
+            "insurance": {
+                "claim_pending":   len([x for x in ins_items if x["kind"] == "filing"]),
+                "appeal_pending":  len([x for x in ins_items if x["kind"] == "appeal"]),
+                "urgent":          ins_urgent,
+                "overdue":         ins_overdue,
+                "all":             ins_items,
+            },
+            "red_flags": {
+                "open_alerts":          len(open_alerts),
+                "referral_not_sent":    len(referral_not_sent),
+                "followup_incomplete":  len(followup_incomplete),
+                "alerts": [
+                    {
+                        "alert_id":          a.id,
+                        "patient_id":        a.timeline.patient_id,
+                        "alarm_level":       a.alarm_level,
+                        "condition":         a.condition,
+                        "session_date":      str(a.timeline.session_date),
+                        "referral_sent_at":  str(a.referral_sent_at) if a.referral_sent_at else None,
+                        "followup_checked":  a.referral_followup_checked,
+                    }
+                    for a in open_alerts[:50]
+                ],
+            },
+            "documents": {
+                "by_type":    doc_stats,
+                "incomplete": doc_incomplete,
+            },
+            "exposure": {
+                "liability_score": score,
+                "breakdown": {
+                    "open_red_alerts":       red_count,
+                    "open_yellow_alerts":    yellow_count,
+                    "referral_not_sent":     len(referral_not_sent),
+                    "da_overdue":            len(da_overdue),
+                    "insurance_overdue":     len(ins_overdue),
+                },
+            },
+        },
+    })
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def compliance_case_detail(request, patient_id: str):
+    """GET: 환자 compliance 상세 / POST: 생성 또는 업데이트."""
+    from vertical_pt.models import ComplianceCase
+
+    if request.method == "GET":
+        try:
+            c = ComplianceCase.objects.get(therapist=request.user, patient_id=patient_id)
+            return JsonResponse({"case": c.to_dict()})
+        except ComplianceCase.DoesNotExist:
+            return JsonResponse({"case": None})
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    _date_fields = (
+        "treatment_start_date", "physician_notified_at",
+        "plan_of_care_sent_at", "claim_submitted_at",
+        "claim_rejected_at", "appeal_submitted_at",
+    )
+    _int_fields = ("da_deadline_days", "appeal_deadline_days")
+
+    import datetime as _dt
+
+    defaults = {}
+    for f in _date_fields:
+        if f in data:
+            raw = data[f]
+            if raw:
+                try:
+                    defaults[f] = _dt.date.fromisoformat(raw)
+                except ValueError:
+                    return JsonResponse({"error": f"Invalid date for {f}: {raw}"}, status=400)
+            else:
+                defaults[f] = None
+
+    for f in _int_fields:
+        if f in data:
+            raw = data[f]
+            defaults[f] = int(raw) if raw not in (None, "") else None
+
+    for f in ("state", "insurer_type", "insurer_name", "notes"):
+        if f in data:
+            defaults[f] = (data[f] or "").strip()
+
+    case, created = ComplianceCase.objects.update_or_create(
+        therapist=request.user,
+        patient_id=patient_id,
+        defaults=defaults,
+    )
+    return JsonResponse({"ok": True, "created": created, "case": case.to_dict()})
+
+
 @require_http_methods(["POST"])
 def submit_feedback(request):
     """파일럿 챗봇 피드백 수집 — 비인증도 허용 (익명 피드백)."""

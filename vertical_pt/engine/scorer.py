@@ -105,6 +105,12 @@ def _score_condition(protocol: dict, hits: list[dict]) -> dict[str, Any]:
     if raw == "RED" and (protocol_max_alarm == "YELLOW" or not has_red_indicator):
         raw = "YELLOW"
 
+    # fracture: 외상력 없으면 RED → YELLOW
+    if condition_ref == "fracture" and raw == "RED":
+        trauma_present = any("Trauma" in h["label"] or "외상" in h["label"] for h in condition_hits)
+        if not trauma_present:
+            raw = "YELLOW"
+
     return {
         "alarm":   raw,
         "score":   round(score, 3),

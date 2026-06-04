@@ -233,7 +233,13 @@
       "sideways fall",
       "minor fall",
       "low-energy fall",
-      "ground-level fall"
+      "ground-level fall",
+      "slip",
+      "slipped",
+      "slipped on",
+      "slipping",
+      "미끄러짐",
+      "미끄러져"
     ],
     "patterns": [
       "(?:바닥|계단|사다리|지붕|나무|자전거|오토바이|말)에서\\s*떨어짐",

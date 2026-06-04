@@ -63,6 +63,10 @@ urlpatterns = [
     path("pt/api/admin/clear/",                 views_pt_alarm.admin_clear_sessions,   name="pt_admin_clear"),
     path("pt/api/admin/reseed/",                views_pt_alarm.admin_reseed_ajax,      name="pt_admin_reseed"),
 
+    # ── Compliance Dashboard ──────────────────────────────────────────────
+    path("pt/api/compliance/",                        views_pt_alarm.compliance_dashboard_json, name="pt_compliance"),
+    path("pt/api/compliance/<str:patient_id>/",       views_pt_alarm.compliance_case_detail,    name="pt_compliance_case"),
+
     # ── 웹 UI ─────────────────────────────────────────────────────────────
     path("pt/",          views_pt_alarm.index,        name="pt_index"),
     path("pt/analyze/",  views_pt_alarm.analyze_view, name="pt_analyze"),

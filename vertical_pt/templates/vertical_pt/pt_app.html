@@ -97,6 +97,15 @@
         <span id="alarm-badge" style="margin-left:auto;background:#dc2626;color:#fff;
               font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;display:none;">0</span>
       </button>
+      <button id="menu-compliance" onclick="showCompliance()"
+        style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;
+               border-radius:8px;border:none;background:transparent;color:#94a3b8;
+               font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:background .15s,color .15s;">
+        <span>📋</span>
+        <span>Compliance</span>
+        <span id="compliance-badge" style="margin-left:auto;background:#f59e0b;color:#fff;
+              font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;display:none;">0</span>
+      </button>
     </div>
 
     <div class="pt-search-wrap">
@@ -283,6 +292,50 @@
         <div id="alarm-list"></div>
       </div>
 
+      <!-- 뷰 3: Compliance Dashboard -->
+      <div id="view-compliance" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;">← Back</button>
+          <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0;">📋 Compliance Dashboard</h2>
+          <span id="compliance-last-updated" style="font-size:11px;color:#94a3b8;margin-left:auto;"></span>
+          <button onclick="loadComplianceData()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:12px;cursor:pointer;">↻ 새로고침</button>
+        </div>
+
+        <!-- KPI 카드 -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;" id="compliance-kpi-row">
+          <div class="compliance-kpi urgent" id="kpi-urgent">
+            <div class="compliance-kpi-num">—</div>
+            <div class="compliance-kpi-label">기한 임박 (D-3)</div>
+          </div>
+          <div class="compliance-kpi danger" id="kpi-overdue">
+            <div class="compliance-kpi-num">—</div>
+            <div class="compliance-kpi-label">기한 초과</div>
+          </div>
+          <div class="compliance-kpi warn" id="kpi-open-alerts">
+            <div class="compliance-kpi-num">—</div>
+            <div class="compliance-kpi-label">미완료 Red Flag</div>
+          </div>
+          <div class="compliance-kpi score" id="kpi-exposure">
+            <div class="compliance-kpi-num">—</div>
+            <div class="compliance-kpi-label">Liability Score</div>
+          </div>
+        </div>
+
+        <!-- Section 탭 -->
+        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;" id="compliance-tabs">
+          <button onclick="showComplianceSection('direct_access')" class="ctab ctab-active" id="ctab-direct_access">Direct Access</button>
+          <button onclick="showComplianceSection('insurance')" class="ctab" id="ctab-insurance">Insurance Billing</button>
+          <button onclick="showComplianceSection('red_flags')" class="ctab" id="ctab-red_flags">Red Flags</button>
+          <button onclick="showComplianceSection('documents')" class="ctab" id="ctab-documents">Documents</button>
+          <button onclick="showComplianceSection('exposure')" class="ctab" id="ctab-exposure">Exposure Summary</button>
+        </div>
+
+        <!-- Section 콘텐츠 -->
+        <div id="compliance-section-content">
+          <div style="color:#94a3b8;font-size:13px;padding:32px;text-align:center;">불러오는 중...</div>
+        </div>
+      </div>
+
     </div>
   </main>
 </div>
@@ -393,11 +446,552 @@
   </div>
 </div>
 
+<!-- ── Compliance Dashboard CSS ─────────────────────────────────────── -->
+<style>
+/* KPI 카드 */
+.compliance-kpi {
+  padding: 16px 18px; border-radius: 10px; border: 1px solid #e2e8f0;
+  background: #fff;
+}
+.compliance-kpi-num { font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1; }
+.compliance-kpi-label { font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 500; }
+.compliance-kpi.urgent { border-color: #fbbf24; background: #fffbeb; }
+.compliance-kpi.urgent .compliance-kpi-num { color: #d97706; }
+.compliance-kpi.danger { border-color: #fca5a5; background: #fff5f5; }
+.compliance-kpi.danger .compliance-kpi-num { color: #dc2626; }
+.compliance-kpi.warn { border-color: #fcd34d; background: #fefce8; }
+.compliance-kpi.warn .compliance-kpi-num { color: #b45309; }
+.compliance-kpi.score { border-color: #c4b5fd; background: #f5f3ff; }
+.compliance-kpi.score .compliance-kpi-num { color: #7c3aed; }
+
+/* Section 탭 */
+.ctab {
+  padding: 6px 16px; border-radius: 7px; border: 1px solid #d1d5db;
+  background: #fff; color: #374151; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.ctab.ctab-active { background: #6366f1; border-color: #6366f1; color: #fff; }
+.ctab:hover:not(.ctab-active) { background: #f1f5f9; }
+
+/* 테이블 */
+.ctable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ctable th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 700;
+             color: #64748b; text-transform: uppercase; letter-spacing: .4px;
+             border-bottom: 1px solid #e2e8f0; }
+.ctable td { padding: 10px 10px; border-bottom: 1px solid #f1f5f9; color: #374151; vertical-align: middle; }
+.ctable tr:hover td { background: #f8fafc; }
+
+/* 상태 뱃지 */
+.cbadge {
+  display: inline-block; padding: 2px 8px; border-radius: 99px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.cbadge.ok      { background: #dcfce7; color: #166534; }
+.cbadge.urgent  { background: #fef3c7; color: #92400e; }
+.cbadge.overdue { background: #fee2e2; color: #991b1b; }
+.cbadge.done    { background: #f0fdf4; color: #15803d; }
+.cbadge.na      { background: #f1f5f9; color: #94a3b8; }
+.cbadge.pending { background: #fef9c3; color: #854d0e; }
+
+/* 섹션 헤더 */
+.csection-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.csection-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+.csection-sub   { font-size: 12px; color: #64748b; }
+
+/* Exposure 게이지 */
+.exposure-bar { height: 8px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+.exposure-fill { height: 100%; border-radius: 99px; transition: width .5s; }
+
+/* 인라인 버튼 */
+.caction { padding: 3px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+           background: #fff; font-size: 11px; cursor: pointer; color: #374151;
+           transition: background .15s; }
+.caction:hover { background: #f1f5f9; }
+.caction.primary { background: #6366f1; border-color: #6366f1; color: #fff; }
+.caction.primary:hover { background: #4f46e5; }
+</style>
+
+<!-- ── Compliance Dashboard JS ─────────────────────────────────────── -->
+<script>
+(function() {
+  let _complianceData = null;
+  let _activeSection  = 'direct_access';
+
+  window.showCompliance = function() {
+    document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none');
+    document.getElementById('view-compliance').style.display = 'block';
+    _setMenuActive('menu-compliance');
+    loadComplianceData();
+  };
+
+  window.loadComplianceData = async function() {
+    const content = document.getElementById('compliance-section-content');
+    content.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:32px;text-align:center;">불러오는 중...</div>';
+    try {
+      const res  = await fetch(URLS.compliance, {headers: {'X-CSRFToken': CSRF}});
+      const data = await res.json();
+      _complianceData = data;
+      _renderKPIs(data);
+      _renderSection(_activeSection);
+      const badge = document.getElementById('compliance-badge');
+      const total = (data.urgent_count || 0) + (data.overdue_count || 0);
+      if (total > 0) { badge.textContent = total; badge.style.display = 'inline'; }
+      else badge.style.display = 'none';
+      document.getElementById('compliance-last-updated').textContent =
+        '업데이트: ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+    } catch(e) {
+      content.innerHTML = '<div style="color:#dc2626;padding:24px;">데이터 로드 실패: ' + e.message + '</div>';
+    }
+  };
+
+  window.showComplianceSection = function(section) {
+    _activeSection = section;
+    document.querySelectorAll('.ctab').forEach(b => b.classList.remove('ctab-active'));
+    const tab = document.getElementById('ctab-' + section);
+    if (tab) tab.classList.add('ctab-active');
+    if (_complianceData) _renderSection(section);
+  };
+
+  function _renderKPIs(data) {
+    _kpi('kpi-urgent',      data.urgent_count  || 0, 'urgent');
+    _kpi('kpi-overdue',     data.overdue_count || 0, 'danger');
+    _kpi('kpi-open-alerts', (data.sections.red_flags || {}).open_alerts || 0, 'warn');
+    const score = ((data.sections.exposure || {}).liability_score || 0);
+    document.getElementById('kpi-exposure').querySelector('.compliance-kpi-num').textContent = score;
+    const kpiEl = document.getElementById('kpi-exposure');
+    kpiEl.querySelector('.compliance-kpi-num').style.color =
+      score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#16a34a';
+  }
+
+  function _kpi(id, val, cls) {
+    const el = document.getElementById(id);
+    el.querySelector('.compliance-kpi-num').textContent = val;
+  }
+
+  function _badge(status) {
+    const map = {ok:'ok', urgent:'urgent', overdue:'overdue', done:'done', 'n/a':'na', pending:'pending'};
+    const cls = map[status] || 'na';
+    const label = {ok:'OK', urgent:'D-3 임박', overdue:'기한초과', done:'완료', 'n/a':'해당없음', pending:'미제출'}[status] || status;
+    return `<span class="cbadge ${cls}">${label}</span>`;
+  }
+
+  function _daysLabel(n) {
+    if (n == null) return '—';
+    if (n < 0)  return `<span style="color:#dc2626;font-weight:700">D+${Math.abs(n)} 초과</span>`;
+    if (n === 0) return `<span style="color:#dc2626;font-weight:700">오늘 마감</span>`;
+    if (n <= 3)  return `<span style="color:#d97706;font-weight:700">D-${n}</span>`;
+    return `D-${n}`;
+  }
+
+  function _renderSection(section) {
+    const d = _complianceData;
+    const content = document.getElementById('compliance-section-content');
+    if (!d) return;
+
+    if (section === 'direct_access')  content.innerHTML = _renderDirectAccess(d.sections.direct_access);
+    else if (section === 'insurance') content.innerHTML = _renderInsurance(d.sections.insurance);
+    else if (section === 'red_flags') content.innerHTML = _renderRedFlags(d.sections.red_flags);
+    else if (section === 'documents') content.innerHTML = _renderDocuments(d.sections.documents);
+    else if (section === 'exposure')  content.innerHTML = _renderExposure(d.sections.exposure);
+  }
+
+  /* ── Direct Access ─────────────────────────────────── */
+  function _renderDirectAccess(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const all = sec.all || [];
+    const rows = all.map(r => `
+      <tr>
+        <td><code style="font-size:12px;">${r.patient_id}</code></td>
+        <td>${r.state || '—'}</td>
+        <td>${r.treatment_start_date || '—'}</td>
+        <td>${r.da_deadline_date || '무제한'}</td>
+        <td>${_daysLabel(r.da_days_left)}</td>
+        <td>${_badge(r.status)}</td>
+        <td>${r.physician_notified_at ? `<span style="color:#16a34a;">✓ ${r.physician_notified_at}</span>` : '<span style="color:#94a3b8;">미완료</span>'}</td>
+        <td>${r.plan_of_care_sent_at ? `<span style="color:#16a34a;">✓ ${r.plan_of_care_sent_at}</span>` : '<span style="color:#94a3b8;">미발송</span>'}</td>
+        <td>
+          <button class="caction" onclick="openComplianceModal('${r.patient_id}')">⚙ 수정</button>
+        </td>
+      </tr>`).join('');
+
+    const noRows = all.length === 0 ? `
+      <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:24px;">
+        등록된 Direct Access 케이스 없음 — 환자 세션에서 ⚙ 를 눌러 추가하세요.
+      </td></tr>` : '';
+
+    return `
+      <div class="csection-header">
+        <div>
+          <div class="csection-title">Direct Access 추적</div>
+          <div class="csection-sub">총 ${sec.total}명 · 기한임박 ${(sec.urgent||[]).length}건 · 기한초과 ${(sec.overdue||[]).length}건</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span style="font-size:12px;color:#64748b;">의사 통보 대기: <strong>${sec.physician_pending||0}</strong>명</span>
+          <span style="font-size:12px;color:#64748b;">Plan of Care 미발송: <strong>${sec.plan_of_care_pending||0}</strong>명</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="ctable">
+          <thead><tr>
+            <th>Patient ID</th><th>State</th><th>치료 시작일</th><th>마감일</th>
+            <th>남은 기간</th><th>상태</th><th>의사 통보</th><th>PoC 발송</th><th></th>
+          </tr></thead>
+          <tbody>${rows}${noRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  /* ── Insurance ──────────────────────────────────────── */
+  function _renderInsurance(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const all = sec.all || [];
+    const rows = all.map(r => `
+      <tr>
+        <td><code style="font-size:12px;">${r.patient_id}</code></td>
+        <td>${r.insurer_name || r.insurer_type || '—'}</td>
+        <td>${r.kind === 'filing' ? '📄 청구 제출' : '⚖️ 항소'}</td>
+        <td>${r.deadline_date || '—'}</td>
+        <td>${_daysLabel(r.days_left)}</td>
+        <td>${_badge(r.status)}</td>
+        <td><button class="caction" onclick="openComplianceModal('${r.patient_id}')">⚙ 수정</button></td>
+      </tr>`).join('');
+
+    const noRows = all.length === 0 ? `
+      <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">
+        미처리 보험 청구 없음
+      </td></tr>` : '';
+
+    return `
+      <div class="csection-header">
+        <div>
+          <div class="csection-title">보험 청구 Deadline 추적</div>
+          <div class="csection-sub">청구 대기: ${sec.claim_pending||0}건 · 항소 대기: ${sec.appeal_pending||0}건</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="ctable">
+          <thead><tr>
+            <th>Patient ID</th><th>보험사</th><th>종류</th><th>마감일</th>
+            <th>남은 기간</th><th>상태</th><th></th>
+          </tr></thead>
+          <tbody>${rows}${noRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  /* ── Red Flags ──────────────────────────────────────── */
+  function _renderRedFlags(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const alerts = sec.alerts || [];
+    const rows = alerts.map(a => {
+      const lvlColor = a.alarm_level === 'RED' ? '#dc2626' : '#d97706';
+      return `<tr>
+        <td><span style="color:${lvlColor};font-weight:700;">${a.alarm_level}</span></td>
+        <td><code style="font-size:12px;">${a.patient_id}</code></td>
+        <td>${a.condition || '—'}</td>
+        <td>${a.session_date}</td>
+        <td>${a.referral_sent_at
+          ? `<span style="color:#16a34a;">✓ ${a.referral_sent_at}</span>`
+          : `<span style="color:#dc2626;">미발송</span>`}</td>
+        <td>${a.followup_checked
+          ? `<span style="color:#16a34a;">✓ 완료</span>`
+          : `<span style="color:#94a3b8;">미확인</span>`}</td>
+      </tr>`;
+    }).join('');
+
+    const noRows = alerts.length === 0 ? `
+      <tr><td colspan="6" style="text-align:center;color:#16a34a;padding:24px;">
+        ✓ 미완료 Red Flag 없음
+      </td></tr>` : '';
+
+    return `
+      <div class="csection-header">
+        <div>
+          <div class="csection-title">Red Flag 현황</div>
+          <div class="csection-sub">미완료 알람: ${sec.open_alerts}건 · 리퍼럴 미발송: ${sec.referral_not_sent}건 · Follow-up 미완료: ${sec.followup_incomplete}건</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="ctable">
+          <thead><tr>
+            <th>Level</th><th>Patient ID</th><th>Condition</th><th>세션 날짜</th>
+            <th>Referral 발송</th><th>Follow-up</th>
+          </tr></thead>
+          <tbody>${rows}${noRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  /* ── Documents ──────────────────────────────────────── */
+  function _renderDocuments(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const byType = sec.by_type || {};
+    const rows = Object.entries(byType).map(([dt, info]) => {
+      const pct = info.generated > 0 ? Math.round(info.chosen / info.generated * 100) : 0;
+      return `<tr>
+        <td>${info.title}</td>
+        <td style="text-align:center;">${info.generated}</td>
+        <td style="text-align:center;">${info.chosen}</td>
+        <td style="text-align:center;color:${info.not_generated > 0 ? '#d97706' : '#16a34a'};">${info.not_generated}</td>
+        <td>
+          <div class="exposure-bar" style="width:80px;">
+            <div class="exposure-fill" style="width:${pct}%;background:${pct>=80?'#16a34a':pct>=40?'#f59e0b':'#dc2626'};"></div>
+          </div>
+          <span style="font-size:11px;color:#64748b;margin-left:6px;">${pct}%</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const incomplete = sec.incomplete || [];
+    const incList = incomplete.length > 0
+      ? `<div style="margin-top:16px;"><div class="csection-sub" style="margin-bottom:8px;">⚠️ Referral 문서 미생성 환자 (${incomplete.length}명)</div>
+         <div style="display:flex;flex-wrap:wrap;gap:6px;">
+           ${incomplete.map(pid => `<code style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:6px;font-size:12px;">${pid}</code>`).join('')}
+         </div></div>`
+      : '';
+
+    return `
+      <div class="csection-header">
+        <div class="csection-title">문서 생성 현황</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="ctable">
+          <thead><tr>
+            <th>문서 종류</th><th style="text-align:center;">생성</th>
+            <th style="text-align:center;">채택</th><th style="text-align:center;">미생성 환자</th>
+            <th>채택률</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${incList}`;
+  }
+
+  /* ── Exposure Summary ───────────────────────────────── */
+  function _renderExposure(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const score = sec.liability_score || 0;
+    const color = score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#16a34a';
+    const bd = sec.breakdown || {};
+
+    const factors = [
+      {label: 'RED 알람 미완료',       val: bd.open_red_alerts    || 0, unit: '건', weight: 20},
+      {label: 'YELLOW 알람 미완료',     val: bd.open_yellow_alerts || 0, unit: '건', weight: 10},
+      {label: 'Referral 미발송',        val: bd.referral_not_sent  || 0, unit: '건', weight: 15},
+      {label: 'Direct Access 기한 초과',val: bd.da_overdue         || 0, unit: '건', weight: 20},
+      {label: '보험 청구 기한 초과',     val: bd.insurance_overdue  || 0, unit: '건', weight: 15},
+    ];
+
+    const factorRows = factors.map(f => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;">
+        <div style="flex:1;font-size:13px;color:#374151;">${f.label}</div>
+        <div style="width:40px;text-align:right;font-weight:700;color:${f.val>0?'#dc2626':'#16a34a'};">${f.val}</div>
+        <div style="width:40px;font-size:11px;color:#94a3b8;">${f.unit}</div>
+        <div style="font-size:11px;color:#94a3b8;">× ${f.weight}점</div>
+        <div style="width:48px;text-align:right;font-size:12px;font-weight:700;color:${f.val>0?'#dc2626':'#94a3b8'};">
+          ${Math.min(f.val * f.weight, f.weight * 3)} pts
+        </div>
+      </div>`).join('');
+
+    const riskLabel = score >= 70 ? 'High Risk' : score >= 40 ? 'Moderate Risk' : 'Low Risk';
+
+    return `
+      <div class="csection-header">
+        <div class="csection-title">전체 Liability Exposure Summary</div>
+      </div>
+      <div style="display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:start;">
+        <div style="text-align:center;padding:24px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+          <div style="font-size:52px;font-weight:900;color:${color};line-height:1;">${score}</div>
+          <div style="font-size:13px;font-weight:700;color:${color};margin:4px 0;">${riskLabel}</div>
+          <div style="font-size:11px;color:#94a3b8;">/ 100점</div>
+          <div class="exposure-bar" style="margin-top:12px;">
+            <div class="exposure-fill" style="width:${score}%;background:${color};"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:8px;">위험 요소별 점수</div>
+          ${factorRows}
+          <div style="margin-top:12px;font-size:11px;color:#94a3b8;">
+            * 점수가 높을수록 소송·감사 위험이 높음. 각 항목 해결 시 점수 자동 감소.
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Compliance Case 수정 모달 ──────────────────────── */
+  window.openComplianceModal = async function(patientId) {
+    let caseData = {};
+    try {
+      const res = await fetch(URLS.compliance_case(patientId), {headers: {'X-CSRFToken': CSRF}});
+      const d   = await res.json();
+      caseData  = d.case || {};
+    } catch(e) {}
+
+    const html = `
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;
+                  display:flex;align-items:center;justify-content:center;"
+           id="compliance-modal-overlay" onclick="if(event.target===this)closeComplianceModal()">
+        <div style="background:#fff;border-radius:14px;width:540px;max-width:95vw;max-height:90vh;
+                    overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-size:16px;font-weight:700;color:#1e293b;">⚙ Compliance 설정 — ${patientId}</div>
+            <button onclick="closeComplianceModal()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#64748b;">✕</button>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Direct Access</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">치료 시작일</label>
+              <input id="cm-start" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.treatment_start_date || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">주(State)</label>
+              <input id="cm-state" class="pt-input" style="margin-top:4px;text-transform:uppercase;"
+                     placeholder="e.g. CA" maxlength="2" value="${caseData.state || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">DA Deadline (일수, 비워두면 State 기본값)</label>
+              <input id="cm-da-days" type="number" class="pt-input" style="margin-top:4px;"
+                     placeholder="예: 30" value="${caseData.da_deadline_days != null ? caseData.da_deadline_days : ''}">
+            </div>
+            <div></div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">의사 통보일</label>
+              <input id="cm-physician" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.physician_notified_at || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">Plan of Care 발송일</label>
+              <input id="cm-poc" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.plan_of_care_sent_at || ''}">
+            </div>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">보험 청구</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">보험 종류</label>
+              <select id="cm-insurer" class="pt-input" style="margin-top:4px;">
+                <option value="">선택...</option>
+                <option value="medicare" ${caseData.insurer_type==='medicare'?'selected':''}>Medicare</option>
+                <option value="medicaid" ${caseData.insurer_type==='medicaid'?'selected':''}>Medicaid</option>
+                <option value="aetna"    ${caseData.insurer_type==='aetna'?'selected':''}>Aetna</option>
+                <option value="cigna"    ${caseData.insurer_type==='cigna'?'selected':''}>Cigna</option>
+                <option value="united"   ${caseData.insurer_type==='united'?'selected':''}>United Healthcare</option>
+                <option value="bcbs"     ${caseData.insurer_type==='bcbs'?'selected':''}>BCBS</option>
+                <option value="humana"   ${caseData.insurer_type==='humana'?'selected':''}>Humana</option>
+                <option value="tricare"  ${caseData.insurer_type==='tricare'?'selected':''}>TRICARE</option>
+                <option value="workers_comp" ${caseData.insurer_type==='workers_comp'?'selected':''}>Workers' Comp</option>
+                <option value="other_commercial" ${caseData.insurer_type==='other_commercial'?'selected':''}>Other Commercial</option>
+                <option value="self_pay" ${caseData.insurer_type==='self_pay'?'selected':''}>Self Pay</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">보험사 명칭 (선택)</label>
+              <input id="cm-insurer-name" class="pt-input" style="margin-top:4px;"
+                     placeholder="예: Aetna PPO" value="${caseData.insurer_name || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">청구 제출일</label>
+              <input id="cm-claim" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.claim_submitted_at || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">청구 거절일</label>
+              <input id="cm-rejected" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.claim_rejected_at || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">항소 제출일</label>
+              <input id="cm-appeal" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.appeal_submitted_at || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">항소 기한 (일수, 비워두면 기본값)</label>
+              <input id="cm-appeal-days" type="number" class="pt-input" style="margin-top:4px;"
+                     placeholder="예: 60" value="${caseData.appeal_deadline_days != null ? caseData.appeal_deadline_days : ''}">
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <label style="font-size:12px;color:#374151;font-weight:600;">메모</label>
+            <textarea id="cm-notes" class="pt-input" rows="2" style="margin-top:4px;resize:vertical;"
+                      placeholder="추가 메모...">${caseData.notes || ''}</textarea>
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="closeComplianceModal()" class="caction">취소</button>
+            <button onclick="saveComplianceCase('${patientId}')" class="caction primary">저장</button>
+          </div>
+        </div>
+      </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+  };
+
+  window.closeComplianceModal = function() {
+    const el = document.getElementById('compliance-modal-overlay');
+    if (el) el.remove();
+  };
+
+  window.saveComplianceCase = async function(patientId) {
+    const payload = {
+      treatment_start_date:  document.getElementById('cm-start').value     || null,
+      state:                 document.getElementById('cm-state').value.toUpperCase() || null,
+      da_deadline_days:      document.getElementById('cm-da-days').value    || null,
+      physician_notified_at: document.getElementById('cm-physician').value  || null,
+      plan_of_care_sent_at:  document.getElementById('cm-poc').value        || null,
+      insurer_type:          document.getElementById('cm-insurer').value    || null,
+      insurer_name:          document.getElementById('cm-insurer-name').value || null,
+      claim_submitted_at:    document.getElementById('cm-claim').value      || null,
+      claim_rejected_at:     document.getElementById('cm-rejected').value   || null,
+      appeal_submitted_at:   document.getElementById('cm-appeal').value     || null,
+      appeal_deadline_days:  document.getElementById('cm-appeal-days').value || null,
+      notes:                 document.getElementById('cm-notes').value      || null,
+    };
+
+    try {
+      const res = await fetch(URLS.compliance_case(patientId), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify(payload),
+      });
+      const d = await res.json();
+      if (!res.ok) { alert('저장 실패: ' + (d.error || '')); return; }
+      closeComplianceModal();
+      loadComplianceData();
+    } catch(e) {
+      alert('저장 실패: ' + e.message);
+    }
+  };
+
+  function _setMenuActive(id) {
+    ['menu-alarms', 'menu-compliance'].forEach(mid => {
+      const el = document.getElementById(mid);
+      if (!el) return;
+      if (mid === id) {
+        el.style.background = 'rgba(99,102,241,.15)';
+        el.style.color = '#818cf8';
+      } else {
+        el.style.background = 'transparent';
+        el.style.color = '#94a3b8';
+      }
+    });
+  }
+})();
+</script>
+
 <!-- Django 컨텍스트 → JS 전달 -->
 <script>
   const CSRF = '{{ csrf_token }}';
   const URLS = {
-    transcribe: "{% url 'vertical_pt:pt_transcribe' %}",
+    transcribe:  "{% url 'vertical_pt:pt_transcribe' %}",
+    compliance:  "{% url 'vertical_pt:pt_compliance' %}",
+    compliance_case: (pid) => `/pt/api/compliance/${pid}/`,
   };
   const APP_CONTEXT = {
     isAuthenticated: {{ user.is_authenticated|lower }},
