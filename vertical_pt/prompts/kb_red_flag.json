@@ -1,6 +1,7 @@
 {
   "RF_001": {
     "label": "Saddle Anesthesia (안장 감각 소실)",
+    "label_en": "Saddle Anesthesia",
     "synonyms": [
       "회음부 저림",
       "항문 주위 감각 없",
@@ -35,6 +36,7 @@
   },
   "RF_002": {
     "label": "Bladder Dysfunction (방광 기능 이상)",
+    "label_en": "Bladder Dysfunction",
     "synonyms": [
       "소변이 안 나옴",
       "소변 못 봄",
@@ -74,6 +76,7 @@
   },
   "RF_003": {
     "label": "Bowel Dysfunction (장 기능 이상)",
+    "label_en": "Bowel Dysfunction",
     "synonyms": [
       "대변 지림",
       "대변 실금",
@@ -103,6 +106,7 @@
   },
   "RF_004": {
     "label": "Bilateral LE Weakness (양측 하지 근력 약화)",
+    "label_en": "Bilateral LE Weakness",
     "synonyms": [
       "양쪽 다리 힘 빠짐",
       "양측 하지 약화",
@@ -144,6 +148,7 @@
   },
   "RF_005": {
     "label": "Progressive Neurological Deficit (진행성 신경학적 악화)",
+    "label_en": "Progressive Neurological Deficit",
     "synonyms": [
       "점점 심해지는 저림",
       "신경 증상 진행",
@@ -192,6 +197,7 @@
   },
   "RF_006": {
     "label": "Significant Trauma (중대 외상력)",
+    "label_en": "Significant Trauma",
     "synonyms": [
       "낙상",
       "교통사고",
@@ -257,6 +263,7 @@
   },
   "RF_007": {
     "label": "Osteoporosis (골다공증)",
+    "label_en": "Osteoporosis",
     "synonyms": [
       "골다공증",
       "뼈가 약함",
@@ -278,6 +285,7 @@
   },
   "RF_008": {
     "label": "Point Tenderness on Percussion (타진 시 국소 압통)",
+    "label_en": "Point Tenderness on Percussion",
     "synonyms": [
       "누르면 극심하게 아픔",
       "특정 부위 극심한 압통",
@@ -312,6 +320,7 @@
   },
   "RF_009": {
     "label": "Previous Cancer History (암 기왕력)",
+    "label_en": "Previous Cancer History",
     "synonyms": [
       "암 수술 받음",
       "암 치료력",
@@ -365,6 +374,7 @@
   },
   "RF_010": {
     "label": "Unexplained Weight Loss (원인 불명 체중 감소)",
+    "label_en": "Unexplained Weight Loss",
     "synonyms": [
       "살이 빠짐",
       "체중 감소",
@@ -401,6 +411,7 @@
   },
   "RF_011": {
     "label": "Night Pain / No Relief with Rest (야간통 / 안정 무관 통증)",
+    "label_en": "Night Pain / No Relief with Rest",
     "synonyms": [
       "밤에 더 아픔",
       "새벽에 통증",
@@ -457,6 +468,7 @@
   },
   "RF_012": {
     "label": "No Improvement ≥ 4 Weeks (4주 보존치료 무반응)",
+    "label_en": "No Improvement ≥ 4 Weeks",
     "synonyms": [
       "치료해도 안 나아짐",
       "한 달 치료 효과 없음",
@@ -490,6 +502,7 @@
   },
   "RF_013": {
     "label": "Fever (발열)",
+    "label_en": "Fever",
     "synonyms": [
       "열남",
       "발열",
@@ -542,6 +555,7 @@
   },
   "RF_014": {
     "label": "Recent Systemic Infection (최근 전신 감염력)",
+    "label_en": "Recent Systemic Infection",
     "synonyms": [
       "방광염",
       "요로감염",
@@ -587,6 +601,7 @@
   },
   "RF_015": {
     "label": "Immunocompromised State (면역 저하 상태)",
+    "label_en": "Immunocompromised State",
     "synonyms": [
       "당뇨",
       "면역억제제",
@@ -615,6 +630,7 @@
   },
   "RF_016": {
     "label": "Pulsating Abdominal Mass (박동성 복부 종괴)",
+    "label_en": "Pulsating Abdominal Mass",
     "synonyms": [
       "배에서 심장 뛰는 것 같은 느낌",
       "복부에서 박동 느낌",
@@ -640,6 +656,7 @@
   },
   "RF_017": {
     "label": "Pain Unaffected by Position (자세 무관 통증)",
+    "label_en": "Pain Unaffected by Position",
     "synonyms": [
       "움직여도 같음",
       "누워도 같음",
@@ -670,6 +687,7 @@
   },
   "RF_018": {
     "label": "Sudden Severe Pain Escalation (갑작스러운 통증 극대화)",
+    "label_en": "Sudden Severe Pain Escalation",
     "synonyms": [
       "갑자기 극심하게 아픔",
       "통증이 갑자기 심해짐",
@@ -690,6 +708,7 @@
   },
   "RF_019": {
     "label": "Morning Stiffness > 1 Hour (1시간 이상 조조 강직)",
+    "label_en": "Morning Stiffness > 1 Hour",
     "synonyms": [
       "아침에 뻣뻣",
       "조조 강직",
@@ -717,6 +736,7 @@
   },
   "RF_020": {
     "label": "Improves with Exercise / Worsens with Rest (운동 시 호전)",
+    "label_en": "Improves with Exercise / Worsens with Rest",
     "synonyms": [
       "움직이면 나아",
       "움직이면 나아짐",
@@ -743,6 +763,7 @@
   },
   "RF_021": {
     "label": "Alternating Buttock Pain (교대성 둔부통)",
+    "label_en": "Alternating Buttock Pain",
     "synonyms": [
       "교대성 엉덩이 통증",
       "왼쪽 오른쪽 번갈아 아픔",
@@ -761,6 +782,7 @@
   },
   "RF_022": {
     "label": "Night Sweats (야간 발한)",
+    "label_en": "Night Sweats",
     "synonyms": [
       "식은땀",
       "야간 발한",
@@ -783,6 +805,7 @@
   },
   "RF_023": {
     "label": "Prolonged Steroid Use (장기 스테로이드 복용)",
+    "label_en": "Prolonged Steroid Use",
     "synonyms": [
       "스테로이드 오래 먹음",
       "스테로이드",
@@ -805,6 +828,7 @@
   },
   "RF_024": {
     "label": "Unexplained Fatigue / Malaise (원인 불명 피로감)",
+    "label_en": "Unexplained Fatigue / Malaise",
     "synonyms": [
       "너무 피곤함",
       "기운이 없음",
@@ -831,6 +855,7 @@
   },
   "YF_001": {
     "label": "Kinesiophobia / Fear of Movement (운동 공포증)",
+    "label_en": "Kinesiophobia / Fear of Movement",
     "synonyms": [
       "움직이면 다칠 것 같음",
       "운동이 무서움",
@@ -872,6 +897,7 @@
   },
   "YF_002": {
     "label": "Fear-Avoidance Beliefs (공포-회피 신념)",
+    "label_en": "Fear-Avoidance Beliefs",
     "synonyms": [
       "공포 회피",
       "공포-회피 신념",
@@ -901,6 +927,7 @@
   },
   "YF_003": {
     "label": "Pain Catastrophizing (통증 파국화)",
+    "label_en": "Pain Catastrophizing",
     "synonyms": [
       "통증 파국화",
       "절대 안 나을 것 같음",
@@ -938,6 +965,7 @@
   },
   "YF_004": {
     "label": "Passive Coping Style (수동적 대처 방식)",
+    "label_en": "Passive Coping Style",
     "synonyms": [
       "수동적 대처",
       "진통제에만 의존",
@@ -962,6 +990,7 @@
   },
   "YF_005": {
     "label": "Depression / Anxiety Symptoms (우울 / 불안 증상)",
+    "label_en": "Depression / Anxiety Symptoms",
     "synonyms": [
       "우울감",
       "불안감",
@@ -1015,6 +1044,7 @@
   },
   "YF_006": {
     "label": "Work Disability Risk (직업적 복귀 장벽)",
+    "label_en": "Work Disability Risk",
     "synonyms": [
       "직장 복귀 어려움",
       "일을 못하고 있음",
@@ -1045,6 +1075,7 @@
   },
   "RF_025": {
     "label": "Age > 50 (50세 이상)",
+    "label_en": "Age > 50",
     "synonyms": [
       "50대",
       "60대",

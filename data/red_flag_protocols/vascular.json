@@ -6,7 +6,10 @@
   "alarm_level": "RED",
   "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed., Ch.6",
   "decision_logic": "WEIGHTED_SUM",
-  "threshold": { "red": 0.85, "yellow": 0.45 },
+  "threshold": {
+    "red": 0.85,
+    "yellow": 0.45
+  },
   "description": "복부 대동맥류. 허리통증으로 위장하여 PT에 내원하는 대표적 내과적 응급. 파열 시 사망률 80% 이상. 즉각 응급 처치 필요.",
   "action": {
     "RED": "즉시 치료 중단 — 119 또는 응급실 이송. 복부 촉진 금지. 운동/조작 금지.",
@@ -17,10 +20,14 @@
       "id": "aaa_001",
       "symptom": "pulsating_abdominal_mass",
       "label": "Pulsating Abdominal Mass (박동성 복부 종괴)",
+      "label_en": "Pulsating Abdominal Mass",
       "description": "배꼽 주위에서 맥박처럼 두근거리는 덩어리 감촉",
       "synonyms": [
-        "배에서 심장 뛰는 것 같은 느낌", "복부에서 박동 느낌",
-        "배에 뭔가 뛰는 것", "pulsating mass", "복부 박동",
+        "배에서 심장 뛰는 것 같은 느낌",
+        "복부에서 박동 느낌",
+        "배에 뭔가 뛰는 것",
+        "pulsating mass",
+        "복부 박동",
         "배꼽 주위가 뛰는 것 같음"
       ],
       "weight": 1.0,
@@ -32,13 +39,18 @@
       "id": "aaa_002",
       "symptom": "pain_unaffected_by_position",
       "label": "Pain Unaffected by Position/Movement (자세 무관 통증)",
+      "label_en": "Pain Unaffected by Position/Movement",
       "description": "허리통증인데 움직임, 자세, 안정과 전혀 무관하게 일정한 통증",
       "synonyms": [
-        "움직여도 같음", "누워도 같음", "자세 바꿔도 안 달라짐",
-        "position independent pain", "movement unrelated pain",
-        "어떤 자세에서도 똑같이 아픔", "통증이 자세와 무관"
+        "움직여도 같음",
+        "누워도 같음",
+        "자세 바꿔도 안 달라짐",
+        "position independent pain",
+        "movement unrelated pain",
+        "어떤 자세에서도 똑같이 아픔",
+        "통증이 자세와 무관"
       ],
-      "weight": 0.80,
+      "weight": 0.8,
       "alarm_level": "RED",
       "standalone_trigger": false,
       "cluster": "pain_pattern"
@@ -47,10 +59,15 @@
       "id": "aaa_003",
       "symptom": "throbbing_deep_pain",
       "label": "Deep Throbbing Back/Abdominal Pain (심부 박동성 통증)",
+      "label_en": "Deep Throbbing Back/Abdominal Pain",
       "description": "쿵쿵 뛰는 듯한 심부 요통 또는 복통",
       "synonyms": [
-        "쿵쿵 뛰는 통증", "박동성 통증", "throbbing pain",
-        "깊은 곳에서 뛰는 아픔", "심부 통증", "복통과 허리 통증 동시",
+        "쿵쿵 뛰는 통증",
+        "박동성 통증",
+        "throbbing pain",
+        "깊은 곳에서 뛰는 아픔",
+        "심부 통증",
+        "복통과 허리 통증 동시",
         "배와 허리가 같이 아픔"
       ],
       "weight": 0.75,
@@ -62,10 +79,15 @@
       "id": "aaa_004",
       "symptom": "age_over_60_male",
       "label": "Age > 60, Male (60세 이상 남성)",
+      "label_en": "Age > 60, Male",
       "description": "60세 이상 남성은 AAA 고위험군 (남성 4배 높음)",
       "synonyms": [
-        "60대 남자", "70대 남자", "80대 남자", "남성 고령",
-        "노인 남성", "elderly male"
+        "60대 남자",
+        "70대 남자",
+        "80대 남자",
+        "남성 고령",
+        "노인 남성",
+        "elderly male"
       ],
       "weight": 0.65,
       "alarm_level": "YELLOW",
@@ -76,13 +98,22 @@
       "id": "aaa_005",
       "symptom": "atherosclerosis_htn",
       "label": "Atherosclerosis / Hypertension History (동맥경화 / 고혈압)",
+      "label_en": "Atherosclerosis / Hypertension History",
       "description": "혈관 질환 이력 — AAA 위험인자",
       "synonyms": [
-        "고혈압", "hypertension", "동맥경화", "혈압약 먹음",
-        "심장 질환", "협심증", "스텐트 삽입", "혈관 질환",
-        "뇌졸중 기왕력", "atherosclerosis", "혈압 높음"
+        "고혈압",
+        "hypertension",
+        "동맥경화",
+        "혈압약 먹음",
+        "심장 질환",
+        "협심증",
+        "스텐트 삽입",
+        "혈관 질환",
+        "뇌졸중 기왕력",
+        "atherosclerosis",
+        "혈압 높음"
       ],
-      "weight": 0.60,
+      "weight": 0.6,
       "alarm_level": "YELLOW",
       "standalone_trigger": false,
       "cluster": "risk_factor"
@@ -91,10 +122,14 @@
       "id": "aaa_006",
       "symptom": "pain_radiates_groin_no_neuro",
       "label": "Groin/Leg Pain without Neurological Signs (신경 증상 없는 서혜부/하지 통증)",
+      "label_en": "Groin/Leg Pain without Neurological Signs",
       "description": "다리나 서혜부로 통증이 퍼지지만 저림/마비는 없음",
       "synonyms": [
-        "허벅지로 가는 통증", "사타구니 통증", "groin pain",
-        "다리 통증인데 저리지는 않음", "신경 증상 없는 하지 통증",
+        "허벅지로 가는 통증",
+        "사타구니 통증",
+        "groin pain",
+        "다리 통증인데 저리지는 않음",
+        "신경 증상 없는 하지 통증",
         "서혜부 방사통"
       ],
       "weight": 0.55,
@@ -106,10 +141,15 @@
       "id": "aaa_007",
       "symptom": "sudden_severe_pain",
       "label": "Sudden Severe Pain (갑작스러운 극심한 통증)",
+      "label_en": "Sudden Severe Pain",
       "description": "기존 통증이 갑자기 극도로 악화 — 파열 의심",
       "synonyms": [
-        "갑자기 극심하게 아픔", "통증이 갑자기 심해짐", "찢어지는 통증",
-        "sudden onset severe pain", "tearing pain", "극심한 통증 갑자기",
+        "갑자기 극심하게 아픔",
+        "통증이 갑자기 심해짐",
+        "찢어지는 통증",
+        "sudden onset severe pain",
+        "tearing pain",
+        "극심한 통증 갑자기",
         "치료 중 갑자기 아파짐"
       ],
       "weight": 1.0,
