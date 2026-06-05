@@ -231,7 +231,10 @@ def waitlist(request):
         resend.api_key = api_key
 
         if audience_id:
-            resend.Contacts.create({"audience_id": audience_id, "email": email, "unsubscribed": False})
+            try:
+                resend.Contacts.create({"audience_id": audience_id, "email": email, "unsubscribed": False})
+            except Exception as ce:
+                logger.warning("Contacts.create skipped for %s: %s", email, ce)
 
         resend.Emails.send({
             "from":    "SagePontus <waitlist@sagepontus.com>",
