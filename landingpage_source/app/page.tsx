@@ -46,8 +46,8 @@ const features = [
   {
     icon: <ClipboardCheck size={22} />,
     spark: false,
-    title: 'Screening proof, not just session notes',
-    body: "Every red flag screening is timestamped and stored. When a lawyer asks 'did you screen?' — you have a record, not a memory.",
+    title: 'Liability Score, not gut feeling',
+    body: "See your clinic's real-time risk across every open red flag, pending referral, and Direct Access deadline — before the insurer does.",
     tag: 'For Clinic Directors',
   },
   {

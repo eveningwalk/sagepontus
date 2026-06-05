@@ -236,8 +236,7 @@ def waitlist(request):
             except Exception as ce:
                 logger.warning("Contacts.create skipped for %s: %s", email, ce)
 
-        if os.environ.get("RESEND_SEND_CONFIRMATION", "false").lower() == "true":
-            resend.Emails.send({
+        resend.Emails.send({
                 "from":    "SagePontus <waitlist@sagepontus.com>",
                 "to":      [email],
                 "subject": "You're on the SagePontus waitlist 🛡️",
