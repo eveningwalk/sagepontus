@@ -227,13 +227,13 @@ def waitlist(request):
         return Response({"ok": True})
 
     try:
-        from resend import Resend
-        client = Resend(api_key=api_key)
+        import resend
+        resend.api_key = api_key
 
         if audience_id:
-            client.contacts.create(audience_id=audience_id, email=email, unsubscribed=False)
+            resend.Contacts.create({"audience_id": audience_id, "email": email, "unsubscribed": False})
 
-        client.emails.send({
+        resend.Emails.send({
             "from":    "SagePontus <waitlist@sagepontus.com>",
             "to":      [email],
             "subject": "You're on the SagePontus waitlist 🛡️",
