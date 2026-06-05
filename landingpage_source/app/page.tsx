@@ -118,7 +118,7 @@ export default function LandingPage() {
         </div>
 
         <div
-          className="reveal -mt-1 flex items-center gap-2 text-[13.5px] text-[#64748B]"
+          className="reveal mt-3 flex items-center gap-2 text-[13.5px] text-[#64748B]"
           style={{ animationDelay: '0.2s' }}
         >
           <CheckCircle2 size={15} className="text-[#14B8A6]" />

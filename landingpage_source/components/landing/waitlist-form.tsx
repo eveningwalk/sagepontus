@@ -39,7 +39,7 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
         </span>
         <div className="text-left">
           <div className="text-[15px] font-semibold text-[#0F172A]">You're on the list — check your inbox!</div>
-          <div className="text-[13px] text-[#64748B]">Confirmation sent to {email}</div>
+          <div className="text-[13px] text-[#64748B]">Confirmation sent to {email.toLowerCase()}</div>
         </div>
       </div>
     )
