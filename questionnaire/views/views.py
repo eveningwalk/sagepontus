@@ -1,10 +1,11 @@
 import json
 import logging
+import os
 
 from django.conf import settings
 from django.contrib import messages
 import json as _json
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, FileResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
@@ -55,6 +56,16 @@ def root(request):
             response["Pragma"] = "no-cache"
             return response
         return home(request)
+
+    # Serve built Next.js landing page if available
+    landing_html = os.path.join(settings.BASE_DIR, "static", "landing", "index.html")
+    if os.path.exists(landing_html):
+        with open(landing_html, "rb") as f:
+            response = HttpResponse(f.read(), content_type="text/html; charset=utf-8")
+            response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            return response
+
+    # Fallback to old landing template
     response = render(request, landing_template_name(request), {})
     response["Cache-Control"] = "no-store, no-cache, must-revalidate"
     response["Pragma"] = "no-cache"

@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import {
   ShieldAlert, ClipboardCheck, FileSignature, Users,
-  Zap, Lock, ShieldCheck, CheckCircle2, Shield, TriangleAlert,
+  Zap, ShieldCheck, CheckCircle2, Shield,
 } from 'lucide-react'
 import { WaitlistForm } from '@/components/landing/waitlist-form'
 import { HowTabs } from '@/components/landing/how-tabs'
@@ -122,7 +122,7 @@ export default function LandingPage() {
           style={{ animationDelay: '0.2s' }}
         >
           <CheckCircle2 size={15} className="text-[#14B8A6]" />
-          Free during beta · No credit card · Works with WebPT
+          Free during beta · No credit card
         </div>
 
         {/* Product mockup */}
@@ -135,9 +135,6 @@ export default function LandingPage() {
             <span className="h-2.5 w-2.5 rounded-full bg-[#E2E8F0]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#E2E8F0]" />
             <span className="h-2.5 w-2.5 rounded-full bg-[#E2E8F0]" />
-            <span className="ml-3 flex items-center gap-1.5 text-[12.5px] text-[#94A3B8]">
-              <Lock size={11} /> app.webpt.com
-            </span>
             <span className="ml-auto flex items-center gap-1.5 rounded-md bg-[#0EA5E9]/10 px-2 py-1 text-[12px] font-semibold text-[#0EA5E9]">
               <ShieldCheck size={12} /> SagePontus
             </span>
@@ -172,46 +169,17 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* RIGHT — SagePontus analysis */}
-            <div className="relative bg-[#0F172A] p-6">
-              <span className="absolute left-0 top-0 hidden h-full w-px bg-gradient-to-b from-transparent via-[#0EA5E9]/55 to-transparent md:block" />
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-[12px] font-semibold uppercase tracking-wide text-[#38BDF8]">
-                  <ShieldCheck size={13} /> SagePontus Analysis
-                </div>
-                <span className="text-[#FB7185]">⚠️</span>
-              </div>
-              <div className="relative mt-4 overflow-hidden rounded-xl border border-[#FB7185]/40 bg-[#FB7185]/[0.08] p-4">
-                <span
-                  className="absolute inset-0 rounded-xl ring-1 ring-[#FB7185]/45 soft-blink"
-                  style={{ animationDuration: '1.8s' }}
-                />
-                <div className="relative flex items-center gap-2 text-[12.5px] font-bold uppercase tracking-wide text-[#FB7185]">
-                  <TriangleAlert size={13} /> Red Flag Detected
-                </div>
-                <p className="relative mt-2.5 text-[13.5px] leading-snug text-white">
-                  Age 58 + lumbar pain →{' '}
-                  <span className="font-semibold text-[#FECDD3]">
-                    cardiovascular screen incomplete.
-                  </span>{' '}
-                  Rule out aortic aneurysm before next session.
-                </p>
-                <span className="relative mt-3.5 inline-flex items-center gap-1.5 rounded-lg border border-[#FB7185]/20 bg-[#FB7185]/10 px-2.5 py-1 text-[12px] font-semibold text-[#FB7185]">
-                  🚨 Physician referral required
-                </span>
-              </div>
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
-                <div className="text-[12.5px]">
-                  <span className="text-[#64748B]">Liability exposure:</span>{' '}
-                  <span className="font-bold text-[#FB7185]">HIGH</span>
-                </div>
-                <div className="flex items-center gap-2 text-[12.5px]">
-                  <span className="text-[#64748B]">Claim status:</span>{' '}
-                  <span className="inline-block rounded bg-[#1e293b] px-2 py-1 font-mono tracking-wide text-[#FBBF24]">
-                    ⛔ HOLD
-                  </span>
-                </div>
-              </div>
+            {/* RIGHT — alarm panel screenshot */}
+            <div className="relative flex items-center justify-center bg-[#F8FAFC] p-4">
+              <span className="absolute left-0 top-0 hidden h-full w-px bg-gradient-to-b from-transparent via-[#E2E8F0] to-transparent md:block" />
+              <Image
+                src="/alarm-panel.png"
+                alt="Sage Pontus Red Flag Alert panel"
+                width={355}
+                height={340}
+                className="w-full h-auto max-w-[320px] mx-auto rounded-xl drop-shadow-md"
+                priority
+              />
             </div>
           </div>
         </div>

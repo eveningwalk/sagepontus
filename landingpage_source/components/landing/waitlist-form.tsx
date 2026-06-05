@@ -18,7 +18,7 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
 
     setState('loading')
     try {
-      const res = await fetch('/api/waitlist', {
+      const res = await fetch('/api/pt/waitlist/', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email: email.trim().toLowerCase(), source }),

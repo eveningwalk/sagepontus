@@ -2,7 +2,10 @@
 
 import datetime
 import json
+import logging
 import re
+
+logger = logging.getLogger(__name__)
 
 from django.contrib.auth.decorators import login_required as _login_required
 from functools import wraps

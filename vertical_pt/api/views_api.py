@@ -9,13 +9,16 @@ POST /api/pt/alerts/<id>/acknowledge/ — 알람 확인 처리
 """
 
 import logging
+import os
+import re
 from datetime import date
 
 from django.utils import timezone
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from vertical_pt.engine import score_soap, build_patient_context
@@ -203,3 +206,59 @@ def acknowledge_alert(request, alert_id: int):
     alert.acknowledged_at = timezone.now()
     alert.save(update_fields=["acknowledged", "acknowledged_at"])
     return Response({"status": "acknowledged", "alert_id": alert_id})
+
+
+@api_view(["POST"])
+@authentication_classes([])
+@permission_classes([AllowAny])
+def waitlist(request):
+    """Landing page waitlist signup — Resend으로 이메일 발송."""
+    email = (request.data.get("email") or "").strip().lower()
+    source = request.data.get("source", "landing")
+
+    if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email):
+        return Response({"error": "Invalid email address."}, status=400)
+
+    api_key     = os.environ.get("RESEND_API_KEY", "")
+    audience_id = os.environ.get("RESEND_AUDIENCE_ID", "")
+
+    if not api_key:
+        logger.warning("RESEND_API_KEY not set — skipping email send")
+        return Response({"ok": True})
+
+    try:
+        from resend import Resend
+        client = Resend(api_key=api_key)
+
+        if audience_id:
+            client.contacts.create(audience_id=audience_id, email=email, unsubscribed=False)
+
+        client.emails.send({
+            "from":    "SagePontus <waitlist@sagepontus.com>",
+            "to":      [email],
+            "subject": "You're on the SagePontus waitlist 🛡️",
+            "html": f"""
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+                        max-width:520px;margin:0 auto;padding:40px 24px;color:#0F172A;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;">
+                <div style="width:36px;height:36px;border-radius:8px;background:#0EA5E9;
+                            display:flex;align-items:center;justify-content:center;">
+                  <span style="color:#fff;font-size:18px;">🛡️</span>
+                </div>
+                <span style="font-size:18px;font-weight:700;">SagePontus</span>
+              </div>
+              <h1 style="font-size:24px;font-weight:800;margin:0 0 12px;">You're on the list.</h1>
+              <p style="font-size:16px;color:#475569;line-height:1.6;margin:0 0 24px;">
+                We'll reach out as soon as beta access opens.
+                Early members get <strong>6 months free</strong>.
+              </p>
+              <p style="font-size:13px;color:#94A3B8;margin:0;">
+                © 2026 SagePontus · Made for clinicians, by clinicians.
+              </p>
+            </div>""",
+        })
+    except Exception as e:
+        logger.error("Waitlist email failed for %s: %s", email, e)
+        return Response({"error": "Failed to join waitlist."}, status=500)
+
+    return Response({"ok": True})

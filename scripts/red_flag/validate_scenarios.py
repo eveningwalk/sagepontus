@@ -13,6 +13,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -390,8 +391,8 @@ _NEGATION_PATTERNS = re.compile(
     r"(?:no|without|denies?|absence of|negative for|ruled out|"
     r"not experiencing|not having|no history of|no evidence of)"
     r"\s+"
-    r"(?!improvement|improving|relief|response|change|comfortable)"  # 이것들은 자체가 Red Flag
-    r"(?:\w+\s+){0,3}",
+    r"(?!improvement|improving|relief|response|change|comfortable)"
+    r"(?:\w+[,;.]?\s*){0,5}",  # 쉼표·마침표 뒤 단어도 마스킹
     re.IGNORECASE,
 )
 
@@ -535,6 +536,12 @@ def score_condition(protocol: dict, hits: list[dict]) -> dict:
     # 프로토콜 자체가 YELLOW-max이거나 RED 지표가 없으면 RED 차단
     if raw_alarm == "RED" and (protocol_max_alarm == "YELLOW" or not has_red_indicator):
         raw_alarm = "YELLOW"
+
+    # fracture: 외상력 없으면 RED → YELLOW (외상 없는 위험인자 조합은 YELLOW)
+    if condition_ref == "fracture" and raw_alarm == "RED":
+        trauma_present = any("Trauma" in h["label"] or "외상" in h["label"] for h in condition_hits)
+        if not trauma_present:
+            raw_alarm = "YELLOW"
 
     return {"alarm": raw_alarm, "score": round(score, 3), "matched": [h["label"] for h in condition_hits]}
 
@@ -709,13 +716,45 @@ def run_validation(filter_condition: Optional[str] = None, verbose: bool = False
     }
 
 
+def save_results(results: dict, out_path: Optional[str] = None) -> Path:
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    if out_path:
+        path = Path(out_path)
+    else:
+        save_dir = ROOT / "data" / "validation_results"
+        save_dir.mkdir(parents=True, exist_ok=True)
+        path = save_dir / f"validation_{timestamp}.json"
+
+    payload = {
+        "timestamp": timestamp,
+        "scenario_count": results["total"],
+        "passed": results["passed"],
+        "accuracy": round(results["accuracy"], 1),
+        "sensitivity": round(results["sensitivity"], 1),
+        "specificity": round(results["specificity"], 1),
+        "fnr": round(results["fnr"], 1),
+        "fpr": round(results["fpr"], 1),
+        "false_negatives": results["false_negatives"],
+        "kb_path": str(KB_PATH),
+        "protocols_dir": str(PROTOCOLS_DIR),
+    }
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    return path
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="PT Red Flag 알고리즘 검증")
     parser.add_argument("--verbose", "-v", action="store_true", help="KB 매칭 상세 출력")
     parser.add_argument("--condition", "-c", help="특정 조건만 테스트 (cauda_equina, fracture, malignancy, infection, vascular, inflammatory, none)")
+    parser.add_argument("--save", "-s", action="store_true", help="결과를 data/validation_results/에 JSON으로 저장")
+    parser.add_argument("--out", "-o", help="저장 경로 지정 (--save 없이도 동작)")
     args = parser.parse_args()
 
     results = run_validation(filter_condition=args.condition, verbose=args.verbose)
+
+    if args.save or args.out:
+        saved_path = save_results(results, out_path=args.out)
+        print(f"{GREEN}💾 결과 저장: {saved_path}{RESET}\n")
 
     if results["fnr"] > 15:
         print(f"{RED}⚠️  FNR {results['fnr']:.1f}% — 임계치 초과. KB 또는 가중치 조정 필요.{RESET}\n")

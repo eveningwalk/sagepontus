@@ -21,7 +21,7 @@ function buildReferralTracker(s) {
   }
   return `
     <button class="pt-letter-btn" onclick="openSendModal(${s.alert_id}, this)"
-      style="background:#1e40af;border-color:#1e40af;">📧 Send to Doctor</button>`;
+      style="background:#2563eb;border-color:#2563eb;color:#fff;padding:6px 16px;font-size:12px;">📧 Send to Doctor</button>`;
 }
 
 function printReferralLetter(alertId) {
@@ -779,6 +779,7 @@ function renderDocumentsTab(patientId, patientName) {
 
   // ── Physician Referral Letter (최신 것) ──
   const letterSessions = _sessions.filter(s => s.referral_letter);
+  const alarmSessions  = _sessions.filter(s => s.alarm_level !== 'NONE' && s.alert_id);
   let referralHtml = '';
   if (letterSessions.length > 0) {
     const latest     = letterSessions[0];
@@ -813,15 +814,45 @@ function renderDocumentsTab(patientId, patientName) {
           </div>
         </div>
       </div>`;
+  } else if (alarmSessions.length > 0) {
+    const latest    = alarmSessions[0];
+    const latestIdx = _sessions.indexOf(latest);
+    const isRed     = latest.alarm_level === 'RED';
+    const borderClr = isRed ? '#dc2626' : '#d97706';
+    const bgClr     = isRed ? '#fef2f2' : '#fffbeb';
+    referralHtml = `
+      <div style="border:2px dashed ${borderClr};border-radius:10px;
+                  overflow:hidden;margin-bottom:16px;">
+        <div style="background:${bgClr};padding:12px 16px;
+                    display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <span style="font-size:20px;flex-shrink:0;">📄</span>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:${borderClr};">
+                Physician Referral Letter
+              </div>
+              <div style="font-size:11px;color:#6b7280;">
+                ${latest.session_date} · Not yet generated
+              </div>
+            </div>
+          </div>
+          <button class="pt-letter-btn pt-letter-btn-primary"
+                  style="${!isRed?'background:#d97706;border-color:#d97706;':''}"
+                  id="doc-referral-gen-btn"
+                  onclick="generateReferralFromWeb(${latest.alert_id}, ${latest.id})">
+            📄 Generate Referral Letter
+          </button>
+        </div>
+      </div>`;
   }
 
   // ── 5개 문서 카드 ──
   const docTypes = [
-    { type:'medical_necessity',   icon:'🏥', title:'Medical Necessity',        desc:'보험사 선승인 / 의학적 필요성 증빙 레터' },
-    { type:'legal_defense',       icon:'⚖️', title:'Standard of Care Defense', desc:'소송 방어용 스크리닝 수행 감사 트레일' },
-    { type:'clinical_chronology', icon:'📅', title:'Clinical Chronology',      desc:'전체 세션 시계열 기록 (법적 참고문서)' },
-    { type:'insurance_appeal',    icon:'📩', title:'Insurance Appeal',         desc:'보험 청구 거절 이의신청 레터' },
-    { type:'functional_report',   icon:'📊', title:'Functional Report',        desc:'Medicare/보험용 기능제한 보고서' },
+    { type:'medical_necessity',   icon:'🏥', title:'Medical Necessity',        desc:'Prior authorization & medical necessity letter for insurance',  desc_ko:'보험사 선승인 / 의학적 필요성 증빙 레터' },
+    { type:'legal_defense',       icon:'⚖️', title:'Standard of Care Defense', desc:'Audit trail documenting screening performed per clinical guidelines', desc_ko:'소송 방어용 스크리닝 수행 감사 트레일' },
+    { type:'clinical_chronology', icon:'📅', title:'Clinical Chronology',      desc:'Full session timeline record for legal reference',               desc_ko:'전체 세션 시계열 기록 (법적 참고문서)' },
+    { type:'insurance_appeal',    icon:'📩', title:'Insurance Appeal',         desc:'Appeal letter for denied insurance claims',                       desc_ko:'보험 청구 거절 이의신청 레터' },
+    { type:'functional_report',   icon:'📊', title:'Functional Report',        desc:'Functional limitation report for Medicare / insurance',           desc_ko:'Medicare/보험용 기능제한 보고서' },
   ];
 
   const cardsHtml = `<div class="doc-cards-grid">` + docTypes.map(dt => `
