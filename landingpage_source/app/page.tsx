@@ -89,8 +89,8 @@ export default function LandingPage() {
 
       {/* ── Hero ──────────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-6 pt-16 pb-20">
-        <div className="reveal inline-flex items-center gap-2 rounded-full border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-1.5 text-[13px] font-medium text-[#475569]">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#14B8A6]" />
+        <div className="reveal inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 text-[13px] font-medium text-slate-700">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
           Chrome extension · Private beta
         </div>
 
