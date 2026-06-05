@@ -236,30 +236,31 @@ def waitlist(request):
             except Exception as ce:
                 logger.warning("Contacts.create skipped for %s: %s", email, ce)
 
-        resend.Emails.send({
-            "from":    "SagePontus <waitlist@sagepontus.com>",
-            "to":      [email],
-            "subject": "You're on the SagePontus waitlist 🛡️",
-            "html": f"""
-            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-                        max-width:520px;margin:0 auto;padding:40px 24px;color:#0F172A;">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;">
-                <div style="width:36px;height:36px;border-radius:8px;background:#0EA5E9;
-                            display:flex;align-items:center;justify-content:center;">
-                  <span style="color:#fff;font-size:18px;">🛡️</span>
-                </div>
-                <span style="font-size:18px;font-weight:700;">SagePontus</span>
-              </div>
-              <h1 style="font-size:24px;font-weight:800;margin:0 0 12px;">You're on the list.</h1>
-              <p style="font-size:16px;color:#475569;line-height:1.6;margin:0 0 24px;">
-                We'll reach out as soon as beta access opens.
-                Early members get <strong>6 months free</strong>.
-              </p>
-              <p style="font-size:13px;color:#94A3B8;margin:0;">
-                © 2026 SagePontus · Made for clinicians, by clinicians.
-              </p>
-            </div>""",
-        })
+        if os.environ.get("RESEND_SEND_CONFIRMATION", "false").lower() == "true":
+            resend.Emails.send({
+                "from":    "SagePontus <waitlist@sagepontus.com>",
+                "to":      [email],
+                "subject": "You're on the SagePontus waitlist 🛡️",
+                "html": f"""
+                <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+                            max-width:520px;margin:0 auto;padding:40px 24px;color:#0F172A;">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;">
+                    <div style="width:36px;height:36px;border-radius:8px;background:#0EA5E9;
+                                display:flex;align-items:center;justify-content:center;">
+                      <span style="color:#fff;font-size:18px;">🛡️</span>
+                    </div>
+                    <span style="font-size:18px;font-weight:700;">SagePontus</span>
+                  </div>
+                  <h1 style="font-size:24px;font-weight:800;margin:0 0 12px;">You're on the list.</h1>
+                  <p style="font-size:16px;color:#475569;line-height:1.6;margin:0 0 24px;">
+                    We'll reach out as soon as beta access opens.
+                    Early members get <strong>6 months free</strong>.
+                  </p>
+                  <p style="font-size:13px;color:#94A3B8;margin:0;">
+                    © 2026 SagePontus · Made for clinicians, by clinicians.
+                  </p>
+                </div>""",
+            })
     except Exception as e:
         logger.error("Waitlist email failed for %s: %s", email, e)
         return Response({"error": "Failed to join waitlist."}, status=500)

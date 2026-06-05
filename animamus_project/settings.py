@@ -19,6 +19,7 @@ from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 load_dotenv(Path(__file__).resolve().parent.parent / ".env.local", override=True)
+load_dotenv(Path(__file__).resolve().parent.parent / "landingpage_source" / ".env.local", override=True)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
