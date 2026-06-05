@@ -27,15 +27,15 @@ const tabs = [
     steps: [
       {
         k: 'Screening proof, not just session notes',
-        v: "Every red flag screening is timestamped and stored separately from your SOAP note. When a lawyer asks 'did you screen?' — you have a record, not a memory.",
+        v: "Every red flag screening is timestamped and stored. When a lawyer asks 'did you screen?' — you have a record, not a memory.",
       },
       {
         k: 'From red flag to documentation — in seconds',
         v: 'When a red flag fires, SagePontus generates the physician referral letter, medical necessity documentation, insurance appeal, and legal defense trail — before the patient leaves the room.',
       },
       {
-        k: 'Real-time liability dashboard',
-        v: 'See every open alert, pending referral, and follow-up status across your entire clinic. Know your exposure before the insurer does.',
+        k: 'Liability Score, not gut feeling',
+        v: 'Track every Direct Access deadline, open red flag, and pending referral across your entire clinic — with a live Liability Score that tells you your exposure before the insurer does.',
       },
     ],
   },

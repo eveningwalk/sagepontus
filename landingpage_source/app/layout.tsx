@@ -12,7 +12,7 @@ const hanken = Hanken_Grotesk({
 export const metadata: Metadata = {
   title: 'SagePontus — AI Red Flag Screening for Physical Therapists',
   description:
-    'SagePontus catches the red flags PTAs miss before they become your malpractice lawsuit. Chrome extension for WebPT and any EMR.',
+    'SagePontus catches the red flags PTAs miss before they become your malpractice lawsuit. Chrome extension for any browser-based EMR.',
   icons: {
     icon: [
       { url: '/icon-light-32x32.png', media: '(prefers-color-scheme: light)' },
