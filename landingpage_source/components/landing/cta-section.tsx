@@ -3,7 +3,11 @@
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 
-export function CTASection() {
+interface CTASectionProps {
+  onGetEarlyAccess?: () => void
+}
+
+export function CTASection({ onGetEarlyAccess }: CTASectionProps) {
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8 bg-muted/30">
       <div className="mx-auto max-w-4xl text-center">
@@ -16,7 +20,7 @@ export function CTASection() {
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-12 text-base">
+          <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 h-12 text-base" onClick={onGetEarlyAccess}>
             Get Early Access
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>

@@ -1,0 +1,109 @@
+{
+  "protocol_id": "rfp_yellow_flag",
+  "condition": "Psychosocial Yellow Flag (심리사회적 황색 신호)",
+  "icd_10": "F45.41, Z73.1",
+  "severity": "WATCHLIST",
+  "alarm_level": "YELLOW",
+  "source": "Kendall et al., Guide to Assessing Psychosocial Yellow Flags in Acute Low Back Pain (1997); IASP; Waddell & Main",
+  "decision_logic": "WEIGHTED_SUM",
+  "threshold": { "red": 9.99, "yellow": 0.50 },
+  "description": "심리사회적 요인으로 인한 만성화 위험. 공포-회피, 파국화, 우울/불안, 수동적 대처가 회복을 방해. 의학적 Red Flag가 아니므로 치료는 계속하되 biopsychosocial 접근 전환 필요.",
+  "action": {
+    "YELLOW": "치료 계속 — biopsychosocial 모델로 전환. 통증 신경과학 교육(PNE), 점진적 노출(Graded Exposure) 고려. 필요 시 심리 상담 리퍼럴."
+  },
+  "indicators": [
+    {
+      "id": "yf_001",
+      "symptom": "kinesiophobia",
+      "label": "Kinesiophobia / Fear of Movement (운동 공포증)",
+      "description": "움직임이 해롭다는 과도한 공포로 인한 활동 회피",
+      "synonyms": [
+        "kinesiophobia", "fear of movement", "afraid to move",
+        "movement will harm", "movement will ruin", "refuses to bend",
+        "TSK elevated", "Tampa Scale"
+      ],
+      "weight": 0.75,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "fear_avoidance"
+    },
+    {
+      "id": "yf_002",
+      "symptom": "fear_avoidance_beliefs",
+      "label": "Fear-Avoidance Beliefs / FABQ Elevated (공포-회피 신념)",
+      "description": "FABQ 점수 상승 또는 공포-회피 행동 명시",
+      "synonyms": [
+        "FABQ elevated", "FABQ high", "fear-avoidance beliefs",
+        "fear avoidance behavior", "FABQ-PA", "FABQ-W"
+      ],
+      "weight": 0.75,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "fear_avoidance"
+    },
+    {
+      "id": "yf_003",
+      "symptom": "pain_catastrophizing",
+      "label": "Pain Catastrophizing (통증 파국화)",
+      "description": "통증에 대한 과도한 부정적 해석 — PCS 상승 또는 임상 관찰",
+      "synonyms": [
+        "pain catastrophizing", "catastrophic thinking",
+        "PCS elevated", "will never get better", "helpless about pain"
+      ],
+      "weight": 0.70,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "psychological"
+    },
+    {
+      "id": "yf_004",
+      "symptom": "passive_coping",
+      "label": "Passive Coping Style (수동적 대처 방식)",
+      "description": "통증 약/핫팩에만 의존, 능동적 자기관리 없음",
+      "synonyms": [
+        "passive coping", "poor coping", "dependent on pain medication",
+        "passive role", "avoids all activity"
+      ],
+      "weight": 0.60,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "coping"
+    },
+    {
+      "id": "yf_005",
+      "symptom": "depression_anxiety",
+      "label": "Depression / Anxiety Symptoms (우울 / 불안 증상)",
+      "description": "우울 또는 불안 증상 — PHQ/GAD 상승 또는 임상 보고",
+      "synonyms": [
+        "depression", "anxiety", "PHQ elevated", "GAD elevated",
+        "depressive symptoms", "psychological distress"
+      ],
+      "weight": 0.65,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "psychological"
+    },
+    {
+      "id": "yf_006",
+      "symptom": "work_disability_risk",
+      "label": "Work Disability Risk (직업적 복귀 장벽)",
+      "description": "직업 복귀 장벽 — 작업 관련 공포, 보상 청구, 직장 스트레스",
+      "synonyms": [
+        "work disability", "unable to work", "return to work barrier",
+        "workers compensation", "disability claim", "prolonged disability"
+      ],
+      "weight": 0.60,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "cluster": "occupational"
+    }
+  ],
+  "screening_questions": [
+    "움직이거나 구부리는 게 무서워서 피하고 있나요?",
+    "통증 때문에 일상 활동을 대부분 포기했나요?",
+    "이 통증이 절대 낫지 않을 것 같다고 느끼나요?",
+    "주로 진통제나 핫팩에만 의존하고 있나요?",
+    "최근 우울하거나 불안한 감정이 자주 드나요?"
+  ],
+  "clinical_notes": "Yellow Flag는 의학적 위험이 아닌 만성화 위험 지표. 치료를 중단하지 말고 접근 방식을 biopsychosocial 모델로 전환. 단독 항목보다 복수 항목 동시 존재 시 만성화 위험 급상승."
+}

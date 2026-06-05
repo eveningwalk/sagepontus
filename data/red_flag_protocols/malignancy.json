@@ -1,0 +1,197 @@
+{
+  "protocol_id": "rfp_malignancy",
+  "condition": "Spinal Malignancy / Metastatic Cancer",
+  "icd_10": "C79.5, C41.2",
+  "severity": "URGENT",
+  "alarm_level": "RED",
+  "source": "Goodman & Snyder, Differential Diagnosis for Physical Therapists, 5th Ed., Ch.13; Henschke et al. Screen of 5 Clinical Prediction Rule",
+  "decision_logic": "SCREEN_OF_5",
+  "threshold": {
+    "red": 4,
+    "yellow": 2,
+    "note": "5개 항목 중 해당 수로 판단. 암 기왕력 단독으로 RED."
+  },
+  "description": "척추 전이암 또는 원발성 척추 종양. Goodman의 '5가지 스크리닝' 기준 적용. 기왕 암 병력 단독으로 RED 트리거.",
+  "action": {
+    "RED": "즉시 치료 중단 — 당일 의사 리퍼럴. ESR/CBC/PSA 등 혈액검사 + MRI 요청.",
+    "YELLOW": "치료 진행하되 담당 의사에게 금주 내 통보. 4주 내 미개선 시 즉시 재평가."
+  },
+  "indicators": [
+    {
+      "id": "ca_001",
+      "symptom": "age_over_50",
+      "label": "Age > 50 (50세 이상)",
+      "label_en": "Age > 50",
+      "description": "전이암의 대부분이 50세 이후 발생",
+      "synonyms": [
+        "50대",
+        "60대",
+        "70대",
+        "80대",
+        "50세 이상",
+        "중년 이상",
+        "나이 많은 편",
+        "고령"
+      ],
+      "weight": 0.6,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "screen_item": 1,
+      "cluster": "risk_factor"
+    },
+    {
+      "id": "ca_002",
+      "symptom": "history_of_cancer",
+      "label": "Previous Cancer History (암 기왕력)",
+      "label_en": "Previous Cancer History",
+      "description": "과거 어떤 암이든 진단/치료 이력",
+      "synonyms": [
+        "암 수술 받음",
+        "암 치료력",
+        "항암 치료",
+        "방사선 치료 받음",
+        "cancer history",
+        "이전에 암",
+        "암 경험",
+        "종양 제거",
+        "유방암",
+        "폐암",
+        "전립선암",
+        "갑상선암",
+        "대장암",
+        "위암",
+        "기왕력 암",
+        "cancer survivor",
+        "암 완치 판정"
+      ],
+      "weight": 1.0,
+      "alarm_level": "RED",
+      "standalone_trigger": true,
+      "screen_item": 2,
+      "cluster": "cardinal"
+    },
+    {
+      "id": "ca_003",
+      "symptom": "unexplained_weight_loss",
+      "label": "Unexplained Weight Loss (원인 불명 체중 감소)",
+      "label_en": "Unexplained Weight Loss",
+      "description": "6개월 내 4.5kg(10lbs) 이상 의도치 않은 체중 감소",
+      "synonyms": [
+        "살이 빠짐",
+        "체중 감소",
+        "갑자기 빠짐",
+        "이유 없이 살 빠짐",
+        "weight loss",
+        "unexplained weight loss",
+        "식욕 감소",
+        "밥을 못 먹음",
+        "체중 줄었음",
+        "6개월 만에 살 빠짐"
+      ],
+      "weight": 0.85,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "screen_item": 3,
+      "cluster": "systemic"
+    },
+    {
+      "id": "ca_004",
+      "symptom": "night_pain_no_relief",
+      "label": "Night Pain / No Relief with Rest (야간통 / 안정 무관 통증)",
+      "label_en": "Night Pain / No Relief with Rest",
+      "description": "누워있어도 통증이 심하거나 밤에 통증으로 깸. 자세와 무관한 통증.",
+      "synonyms": [
+        "밤에 더 아픔",
+        "새벽에 통증",
+        "야간통",
+        "누워도 아픔",
+        "쉬어도 안 나아짐",
+        "밤에 깸",
+        "자다가 아파서 깸",
+        "night pain",
+        "rest pain",
+        "통증이 자세와 무관",
+        "어떤 자세도 편하지 않음",
+        "쉬면 더 아픔"
+      ],
+      "weight": 0.8,
+      "alarm_level": "RED",
+      "standalone_trigger": false,
+      "screen_item": 4,
+      "cluster": "pain_pattern"
+    },
+    {
+      "id": "ca_005",
+      "symptom": "no_improvement_conservative",
+      "label": "No Improvement ≥ 4 Weeks (4주 보존치료 무반응)",
+      "label_en": "No Improvement ≥ 4 Weeks",
+      "description": "물리치료/도수치료 등 4-6주 치료에도 개선 없음",
+      "synonyms": [
+        "치료해도 안 나아짐",
+        "한 달 치료 효과 없음",
+        "여러 치료 받았음",
+        "개선 없음",
+        "no improvement",
+        "4주 치료 무반응",
+        "치료 효과 없음",
+        "낫지 않음",
+        "병원 다녀도 그대로"
+      ],
+      "weight": 0.7,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "screen_item": 5,
+      "cluster": "treatment_response"
+    },
+    {
+      "id": "ca_006",
+      "symptom": "fatigue_malaise",
+      "label": "Unexplained Fatigue / Malaise (원인 불명 피로감)",
+      "label_en": "Unexplained Fatigue / Malaise",
+      "description": "전신 피로, 무기력, 식욕 부진",
+      "synonyms": [
+        "너무 피곤함",
+        "기운이 없음",
+        "전신 피로",
+        "무기력",
+        "fatigue",
+        "malaise",
+        "식욕 없음",
+        "아무것도 하기 싫음"
+      ],
+      "weight": 0.55,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "screen_item": null,
+      "cluster": "systemic"
+    },
+    {
+      "id": "ca_007",
+      "symptom": "multi_site_pain",
+      "label": "Multi-Site Pain (다발성 통증)",
+      "label_en": "Multi-Site Pain",
+      "description": "척추뿐 아니라 여러 부위에 동시 통증",
+      "synonyms": [
+        "여기저기 아픔",
+        "온몸이 아픔",
+        "다발성 통증",
+        "multi-site pain",
+        "여러 군데 동시 통증",
+        "뼈 여러 곳이 아픔"
+      ],
+      "weight": 0.65,
+      "alarm_level": "YELLOW",
+      "standalone_trigger": false,
+      "screen_item": null,
+      "cluster": "pain_pattern"
+    }
+  ],
+  "screening_questions": [
+    "나이가 50세 이상이신가요?",
+    "과거에 암 진단이나 치료를 받으신 적 있나요?",
+    "최근 6개월 내 이유 없이 체중이 줄었나요?",
+    "통증이 밤에 심해지거나 어떤 자세로도 편하지 않나요?",
+    "4주 이상 치료를 받았는데 전혀 나아지지 않고 있나요?"
+  ],
+  "clinical_notes": "Screen of 5 중 3개 이상 = RED. 암 기왕력 하나만으로도 RED. 전이 호발 암: 유방, 폐, 전립선, 신장, 갑상선 (BLPKT 기억법)."
+}

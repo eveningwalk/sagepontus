@@ -1,10 +1,11 @@
 import json
 import logging
+import os
 
 from django.conf import settings
 from django.contrib import messages
 import json as _json
-from django.http import JsonResponse, StreamingHttpResponse
+from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
@@ -38,9 +39,16 @@ def _demo_flow_template(request, base_name: str) -> str:
 
 def root(request):
     """
-    루트 URL(/). 비로그인 + 데모 ON → 랜딩 페이지.
-    데모 유저 로그인 중 → 항상 /demo/ (새 세션 시작)으로 이동.
+    루트 URL(/). Next.js 빌드 랜딩 페이지 우선 제공.
+    빌드 파일 없으면 기존 Django 랜딩으로 fallback.
     """
+    landing_html = os.path.join(settings.BASE_DIR, "static", "landing", "index.html")
+    if os.path.exists(landing_html):
+        with open(landing_html, "rb") as f:
+            response = HttpResponse(f.read(), content_type="text/html; charset=utf-8")
+            response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            return response
+
     if request.user.is_authenticated:
         demo_username = getattr(settings, "DEMO_USER_USERNAME", "")
         if getattr(settings, "DEMO_ENABLED", False) and demo_username and request.user.get_username() == demo_username:
