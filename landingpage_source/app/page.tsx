@@ -130,57 +130,15 @@ export default function LandingPage() {
           className="reveal mt-14 overflow-hidden rounded-2xl border border-[#E2E8F0] bg-[#F8FAFC] shadow-[0_30px_80px_-40px_rgba(15,23,42,0.4)]"
           style={{ animationDelay: '0.25s' }}
         >
-          {/* browser chrome */}
-          <div className="flex items-center gap-2 border-b border-[#E2E8F0] px-4 py-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#E2E8F0]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#E2E8F0]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#E2E8F0]" />
-            <span className="ml-auto flex items-center gap-1.5 rounded-md bg-[#0EA5E9]/10 px-2 py-1 text-[12px] font-semibold text-[#0EA5E9]">
-              <ShieldCheck size={12} /> SagePontus
-            </span>
-          </div>
-
-          <div className="grid md:grid-cols-[45fr_55fr]">
-            {/* LEFT — PTA session */}
-            <div className="bg-white p-6">
-              <div className="text-[12px] font-semibold uppercase tracking-wide text-[#94A3B8]">
-                PTA Session in Progress
-              </div>
-              <div className="mt-3 rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-[13px]">
-                <span className="font-semibold text-[#0F172A]">Patient:</span>{' '}
-                <span className="text-[#475569]">John D. · 58M, lumbar pain</span>
-              </div>
-              <div className="mt-3 space-y-2.5 text-[13.5px] leading-relaxed">
-                <p>
-                  <span className="font-bold text-[#0F172A]">S:</span>{' '}
-                  <span className="text-[#64748B]">Pain 4/10, down from 7/10. Flexion 60°</span>
-                </p>
-                <p>
-                  <span className="font-bold text-[#0F172A]">O:</span>{' '}
-                  <span className="text-[#64748B]">AROM improving. Tolerating progression well.</span>
-                </p>
-                <p>
-                  <span className="font-bold text-[#0F172A]">A:</span>{' '}
-                  <span className="text-[#64748B]">Improving s/p lumbar strain.</span>
-                </p>
-              </div>
-              <div className="soft-blink mt-5 flex items-center gap-1.5 text-[13px] font-medium text-[#0EA5E9]">
-                <span>✦</span> Generating next session plan…
-              </div>
-            </div>
-
-            {/* RIGHT — alarm panel screenshot */}
-            <div className="relative flex items-center justify-center bg-[#F8FAFC] p-4">
-              <span className="absolute left-0 top-0 hidden h-full w-px bg-gradient-to-b from-transparent via-[#E2E8F0] to-transparent md:block" />
-              <Image
-                src="/alarm-panel.png"
-                alt="Sage Pontus Red Flag Alert panel"
-                width={355}
-                height={340}
-                className="w-full h-auto max-w-[320px] mx-auto rounded-xl drop-shadow-md"
-                priority
-              />
-            </div>
+          <div className="flex items-center justify-center p-6">
+            <Image
+              src="/alarm-panel.png"
+              alt="Sage Pontus Red Flag Alert panel"
+              width={900}
+              height={520}
+              className="w-full h-auto rounded-xl drop-shadow-md"
+              priority
+            />
           </div>
         </div>
       </section>
