@@ -1,13 +1,13 @@
 import { Resend } from 'resend'
 import { NextRequest, NextResponse } from 'next/server'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || ''
 const FROM_EMAIL  = 'SagePontus <waitlist@sagepontus.com>'
 
 const isEmail = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
 
 export async function POST(req: NextRequest) {
+  const resend = new Resend(process.env.RESEND_API_KEY || 'dummy_key_for_build')
   try {
     const { email, source = 'landing' } = await req.json()
 
