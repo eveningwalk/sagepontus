@@ -30,6 +30,11 @@ staticfiles
 .DS_Store
 *.swp
 
+# Next.js
+landingpage_source/node_modules
+landingpage_source/.next
+landingpage_source/out
+
 # 기타 (빌드 컨텍스트 축소)
 *.md
 .ipynb_checkpoints
