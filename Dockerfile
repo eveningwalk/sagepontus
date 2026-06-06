@@ -8,6 +8,7 @@ WORKDIR /build
 COPY landingpage_source/package.json landingpage_source/pnpm-lock.yaml ./
 RUN npm install -g pnpm --quiet && pnpm install --frozen-lockfile
 COPY landingpage_source/ .
+ENV NEXT_PUBLIC_ASSET_BASE=/static
 RUN pnpm build
 
 # ── Stage 2: Django ───────────────────────────────────────────────────
