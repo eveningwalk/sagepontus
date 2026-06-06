@@ -16,19 +16,19 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 const pains = [
   {
-    img: '/icon-gavel.png',
+    img: '/static/icon-gavel.png',
     stat: '$134K',
     title: 'Average PT Malpractice Lawsuit',
     body: "PT is the #1 medical field for malpractice claims. Your PTA's blind spot is your legal exposure.",
   },
   {
-    img: '/icon-clock.png',
+    img: '/static/icon-clock.png',
     stat: '$30K–$90K/yr',
     title: 'Lost to Claim Denials',
     body: 'PT clinics lose $30K–$90K annually to preventable denials. 90% are recoverable — but most never get worked. "Missing information" is the #1 reason.',
   },
   {
-    img: '/icon-shield-alert.png',
+    img: '/static/icon-shield-alert.png',
     stat: 'Zero Notice',
     title: 'Before Medicare Exclusion',
     body: "A single PTA supervision violation can trigger repayment demands, penalties, and full Medicare exclusion. Most clinics don't know until it's too late.",
@@ -75,7 +75,7 @@ export default function LandingPage() {
       {/* ── Nav ───────────────────────────────────────────────── */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 pt-8 pb-2">
         <div className="flex items-center">
-          <Image src="/logo-lockup.png" alt="SagePontus" width={180} height={40} className="h-9 w-auto" priority />
+          <Image src="/static/logo-lockup.png" alt="SagePontus" width={180} height={40} className="h-9 w-auto" priority />
         </div>
         <nav className="hidden items-center gap-7 text-[14px] font-medium text-[#475569] sm:flex">
           <span className="cursor-pointer hover:text-[#0F172A]">Product</span>
@@ -173,7 +173,7 @@ export default function LandingPage() {
             <div className="relative flex items-center justify-center bg-[#F8FAFC] p-4">
               <span className="absolute left-0 top-0 hidden h-full w-px bg-gradient-to-b from-transparent via-[#E2E8F0] to-transparent md:block" />
               <Image
-                src="/alarm-panel.png"
+                src="/static/alarm-panel.png"
                 alt="Sage Pontus Red Flag Alert panel"
                 width={355}
                 height={340}
@@ -285,7 +285,7 @@ export default function LandingPage() {
         <div className="mt-10 flex flex-col items-center justify-between gap-3 text-[13.5px] text-[#94A3B8] sm:flex-row">
           <span>© 2026 SagePontus · For Physical Therapists</span>
           <span className="flex items-center gap-2">
-            <Image src="/logo-mark.png" alt="" width={16} height={16} className="opacity-60" />
+            <Image src="/static/logo-mark.png" alt="" width={16} height={16} className="opacity-60" />
             Made for clinicians, by clinicians.
           </span>
         </div>

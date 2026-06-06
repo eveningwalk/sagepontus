@@ -14,8 +14,8 @@ export const metadata: Metadata = {
   description:
     'SagePontus catches the red flags PTAs miss before they become your malpractice lawsuit. Chrome extension for any browser-based EMR.',
   icons: {
-    icon: '/favicon.png',
-    apple: '/favicon.png',
+    icon: '/static/favicon.png',
+    apple: '/static/favicon.png',
   },
 }
 
