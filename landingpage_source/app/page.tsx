@@ -23,9 +23,9 @@ const pains = [
   },
   {
     img: '/icon-clock.png',
-    stat: '$47K/yr',
-    title: 'Lost to Documentation Overhead',
-    body: 'Every hour spent on paperwork is an hour not treating — and revenue quietly walking out the door.',
+    stat: '$30K–$90K/yr',
+    title: 'Lost to Claim Denials',
+    body: 'PT clinics lose $30K–$90K annually to preventable denials. 90% are recoverable — but most never get worked. "Missing information" is the #1 reason.',
   },
   {
     img: '/icon-shield-alert.png',
@@ -40,21 +40,21 @@ const features = [
     icon: <ShieldAlert size={22} />,
     spark: true,
     title: 'The Malpractice Shield',
-    body: "Instantly scans session notes against 50+ clinical patterns (Goodman's Guidelines) to catch hidden cancer, fractures, or vascular emergencies before liability strikes.",
+    body: "Your PTA runs every session. SagePontus screens every one — catching the hidden cancer, fracture, or vascular emergency before it becomes a $134K lawsuit.",
+    tag: 'For Clinic Directors',
+  },
+  {
+    icon: <FileSignature size={22} />,
+    spark: false,
+    title: 'Audit-Proof Documentation',
+    body: `When a lawyer asks "did you screen?" — you have a record, not a memory. When an insurer says "missing information" — you have documentation that holds up.`,
     tag: 'For Clinic Directors',
   },
   {
     icon: <ClipboardCheck size={22} />,
     spark: false,
     title: 'Liability Score, not gut feeling',
-    body: "See your clinic's real-time risk across every open red flag, pending referral, and Direct Access deadline — before the insurer does.",
-    tag: 'For Clinic Directors',
-  },
-  {
-    icon: <FileSignature size={22} />,
-    spark: false,
-    title: 'Audit-Proof Referral Generator',
-    body: "Physician referral and medical necessity letters generated in seconds. Backed by clinical evidence that MDs respect — and keeps your clinic off the Medicare audit list.",
+    body: "Most clinics don't know their compliance exposure until a lawyer calls. SagePontus gives you a number — updated after every session, across every patient.",
     tag: 'For Clinic Directors',
   },
 ]

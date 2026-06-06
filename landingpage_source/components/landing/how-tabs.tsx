@@ -9,11 +9,11 @@ const tabs = [
     steps: [
       {
         k: 'No new workflow required',
-        v: 'Capture the session, any way you work. Paste a note, or upload a file — SagePontus works with however your clinic already documents.',
+        v: 'Paste a session note, upload a file, or type directly — SagePontus works with however your clinic already documents.',
       },
       {
         k: 'SagePontus screens in real time',
-        v: "Every symptom is cross-checked against Goodman's 6 red flag criteria.",
+        v: "Every symptom is automatically cross-checked against Goodman's 6 red flag criteria.",
       },
       {
         k: 'Flagged or cleared — instantly',
@@ -26,23 +26,23 @@ const tabs = [
     label: 'For Clinic Directors',
     steps: [
       {
-        k: 'Screening proof, not just session notes',
-        v: "Every red flag screening is timestamped and stored. When a lawyer asks 'did you screen?' — you have a record, not a memory.",
+        k: 'Every session, automatically screened',
+        v: "SagePontus runs Goodman's 6 criteria on every PTA session — with a timestamped record that screening happened.",
       },
       {
-        k: 'From red flag to documentation — in seconds',
-        v: 'When a red flag fires, SagePontus generates the physician referral letter, medical necessity documentation, insurance appeal, and legal defense trail — before the patient leaves the room.',
+        k: 'From red flag to legal-ready documentation',
+        v: 'Physician referral, medical necessity, insurance appeal, and legal defense trail — generated before the patient leaves the room.',
       },
       {
-        k: 'Liability Score, not gut feeling',
-        v: 'Track every Direct Access deadline, open red flag, and pending referral across your entire clinic — with a live Liability Score that tells you your exposure before the insurer does.',
+        k: 'Compliance deadlines, tracked automatically',
+        v: 'Direct Access notification windows, pending referrals, and claim filing deadlines — all tracked in real time with a live Liability Score.',
       },
     ],
   },
 ]
 
 export function HowTabs() {
-  const [active, setActive] = useState(0)
+  const [active, setActive] = useState(1)
 
   return (
     <>
