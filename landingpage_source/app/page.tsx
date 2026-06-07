@@ -20,14 +20,16 @@ const pains = [
   {
     img: `${BASE}/icon-gavel.png`,
     stat: '$134K',
-    title: 'Average PT Malpractice Lawsuit',
+    title: "Average PT Malpractice Lawsuit",
     body: "PT is the #1 medical field for malpractice claims. Your PTA's blind spot is your legal exposure.",
+    source: "Source: HPSO Physical Therapy Malpractice Report, 4th Edition",  
   },
   {
     img: `${BASE}/icon-clock.png`,
     stat: '$30K–$90K/yr',
     title: 'Lost to Claim Denials',
     body: 'PT clinics lose $30K–$90K annually to preventable denials. 90% are recoverable — but most never get worked. "Missing information" is the #1 reason.',
+    source: "Source: SPRY PT Revenue Analysis · WebPT / APTA"
   },
   {
     img: `${BASE}/icon-shield-alert.png`,
@@ -100,10 +102,10 @@ export default function LandingPage() {
           className="reveal mt-6 max-w-3xl text-[clamp(2.4rem,6vw,4.2rem)] font-extrabold leading-[1.02] tracking-[-0.03em]"
           style={{ animationDelay: '0.05s' }}
         >
-          Your PTA Missed a Red Flag.
+          Red Flag Detected.
           <br />
           <span className="bg-gradient-to-r from-[#0EA5E9] to-[#14B8A6] bg-clip-text text-transparent">
-            You Just Inherited a $134K Lawsuit.
+            Before Treatment Starts.
           </span>
         </h1>
 
@@ -111,8 +113,7 @@ export default function LandingPage() {
           className="reveal mt-6 max-w-2xl text-[19px] leading-relaxed text-[#475569]"
           style={{ animationDelay: '0.1s' }}
         >
-          Direct Access gave PTAs more power. It also gave YOU more liability. SagePontus flags
-          what humans miss — before it becomes your problem.
+          Enter symptoms. SagePontus screens against Goodman's 6 criteria in real time — and alerts before your PTA takes the first step.
         </p>
 
         <div className="reveal mt-8 max-w-xl" style={{ animationDelay: '0.15s' }}>
@@ -208,6 +209,9 @@ export default function LandingPage() {
                 </div>
                 <div className="text-[15px] font-semibold text-[#0F172A]">{p.title}</div>
                 <p className="mt-2 text-[14px] leading-relaxed text-[#64748B]">{p.body}</p>
+                {p.source && (
+                  <p className="mt-3 text-[11.5px] text-[#94A3B8]">{p.source}</p>
+                )}
               </div>
             ))}
           </div>

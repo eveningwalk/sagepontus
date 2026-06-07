@@ -18,13 +18,18 @@ export function WaitlistForm({ source = 'landing' }: { source?: string }) {
 
     setState('loading')
     try {
-      const res = await fetch('/api/pt/waitlist/', {
+      const url = process.env.NEXT_PUBLIC_WAITLIST_URL ?? '/api/waitlist'
+      const res = await fetch(url, {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email: email.trim().toLowerCase(), source }),
       })
       const data = await res.json()
       if (!res.ok) { setErrMsg(data.error || 'Something went wrong.'); setState('error'); return }
+      if (typeof window !== 'undefined' && typeof (window as any).lintrk === 'function') {
+        const convId = process.env.NEXT_PUBLIC_LINKEDIN_CONVERSION_ID
+        if (convId) (window as any).lintrk('track', { conversion_id: Number(convId) })
+      }
       setState('done')
     } catch {
       setErrMsg('Network error — please try again.'); setState('error')
