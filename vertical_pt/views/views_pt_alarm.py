@@ -807,6 +807,49 @@ def admin_reseed_ajax(request):
         except Exception as e:
             results["errors"].append(str(e))
 
+    # 4. ComplianceCase 재생성 (Direct Access deadline이 있는 주 배정)
+    from vertical_pt.models import ComplianceCase
+    ComplianceCase.objects.filter(therapist=request.user).delete()
+
+    today = datetime.date.today()
+    _STATES   = ["NY", "NJ", "AL", "DE", "MO", "NY", "NJ", "AL", "NY", "DE",
+                 "MO", "NJ", "AL", "NY", "NJ", "MO"]   # 16개 PT-xxx 용
+    _INSURERS = ["bcbs", "aetna", "medicare", "cigna", "united", "bcbs",
+                 "aetna", "medicare", "cigna", "bcbs", "united", "aetna",
+                 "bcbs", "medicare", "cigna", "united"]
+    compliance_count = 0
+    for i in range(1, 17):
+        pid        = f"PT-{i:03d}"
+        state      = _STATES[i - 1]
+        start_date = today - datetime.timedelta(days=(i * 4) + 2)
+        notified   = (start_date + datetime.timedelta(days=5)) if i % 4 == 0 else None
+        poc_sent   = (start_date + datetime.timedelta(days=7)) if i % 6 == 0 else None
+        ComplianceCase.objects.update_or_create(
+            therapist=request.user, patient_id=pid,
+            defaults={
+                "state":                 state,
+                "treatment_start_date":  start_date,
+                "insurer_type":          _INSURERS[i - 1],
+                "physician_notified_at": notified,
+                "plan_of_care_sent_at":  poc_sent,
+            }
+        )
+        compliance_count += 1
+
+    # Margaret Wilson — NY (10일 기한), 8일 경과 → urgent
+    ComplianceCase.objects.update_or_create(
+        therapist=request.user, patient_id=PATIENT_ID,
+        defaults={
+            "state":                "NY",
+            "treatment_start_date": today - datetime.timedelta(days=8),
+            "insurer_type":         "bcbs",
+            "physician_notified_at": None,
+            "plan_of_care_sent_at":  None,
+        }
+    )
+    compliance_count += 1
+    results["compliance_seeded"] = compliance_count
+
     return JsonResponse({"ok": True, **results})
 
 

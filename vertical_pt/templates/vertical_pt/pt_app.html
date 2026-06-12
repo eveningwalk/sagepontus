@@ -5,1003 +5,1049 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>PT Red Flag — Sage Pontus</title>
-  <link rel="stylesheet" href="{% static 'css/app_shell.css' %}">
-  <link rel="stylesheet" href="{% static 'css/pt_app.css' %}">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 15px; line-height: 1.5; color: #1a1d21; background: #e8eaef;
+    }
+    
+    /* ===== layout & architecture ===== */
+    .fc-layout { display: flex; min-height: 100vh; }
+    .fc-sidebar {
+      width: 250px; background: #1e293b; color: #f8fafc; display: flex;
+      flex-direction: column; flex-shrink: 0; border-right: 1px solid #334155;
+    }
+    .fc-brand-wrap { padding: 20px; border-bottom: 1px solid #334155; }
+    .fc-brand-title { font-size: 18px; font-weight: 800; color: #fff; }
+    .fc-brand-sub { font-size: 11px; color: #94a3b8; text-transform: uppercase; font-weight: 700; margin-top: 2px; }
+    
+    .fc-nav { flex: 1; padding: 20px 12px; display: flex; flex-direction: column; gap: 6px; }
+    .fc-nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      color: #94a3b8; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+    }
+    .fc-nav-item:hover { background: #334155; color: #fff; }
+    .fc-nav-item.active { background: #0f766e; color: #fff; }
+    
+    .fc-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .fc-top-bar { height: 64px; background: #fff; border-bottom: 1px solid #dcdfe4; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; }
+    .fc-container { padding: 32px; max-width: 1200px; width: 100%; margin: 0 auto; flex: 1; }
+    
+    /* ===== panels & cards ===== */
+    .view-pane { display: none; }
+    .view-pane.active { display: block; }
+    .fc-card { background: #fff; border-radius: 12px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 24px; margin-bottom: 24px; }
+    
+    /* ===== soap form tab buttons ===== */
+    .soap-tabs-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .soap-tab-btn {
+      position: relative; width: 100%; padding: 12px 10px !important;
+      border: 1px solid #e2e8f0 !important; background: #f8fafc !important; border-radius: 8px !important;
+      color: #64748b !important; cursor: pointer; text-align: left; display: block !important; margin-bottom: 0 !important; font-weight: 600 !important;
+    }
+    .soap-tab-btn span { display: block; font-size: 14px; font-weight: 900; line-height: 1; }
+    .soap-tab-btn small { display: block; margin-top: 4px; font-size: 10px; font-weight: 700; color: #94a3b8; }
+    .soap-tab-btn i { position: absolute; right: 8px; top: 8px; width: 7px; height: 7px; border-radius: 50%; background: #cbd5e1; }
+    .soap-tab-btn.has-text i { background: #14B8A6; }
+    .soap-tab-btn.active { color: #0f766e !important; background: #f0fdfa !important; border-color: #99f6e4 !important; box-shadow: inset 0 0 0 1px #99f6e4 !important; }
+    .soap-tab-btn.active small { color: #0D9488 !important; }
+    
+    .input-control { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; background: #f8fafc; font-size: 14px; outline: none; color: #1a1d21; }
+    .textarea-control { height: 180px; resize: vertical; font-family: monospace; display: none; }
+    .textarea-control.active { display: block; }
+    
+    .btn-action { padding: 12px 24px; border: none; border-radius: 8px; background: #0f766e; color: #fff; font-weight: 700; cursor: pointer; font-size: 14px; }
+    .btn-action:hover { background: #115e59; }
+
+    /* ===== records grid table ===== */
+    .case-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
+    .case-table th { padding: 12px; background: #f1f5f9; color: #475569; font-weight: 700; border-bottom: 1px solid #cbd5e1; }
+    .case-table td { padding: 14px 12px; border-bottom: 1px solid #e2e8f0; }
+    .badge-flag { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+    .badge-flag.RED { background: #fee2e2; color: #ef4444; }
+    .badge-flag.YELLOW { background: #fef3c7; color: #d97706; }
+    .badge-flag.NONE { background: #d1fae5; color: #10b981; }
+
+    /* ===== 3-panel patient view ===== */
+    #pane-patients.active { display: flex; flex-direction: column; }
+    .pt-3panel { display: flex; gap: 16px; height: calc(100vh - 130px); }
+    .pt-panel { display: flex; flex-direction: column; background: #fff; border-radius: 12px; border: 1px solid #cbd5e1; box-shadow: 0 1px 3px rgba(0,0,0,.05); overflow: hidden; }
+    .pt-panel-hd { padding: 14px 16px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0; }
+    .pt-panel-bd { flex: 1; overflow-y: auto; padding: 6px; }
+
+    .pt-patient-card { padding: 10px 12px; border-radius: 8px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background .12s; }
+    .pt-patient-card:hover { background: #f8fafc; }
+    .pt-patient-card.active { background: #f0fdfa; }
+    .pt-patient-name { font-size: 13px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pt-patient-meta { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+    .pt-session-row { padding: 10px 12px; border-radius: 8px; cursor: pointer; border-bottom: 1px solid #f1f5f9; transition: background .12s; display: flex; flex-direction: column; gap: 3px; }
+    .pt-session-row:hover { background: #f8fafc; }
+    .pt-session-row.active { background: #f0fdfa; border-left: 3px solid #0f766e; padding-left: 9px; }
+
+    .alarm-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .alarm-dot.RED { background: #ef4444; }
+    .alarm-dot.YELLOW { background: #f59e0b; }
+    .alarm-dot.NONE { background: #10b981; }
+
+    /* ===== SOAP edit modal ===== */
+    .soap-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.5);
+      z-index: 500; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .18s;
+    }
+    .soap-modal-overlay.open { opacity: 1; pointer-events: all; }
+    .soap-modal {
+      background: #fff; border-radius: 14px;
+      width: 90vw; max-width: 760px; max-height: 88vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,.22);
+      transform: translateY(14px); transition: transform .18s;
+    }
+    .soap-modal-overlay.open .soap-modal { transform: translateY(0); }
+    .soap-modal-hd {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 22px; border-bottom: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+    .soap-modal-bd { flex: 1; min-height: 0; padding: 20px 22px; display: flex; flex-direction: column; }
+    .soap-modal-ft {
+      display: flex; justify-content: flex-end; gap: 8px;
+      padding: 14px 22px; border-top: 1px solid #e2e8f0; flex-shrink: 0;
+    }
+
+    /* ===== table responsive wrapper ===== */
+    .table-responsive { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+    /* ===== hamburger & mobile sidebar overlay ===== */
+    .fc-hamburger {
+      display: none; align-items: center; justify-content: center;
+      width: 44px; height: 44px; border: none; background: transparent;
+      cursor: pointer; color: #334155; flex-shrink: 0; border-radius: 8px;
+    }
+    .fc-hamburger:hover { background: #f1f5f9; }
+
+    .fc-sidebar-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.45); z-index: 290;
+    }
+    .fc-sidebar-backdrop.visible { display: block; }
+
+    /* ===== mobile 3-panel tab nav ===== */
+    .pt-mobile-tabs {
+      display: none; border-bottom: 1px solid #e2e8f0; background: #fff; flex-shrink: 0;
+    }
+    .pt-mobile-tab {
+      flex: 1; padding: 0 8px; height: 44px; border: none; background: transparent;
+      font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer;
+      border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+    }
+    .pt-mobile-tab.active { color: #0f766e; border-bottom-color: #0f766e; }
+
+    /* ===== responsive: 768px breakpoint ===== */
+    @media (max-width: 767px) {
+      /* hamburger: show on mobile */
+      .fc-hamburger { display: flex; }
+
+      /* sidebar: hidden off-screen, slides in as overlay */
+      .fc-sidebar {
+        position: fixed; top: 0; bottom: 0;
+        left: -260px; z-index: 300; transition: left .25s ease;
+      }
+      .fc-sidebar.mobile-open { left: 0; }
+
+      /* compact top bar & container */
+      .fc-top-bar { padding: 0 16px; gap: 12px; }
+      .fc-container { padding: 16px; }
+
+      /* soap tabs → horizontal scroll strip */
+      .soap-tabs-grid {
+        display: flex !important; grid-template-columns: unset !important;
+        overflow-x: auto; -webkit-overflow-scrolling: touch;
+        gap: 8px !important; padding-bottom: 4px; scrollbar-width: none;
+      }
+      .soap-tabs-grid::-webkit-scrollbar { display: none; }
+      .soap-tab-btn { flex-shrink: 0; width: 110px; }
+
+      /* 3-panel → single active panel driven by tab nav */
+      .pt-mobile-tabs { display: flex; }
+      .pt-3panel { flex-direction: column; height: auto !important; gap: 0; }
+      .pt-panel {
+        width: 100% !important; flex-shrink: unset !important;
+        display: none; min-height: 60vh; border-radius: 0;
+      }
+      .pt-panel.mobile-active { display: flex; }
+
+      /* soap edit modal: viewport-safe */
+      .soap-modal { width: 96vw !important; max-height: 92vh; }
+      .soap-modal-bd { padding: 14px 16px !important; }
+      #soap-edit-textarea { min-height: unset !important; max-height: 40vh; height: 40vh; }
+
+      /* touch target for modal close button */
+      .modal-close-btn { width: 44px !important; height: 44px !important; }
+    }
+  </style>
 </head>
 <body>
+<div class="fc-sidebar-backdrop" id="fc-sidebar-backdrop" onclick="closeSidebar()"></div>
 
-{% if not user.is_authenticated %}
-<!-- ── 미로그인: 로그인 카드 ── -->
-<div class="pt-login-wrap">
-  <div class="pt-login-card">
-    <div class="pt-login-logo">
-      <span class="pt-login-logo-icon">🛡️</span>
-      <div>
-        <div class="pt-login-logo-title">Sage Pontus</div>
-        <div class="pt-login-logo-sub">PT Red Flag Alert</div>
-      </div>
+<div class="fc-layout">
+  <aside class="fc-sidebar">
+    <div class="fc-brand-wrap">
+      <div class="fc-brand-title">Sage Pontus</div>
+      <div class="fc-brand-sub">FlagChart OS Kernel</div>
     </div>
-    {% if login_error %}<div class="pt-error">{{ login_error }}</div>{% endif %}
-    <form method="post" action="{% url 'accounts:login' %}">
-      {% csrf_token %}
-      <input type="hidden" name="next" value="/pt/" />
-      <div style="margin-bottom:12px">
-        <label class="pt-label">Username</label>
-        <input class="pt-input" type="text" name="username" autocomplete="username" placeholder="username" />
-      </div>
-      <div style="margin-bottom:16px">
-        <label class="pt-label">Password</label>
-        <input class="pt-input" type="password" name="password" autocomplete="current-password" placeholder="••••••••" />
-      </div>
-      <button type="submit" style="width:100%;padding:10px;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Sign In</button>
-    </form>
-  </div>
-</div>
-
-{% else %}
-<!-- ── 로그인: 사이드바 앱 ── -->
-<div class="app-shell">
-
-  <!-- 사이드바 -->
-  <aside class="app-sidebar">
-
-    <!-- 브랜드 -->
-    <div class="app-sidebar__brand">
-      🛡️ PT Red Flag
-    </div>
-
-    <!-- 계정 정보 -->
-    <div style="padding:10px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px;">
-      <div style="display:flex;align-items:center;gap:9px;">
-        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);
-                    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">
-          {{ user.first_name|first|upper|default:user.username|first|upper }}
-        </div>
-        <div style="min-width:0;flex:1;">
-          <div style="font-size:13px;font-weight:600;color:#e2e8f0;
-                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-            {% if user.get_full_name %}{{ user.get_full_name }}{% else %}{{ user.username }}{% endif %}
-          </div>
-          <div style="font-size:11px;color:#64748b;">
-            {% if user.pt_profile %}{{ user.pt_profile.get_role_display }}{% if user.pt_profile.clinic_name %} · {{ user.pt_profile.clinic_name }}{% endif %}{% else %}{{ user.email }}{% endif %}
-          </div>
-        </div>
-        <a href="{% url 'vertical_pt:pt_logout' %}"
-           title="Sign out"
-           style="flex-shrink:0;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
-                  justify-content:center;color:#64748b;text-decoration:none;transition:background .15s,color .15s;"
-           onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='#f87171'"
-           onmouseout="this.style.background='transparent';this.style.color='#64748b'">
-          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
-          </svg>
-        </a>
-      </div>
-    </div>
-
-    <button class="pt-new-btn" onclick="showNewSession()">
-      <span style="font-size:16px;line-height:1">＋</span> New Session
-    </button>
-
-    <!-- 메뉴 -->
-    <div style="padding:0 10px;margin-bottom:4px;">
-      <button id="menu-alarms" onclick="showAlarms()"
-        style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;
-               border-radius:8px;border:none;background:transparent;color:#94a3b8;
-               font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:background .15s,color .15s;">
-        <span>🔔</span>
-        <span>Alarm 현황</span>
-        <span id="alarm-badge" style="margin-left:auto;background:#dc2626;color:#fff;
-              font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;display:none;">0</span>
-      </button>
-      <button id="menu-compliance" onclick="showCompliance()"
-        style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;
-               border-radius:8px;border:none;background:transparent;color:#94a3b8;
-               font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:background .15s,color .15s;">
-        <span>📋</span>
-        <span>Compliance</span>
-        <span id="compliance-badge" style="margin-left:auto;background:#f59e0b;color:#fff;
-              font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;display:none;">0</span>
-      </button>
-    </div>
-
-    <div class="pt-search-wrap">
-      <span class="pt-search-icon">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-        </svg>
-      </span>
-      <input class="pt-search" type="text" placeholder="환자 검색..." id="patient-search"
-             oninput="filterPatients(this.value)" />
-    </div>
-
-    <div class="app-sidebar__section-label" style="display:flex;align-items:center;justify-content:space-between;">
-      <span>Patients</span>
-      <span id="patient-count" style="font-size:10px;font-weight:700;padding:1px 6px;
-            border-radius:99px;background:rgba(255,255,255,.1);color:#94a3b8;"></span>
-    </div>
-    <nav class="app-sidebar__nav" id="patient-list" style="padding:0 6px;gap:0;">
-      <div style="padding:12px;font-size:12px;color:#64748b;">불러오는 중...</div>
+    <nav class="fc-nav">
+      <a href="#view-analysis"  id="menu-analysis"  class="fc-nav-item active">New Session</a>
+      <a href="#view-patients"  id="menu-patients"  class="fc-nav-item">Patients <span id="patient-count-badge" style="margin-left:auto;background:rgba(255,255,255,.15);font-size:10px;font-weight:700;padding:1px 7px;border-radius:99px;"></span></a>
+      <a href="#view-archive"   id="menu-archive"   class="fc-nav-item">Compliance</a>
+      <a href="#view-alarms"    id="menu-alarms"    class="fc-nav-item">Alarm 현황</a>
     </nav>
-
-    <!-- 임시 Dev Tools -->
-    <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:5px;">
-      <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.6px;text-transform:uppercase;padding:2px 0;">Dev Tools</div>
+    <!-- Dev Tools -->
+    <div style="padding:10px 12px; border-top:1px solid #334155; display:flex; flex-direction:column; gap:6px;">
+      <div style="font-size:9px; font-weight:700; color:rgba(255,255,255,.3); letter-spacing:.6px; text-transform:uppercase; padding:2px 2px 4px;">Dev Tools</div>
       <button id="reseed-btn" onclick="runReseed()"
-        style="width:100%;padding:7px;border:1px solid rgba(255,255,255,.25);border-radius:7px;
-               background:transparent;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;transition:background .15s;"
-        onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
+        style="width:100%; padding:7px 10px; border:1px solid rgba(255,255,255,.2); border-radius:7px;
+               background:transparent; color:rgba(255,255,255,.65); font-size:11px; cursor:pointer;
+               text-align:left; transition:background .15s;"
+        onmouseover="this.style.background='rgba(255,255,255,.08)'"
+        onmouseout="this.style.background='transparent'">
         🌱 Clear &amp; Reseed All
       </button>
       <button id="rescore-btn" onclick="runBackfill()"
-        style="width:100%;padding:7px;border:1px solid rgba(255,255,255,.25);border-radius:7px;
-               background:transparent;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;transition:background .15s;"
-        onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
+        style="width:100%; padding:7px 10px; border:1px solid rgba(255,255,255,.2); border-radius:7px;
+               background:transparent; color:rgba(255,255,255,.65); font-size:11px; cursor:pointer;
+               text-align:left; transition:background .15s;"
+        onmouseover="this.style.background='rgba(255,255,255,.08)'"
+        onmouseout="this.style.background='transparent'">
         🔄 Re-score All
       </button>
     </div>
 
-    <div class="app-sidebar__footer">
-      <a href="{% url 'vertical_pt:pt_logout' %}" class="app-sidebar__footer-link">Sign out</a>
+    <div style="padding:14px 20px; border-top:1px solid #334155; font-size:13px; color:#64748b;">
+      {% if user.is_authenticated %}
+      <span style="color:#fff; display:block; margin-bottom:8px;">User: {{ user.username }}</span>
+      <a href="#" onclick="document.getElementById('logout-form').submit();" style="color:#f87171; text-decoration:none; font-weight:600;">Sign Out Panel</a>
+      <form method="post" action="{% url 'accounts:logout' %}" id="logout-form" style="display:none;">{% csrf_token %}</form>
+      {% endif %}
     </div>
   </aside>
 
-  <!-- 메인 영역 -->
-  <main class="app-main">
-    <div class="pt-main">
+  <main class="fc-main">
+    <header class="fc-top-bar">
+      <button class="fc-hamburger" id="fc-hamburger-btn" onclick="toggleSidebar()" aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+          <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+        </svg>
+      </button>
+      <div style="font-weight:700; color:#334155; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Clinical Engine Diagnostics Workspace</div>
+      <div style="font-size:12px; font-weight:700; color:#0f766e; background:#ccfbf1; padding:4px 10px; border-radius:99px; flex-shrink:0;">Active Protocol</div>
+    </header>
 
-      <!-- 뷰 1: 새 세션 (기본) -->
-      <div id="view-new">
-        <div class="pt-panels">
+    <div class="fc-container">
+      <section id="pane-analysis" class="view-pane active">
+        <div class="fc-card">
+          <h3 style="margin-top:0; margin-bottom:20px; font-size:16px; color:#1e293b;">Run Advanced Clinical Narrative Diagnostic</h3>
+          <form method="post" action="{% url 'vertical_pt:pt_analyze' %}" id="analysis-form">
+  {% csrf_token %}
+  <div style="margin-bottom:20px;">
+              <label style="display:block; font-size:12px; font-weight:700; margin-bottom:6px; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">Patient Tracking ID</label>
+              <input type="text" name="patient_id" class="input-control" placeholder="Ex: Anon-PT-2026-X" required>
+            </div>
 
-          <!-- 입력 패널 -->
-          <div class="pt-card">
-            <div class="pt-card-header">🩺 SOAP Note 입력</div>
-            <div class="pt-card-body">
-              <div class="pt-row">
-                <div>
-                  <label class="pt-label">Patient Name</label>
-                  <input class="pt-input" id="inp-name" placeholder="e.g. 홍길동" />
-                </div>
-                <div>
-                  <label class="pt-label">Patient ID</label>
-                  <div style="display:flex;gap:6px;">
-                    <input class="pt-input" id="inp-id" placeholder="e.g. PT-260518-001"
-                           style="flex:1;" oninput="this.value=this.value.toUpperCase()" />
-                    <button type="button" onclick="generatePatientId()"
-                            style="padding:0 10px;border:1px solid #d1d5db;border-radius:7px;
-                                   background:#f8fafc;font-size:11px;font-weight:600;
-                                   color:#374151;cursor:pointer;white-space:nowrap;flex-shrink:0;"
-                            title="날짜 기반 ID 자동 생성">
-                      ⚡ Generate
-                    </button>
-                  </div>
-                </div>
+            <label style="display:block; font-size:12px; font-weight:700; margin-bottom:8px; color:#475569; text-transform:uppercase; letter-spacing:0.5px;">EMR SOAP Text Structure Elements</label>
+            <div class="soap-tabs-grid">
+              <button type="button" class="soap-tab-btn active" data-target="soap-s"><span>Subjective</span><small>S-Block Field</small><i></i></button>
+              <button type="button" class="soap-tab-btn" data-target="soap-o"><span>Objective</span><small>O-Block Field</small><i></i></button>
+              <button type="button" class="soap-tab-btn" data-target="soap-a"><span>Assessment</span><small>A-Block Field</small><i></i></button>
+              <button type="button" class="soap-tab-btn" data-target="soap-p"><span>Plan</span><small>P-Block Field</small><i></i></button>
+            </div>
+
+            <textarea id="soap-s" class="input-control textarea-control active" placeholder="S: Patient reports deep, localizing unremitting physical ache..."></textarea>
+            <textarea id="soap-o" class="input-control textarea-control" placeholder="O: Assessment measures, structural reflexes, palpatory findings..."></textarea>
+            <textarea id="soap-a" class="input-control textarea-control" placeholder="A: Evaluative summary, structural differential risk matrices..."></textarea>
+            <textarea id="soap-p" class="input-control textarea-control" placeholder="P: Therapeutic execution vector, clinical validation milestones..."></textarea>
+            
+            <input type="hidden" name="soap_text" id="final-soap-payload">
+
+            <div style="margin-top:24px; text-align:right;">
+              <button type="submit" class="btn-action">Execute Red Flag Analysis Protocol</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <section id="pane-patients" class="view-pane">
+        <!-- Mobile Panel Navigation (visible on mobile only) -->
+        <div class="pt-mobile-tabs" id="pt-mobile-tabs">
+          <button class="pt-mobile-tab active" data-panel="patients" onclick="switchMobilePanel('patients')">Patients</button>
+          <button class="pt-mobile-tab" data-panel="sessions" onclick="switchMobilePanel('sessions')">Sessions</button>
+          <button class="pt-mobile-tab" data-panel="detail" onclick="switchMobilePanel('detail')">Detail</button>
+        </div>
+
+        <div class="pt-3panel">
+
+          <!-- Panel 1: Patient List -->
+          <div class="pt-panel mobile-active" id="pt-panel-patients" style="width:260px; flex-shrink:0;">
+            <div class="pt-panel-hd">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.5px;">Patients</span>
+                <span id="patient-count" style="font-size:11px; font-weight:700; color:#64748b; background:#f1f5f9; padding:1px 7px; border-radius:99px;"></span>
               </div>
-              <div style="margin-bottom:12px">
-                <label class="pt-label">Session Date</label>
-                <input class="pt-input" id="inp-date" type="date" />
+              <div style="position:relative;">
+                <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#94a3b8;pointer-events:none;" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="patient-search" type="text" placeholder="환자 검색..."
+                  oninput="filterPatients(this.value)"
+                  style="width:100%; padding:8px 10px 8px 30px; border:1px solid #e2e8f0; border-radius:7px; background:#f8fafc; font-size:12px; outline:none; color:#1a1d21;">
               </div>
-              <div>
-                <label class="pt-label">SOAP Note</label>
-                <div class="soap-tab-bar" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-                  <button class="soap-tab-btn active" id="stab-S" onclick="switchSoapTab('S')">S — Subjective</button>
-                  <button class="soap-tab-btn" id="stab-O" onclick="switchSoapTab('O')">O — Objective</button>
-                  <button class="soap-tab-btn" id="stab-A" onclick="switchSoapTab('A')">A — Assessment</button>
-                  <button class="soap-tab-btn" id="stab-P" onclick="switchSoapTab('P')">P — Plan</button>
-                  <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
-                    <span id="rec-status" style="display:none;font-size:11px;color:#e53e3e;font-weight:600;animation:blink 1s step-end infinite">● REC</span>
-                    <button id="mic-btn" onclick="toggleRecording()"
-                      style="background:#2d3748;border:1px solid #4a5568;color:#e2e8f0;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap"
-                      title="Record session audio — auto-fills S and O">
-                      🎙 Record
-                    </button>
-                  </div>
-                </div>
-                <div id="scribe-status" style="display:none;font-size:11px;color:#90cdf4;margin:4px 0 2px;text-align:right"></div>
-                <div id="soap-pane-S">
-                  <textarea class="pt-textarea" id="inp-S" rows="6"
-                    placeholder="Patient-reported symptoms, pain level, onset, prior history..."></textarea>
-                  <span class="rf-chip-label">⚑ Red Flag Quick-Check — S (click to confirm)</span>
-                  <div class="rf-chip-row" id="chips-S"></div>
-                </div>
-                <div id="soap-pane-O" style="display:none">
-                  <textarea class="pt-textarea" id="inp-O" rows="6"
-                    placeholder="ROM, MMT, neurological screen, special tests, vitals..."></textarea>
-                  <span class="rf-chip-label">⚑ Red Flag Quick-Check — O (click to confirm)</span>
-                  <div class="rf-chip-row" id="chips-O"></div>
-                </div>
-                <div id="soap-pane-A" style="display:none">
-                  <textarea class="pt-textarea" id="inp-A" rows="5"
-                    placeholder="Clinical impression, working diagnosis, interpretation..."></textarea>
-                </div>
-                <div id="soap-pane-P" style="display:none">
-                  <textarea class="pt-textarea" id="inp-P" rows="5"
-                    placeholder="Treatment plan, short/long-term goals, HEP, referral plan..."></textarea>
-                </div>
-              </div>
-              <button class="pt-analyze-btn" id="analyze-btn" onclick="analyzeAndSave()">
-                🚨 Analyze Red Flags &amp; Save
-              </button>
+            </div>
+            <div id="patient-list" class="pt-panel-bd">
+              <div style="padding:24px; text-align:center; font-size:12px; color:#94a3b8;">불러오는 중...</div>
             </div>
           </div>
 
-          <!-- 결과 패널 -->
-          <div class="pt-card" id="result-panel">
-            <div class="pt-card-header">📊 분석 결과</div>
-            <div class="pt-card-body">
-              <div class="pt-empty" id="result-empty">
-                <div class="pt-empty-icon">🔍</div>
-                <div class="pt-empty-text">SOAP note를 입력하고<br>분석을 실행하세요</div>
+          <!-- Panel 2: Session List -->
+          <div class="pt-panel" id="pt-panel-sessions" style="width:220px; flex-shrink:0;">
+            <div class="pt-panel-hd">
+              <div id="selected-patient-name" style="font-size:13px; font-weight:700; color:#1e293b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">환자를 선택하세요</div>
+              <div id="selected-patient-id" style="font-size:11px; color:#94a3b8; margin-top:2px;"></div>
+            </div>
+            <div id="session-list-items" class="pt-panel-bd">
+              <div style="padding:32px 12px; text-align:center; font-size:12px; color:#94a3b8;">← 환자 선택</div>
+            </div>
+          </div>
+
+          <!-- Panel 3: Session Detail -->
+          <div class="pt-panel" id="pt-panel-detail" style="flex:1;">
+            <div id="session-detail-panel" class="pt-panel-bd" style="padding:0;">
+              <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#94a3b8;">
+                <div style="font-size:32px; margin-bottom:10px;">📋</div>
+                <div style="font-size:13px;">세션을 선택하세요</div>
               </div>
-              <div id="result-content" style="display:none"></div>
             </div>
           </div>
 
         </div>
-      </div>
+      </section>
 
-      <!-- 뷰 2: 환자 히스토리 -->
-      <div id="view-history" style="display:none">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
-          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;flex-shrink:0;">← Back</button>
-          <div class="pt-history-title" id="history-title">Patient History</div>
-          <button onclick="addSessionForPatient()" style="margin-left:auto;padding:7px 16px;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">+ New Session</button>
-        </div>
-        <div class="pt-history-layout">
-          <!-- 좌: 세션 목록 -->
-          <div class="pt-session-list" id="session-list-panel">
-            <div class="pt-session-list-header">Sessions</div>
-            <div id="session-list-items"></div>
-          </div>
-          <!-- 우: 상세 패널 -->
-          <div class="pt-detail-panel" id="detail-panel">
-            <div class="pt-detail-empty">
-              <div style="font-size:36px;margin-bottom:12px;">📋</div>
-              <div style="font-size:14px;">세션을 선택하세요</div>
-            </div>
+      <section id="pane-archive" class="view-pane">
+        <div class="fc-card">
+          <h3 style="margin-top:0; margin-bottom:20px; font-size:16px; color:#1e293b;">Defensible Compliance Log Archive</h3>
+          <div class="table-responsive">
+          <table class="case-table">
+            <thead>
+              <tr><th>Patient ID</th><th>State</th><th>SOC Date</th><th>Compliance Due Date</th><th>Days Remaining</th><th>Compliance Status</th><th>Physician Notified</th><th>POC Sent</th></tr>
+            </thead>
+            <tbody id="compliance-rows">
+              <tr><td colspan="8" style="text-align:center; padding:30px; color:#64748b;">Processing clinical ledger data stream...</td></tr>
+            </tbody>
+          </table>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- 뷰 3: Alarm 현황 -->
-      <div id="view-alarms" style="display:none">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;">← Back</button>
-          <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0;">🔔 Alarm 현황</h2>
-        </div>
-
-        <!-- 요약 카드 -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;" id="alarm-summary-cards"></div>
-
-        <!-- 필터 탭 -->
-        <div style="display:flex;gap:8px;margin-bottom:16px;">
-          <button onclick="filterAlarmView('ALL')" id="tab-ALL"
-            style="padding:6px 16px;border-radius:7px;border:1px solid #6366f1;background:#6366f1;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">전체</button>
-          <button onclick="filterAlarmView('RED')" id="tab-RED"
-            style="padding:6px 16px;border-radius:7px;border:1px solid #d1d5db;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">🚨 RED</button>
-          <button onclick="filterAlarmView('YELLOW')" id="tab-YELLOW"
-            style="padding:6px 16px;border-radius:7px;border:1px solid #d1d5db;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">⚠️ YELLOW</button>
-        </div>
-
-        <!-- 알람 목록 -->
-        <div id="alarm-list"></div>
-      </div>
-
-      <!-- 뷰 3: Compliance Dashboard -->
-      <div id="view-compliance" style="display:none">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;">← Back</button>
-          <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0;">📋 Compliance Dashboard</h2>
-          <span id="compliance-last-updated" style="font-size:11px;color:#94a3b8;margin-left:auto;"></span>
-          <button onclick="loadComplianceData()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:12px;cursor:pointer;">↻ 새로고침</button>
-        </div>
-
-        <!-- KPI 카드 -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;" id="compliance-kpi-row">
-          <div class="compliance-kpi urgent" id="kpi-urgent">
-            <div class="compliance-kpi-num">—</div>
-            <div class="compliance-kpi-label">기한 임박 (D-3)</div>
-          </div>
-          <div class="compliance-kpi danger" id="kpi-overdue">
-            <div class="compliance-kpi-num">—</div>
-            <div class="compliance-kpi-label">기한 초과</div>
-          </div>
-          <div class="compliance-kpi warn" id="kpi-open-alerts">
-            <div class="compliance-kpi-num">—</div>
-            <div class="compliance-kpi-label">미완료 Red Flag</div>
-          </div>
-          <div class="compliance-kpi score" id="kpi-exposure">
-            <div class="compliance-kpi-num">—</div>
-            <div class="compliance-kpi-label">Liability Score</div>
+      <section id="pane-alarms" class="view-pane">
+        <div class="fc-card">
+          <h3 style="margin-top:0; margin-bottom:16px; font-size:16px; color:#1e293b; display:flex; align-items:center; gap:12px;">
+            Alarm 현황
+            <span id="alarm-counts" style="font-size:13px; font-weight:400; color:#64748b;"></span>
+          </h3>
+          <div style="overflow-x:auto;">
+            <table class="case-table">
+              <thead>
+                <tr>
+                  <th>Patient ID</th>
+                  <th>Patient Name</th>
+                  <th>Session Date</th>
+                  <th>Alarm Level</th>
+                  <th>Condition</th>
+                  <th>Risk Score</th>
+                  <th>Matched Indicators</th>
+                  <th>Referral Sent</th>
+                  <th>Follow-up</th>
+                </tr>
+              </thead>
+              <tbody id="alarm-rows">
+                <tr><td colspan="9" style="text-align:center; padding:30px; color:#64748b;">Loading alarm records...</td></tr>
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <!-- Section 탭 -->
-        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;" id="compliance-tabs">
-          <button onclick="showComplianceSection('direct_access')" class="ctab ctab-active" id="ctab-direct_access">Direct Access</button>
-          <button onclick="showComplianceSection('insurance')" class="ctab" id="ctab-insurance">Insurance Billing</button>
-          <button onclick="showComplianceSection('red_flags')" class="ctab" id="ctab-red_flags">Red Flags</button>
-          <button onclick="showComplianceSection('documents')" class="ctab" id="ctab-documents">Documents</button>
-          <button onclick="showComplianceSection('exposure')" class="ctab" id="ctab-exposure">Exposure Summary</button>
-        </div>
-
-        <!-- Section 콘텐츠 -->
-        <div id="compliance-section-content">
-          <div style="color:#94a3b8;font-size:13px;padding:32px;text-align:center;">불러오는 중...</div>
-        </div>
-      </div>
-
+      </section>
     </div>
   </main>
 </div>
 
-<!-- ── 슬라이드 패널 (알람 세션 상세) ── -->
-<div class="slide-overlay" id="slide-overlay" onclick="closeSlidePanel()"></div>
-<div class="slide-panel" id="slide-panel">
-  <div class="slide-panel-header">
-    <button onclick="closeSlidePanel()"
-      style="width:32px;height:32px;border:none;background:#f1f5f9;border-radius:8px;
-             font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
-    <div id="slide-panel-title" style="font-size:15px;font-weight:700;color:#1e293b;flex:1;min-width:0;
-         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-    <div id="slide-panel-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;flex-shrink:0;"></div>
-  </div>
-  <div class="slide-panel-body" id="slide-panel-body"></div>
-</div>
-
-<!-- ── 문서 생성 모달 ── -->
-{% if user.is_authenticated %}
-<div class="doc-modal-overlay" id="doc-modal-overlay">
-  <div class="doc-modal">
-    <div class="doc-modal-header">
-      <div class="doc-modal-title" id="doc-modal-title">Document</div>
-      <div class="doc-modal-actions">
-        <button class="pt-letter-btn" onclick="printDocModal()">🖨️ Print</button>
-        <button class="pt-letter-btn" id="doc-modal-edit-btn" onclick="toggleDocEdit(this)" style="display:none;">✏ 수정</button>
-        {% if FEATURES.email_send %}<button class="pt-letter-btn" id="doc-modal-send-btn" onclick="openEmailModal()" style="display:none;">✉ Send</button>{% endif %}
-        <button class="pt-letter-btn pt-letter-btn-primary" id="doc-modal-copy-btn"
-                onclick="copyDocModal(this)">📋 Copy</button>
-        <button class="pt-letter-btn" onclick="closeDocModal()">✕</button>
+<!-- SOAP Edit Modal -->
+<div class="soap-modal-overlay" id="soap-edit-overlay" onclick="if(event.target===this)closeSoapEditModal()">
+  <div class="soap-modal">
+    <div class="soap-modal-hd">
+      <div>
+        <div style="font-size:14px; font-weight:700; color:#1e293b;">Edit SOAP Note</div>
+        <div id="soap-edit-subtitle" style="font-size:11px; color:#94a3b8; margin-top:2px;"></div>
       </div>
+      <button class="modal-close-btn" onclick="closeSoapEditModal()"
+        style="width:28px; height:28px; border:none; background:#f1f5f9; border-radius:6px; cursor:pointer; font-size:16px; color:#64748b; display:flex; align-items:center; justify-content:center;">
+        ×
+      </button>
     </div>
-    <div class="doc-modal-body" id="doc-modal-body"></div>
-  </div>
-</div>
-
-{% if FEATURES.email_send %}
-<!-- ── Email 발송 모달 ──────────────────────────────────────────────── -->
-<div class="email-modal-overlay" id="email-modal-overlay" onclick="if(event.target===this)closeEmailModal()">
-  <div class="email-modal">
-    <div class="email-modal-header">
-      <span class="email-modal-title">Send Document</span>
-      <button class="pt-letter-btn" onclick="closeEmailModal()">✕</button>
+    <div class="soap-modal-bd">
+      <textarea id="soap-edit-textarea"
+        style="flex:1; width:100%; min-height:360px; font-family:'Courier New',monospace; font-size:13px; line-height:1.7; color:#1e293b; border:1px solid #cbd5e1; border-radius:8px; padding:14px; resize:vertical; outline:none;"></textarea>
     </div>
-    <div class="email-modal-body">
-      <!-- 저장된 수신자 -->
-      <div class="email-section-label">수신자</div>
-      <div id="email-contact-list"></div>
-
-      <!-- 수신자 추가 폼 -->
-      <div id="email-add-form" style="margin-top:12px;">
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <select id="email-add-role" class="pt-input" style="width:140px;">
-            <option value="physician">Physician</option>
-            <option value="lawyer">Lawyer</option>
-            <option value="insurance">Insurance</option>
-            <option value="other">Other</option>
-          </select>
-          <input id="email-add-name"  class="pt-input" style="flex:1;min-width:120px;" placeholder="Name">
-          <input id="email-add-email" class="pt-input" style="flex:1;min-width:160px;" placeholder="Email address" type="email">
-          <input id="email-add-org"   class="pt-input" style="flex:1;min-width:120px;" placeholder="Organization (optional)">
-          <button class="pt-btn pt-btn-sm" onclick="addEmailContact()">+ Add</button>
-        </div>
-      </div>
-    </div>
-    <div class="email-modal-footer">
-      <span id="email-send-status" style="font-size:12px;color:#6b7280;flex:1;"></span>
-      <button class="pt-letter-btn" onclick="closeEmailModal()">취소</button>
-      <button class="pt-letter-btn pt-letter-btn-primary" id="email-send-btn" onclick="sendDocumentEmail()">✉ 발송</button>
+    <div class="soap-modal-ft">
+      <button onclick="closeSoapEditModal()"
+        style="padding:9px 20px; border:1px solid #e2e8f0; border-radius:8px; background:#fff; color:#64748b; font-size:13px; font-weight:600; cursor:pointer;">
+        Cancel
+      </button>
+      <button id="soap-edit-save-btn" onclick="saveSoapEdit()"
+        style="padding:9px 20px; border:none; border-radius:8px; background:#0f766e; color:#fff; font-size:13px; font-weight:700; cursor:pointer;">
+        Save
+      </button>
     </div>
   </div>
 </div>
-{% endif %}
-{% endif %}
 
-{% endif %}
-
-<!-- ── Pilot Feedback 챗봇 ───────────────────────────────────────────── -->
-<button id="feedback-btn" onclick="toggleFeedback()" aria-label="피드백">
-  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="white"/>
-  </svg>
-</button>
-
-<div id="feedback-panel">
-  <div id="feedback-panel-header">
-    <div id="fp-avatar">SP</div>
-    <div id="fp-header-text">
-      <div id="fp-label">feedback bot</div>
-      <div id="fp-name">Sage Pontus</div>
-    </div>
-    <button id="fp-close" onclick="toggleFeedback()">✕</button>
-  </div>
-
-  <div id="feedback-messages"></div>
-
-  <div id="feedback-quick-replies"></div>
-
-  <div id="feedback-input-row">
-    <textarea id="feedback-text" placeholder="여기에 입력하세요." rows="1"
-              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitFeedback();}"></textarea>
-    <button id="feedback-send-btn" onclick="submitFeedback()">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-        <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-  </div>
-</div>
-
-<!-- ── Compliance Dashboard CSS ─────────────────────────────────────── -->
-<style>
-/* KPI 카드 */
-.compliance-kpi {
-  padding: 16px 18px; border-radius: 10px; border: 1px solid #e2e8f0;
-  background: #fff;
-}
-.compliance-kpi-num { font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1; }
-.compliance-kpi-label { font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 500; }
-.compliance-kpi.urgent { border-color: #fbbf24; background: #fffbeb; }
-.compliance-kpi.urgent .compliance-kpi-num { color: #d97706; }
-.compliance-kpi.danger { border-color: #fca5a5; background: #fff5f5; }
-.compliance-kpi.danger .compliance-kpi-num { color: #dc2626; }
-.compliance-kpi.warn { border-color: #fcd34d; background: #fefce8; }
-.compliance-kpi.warn .compliance-kpi-num { color: #b45309; }
-.compliance-kpi.score { border-color: #c4b5fd; background: #f5f3ff; }
-.compliance-kpi.score .compliance-kpi-num { color: #7c3aed; }
-
-/* Section 탭 */
-.ctab {
-  padding: 6px 16px; border-radius: 7px; border: 1px solid #d1d5db;
-  background: #fff; color: #374151; font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: all .15s;
-}
-.ctab.ctab-active { background: #6366f1; border-color: #6366f1; color: #fff; }
-.ctab:hover:not(.ctab-active) { background: #f1f5f9; }
-
-/* 테이블 */
-.ctable { width: 100%; border-collapse: collapse; font-size: 13px; }
-.ctable th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 700;
-             color: #64748b; text-transform: uppercase; letter-spacing: .4px;
-             border-bottom: 1px solid #e2e8f0; }
-.ctable td { padding: 10px 10px; border-bottom: 1px solid #f1f5f9; color: #374151; vertical-align: middle; }
-.ctable tr:hover td { background: #f8fafc; }
-
-/* 상태 뱃지 */
-.cbadge {
-  display: inline-block; padding: 2px 8px; border-radius: 99px;
-  font-size: 11px; font-weight: 700; white-space: nowrap;
-}
-.cbadge.ok      { background: #dcfce7; color: #166534; }
-.cbadge.urgent  { background: #fef3c7; color: #92400e; }
-.cbadge.overdue { background: #fee2e2; color: #991b1b; }
-.cbadge.done    { background: #f0fdf4; color: #15803d; }
-.cbadge.na      { background: #f1f5f9; color: #94a3b8; }
-.cbadge.pending { background: #fef9c3; color: #854d0e; }
-
-/* 섹션 헤더 */
-.csection-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 12px;
-}
-.csection-title { font-size: 15px; font-weight: 700; color: #1e293b; }
-.csection-sub   { font-size: 12px; color: #64748b; }
-
-/* Exposure 게이지 */
-.exposure-bar { height: 8px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
-.exposure-fill { height: 100%; border-radius: 99px; transition: width .5s; }
-
-/* 인라인 버튼 */
-.caction { padding: 3px 10px; border: 1px solid #d1d5db; border-radius: 6px;
-           background: #fff; font-size: 11px; cursor: pointer; color: #374151;
-           transition: background .15s; }
-.caction:hover { background: #f1f5f9; }
-.caction.primary { background: #6366f1; border-color: #6366f1; color: #fff; }
-.caction.primary:hover { background: #4f46e5; }
-</style>
-
-<!-- ── Compliance Dashboard JS ─────────────────────────────────────── -->
 <script>
-(function() {
-  let _complianceData = null;
-  let _activeSection  = 'direct_access';
-
-  window.showCompliance = function() {
-    document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none');
-    document.getElementById('view-compliance').style.display = 'block';
-    _setMenuActive('menu-compliance');
-    loadComplianceData();
+  const URLS = {
+    compliance: "{% url 'vertical_pt:pt_compliance' %}",
+    alarms:     "{% url 'vertical_pt:pt_alarms' %}",
+    patients:   "{% url 'vertical_pt:pt_patients' %}"
   };
+  let _allPatients = [];
+  let _docOriginals = {};
+  let _pendingDocChoices = {};
 
-  window.loadComplianceData = async function() {
-    const content = document.getElementById('compliance-section-content');
-    content.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:32px;text-align:center;">불러오는 중...</div>';
-    try {
-      const res  = await fetch(URLS.compliance, {headers: {'X-CSRFToken': CSRF}});
-      const data = await res.json();
-      _complianceData = data;
-      _renderKPIs(data);
-      _renderSection(_activeSection);
-      const badge = document.getElementById('compliance-badge');
-      const total = (data.urgent_count || 0) + (data.overdue_count || 0);
-      if (total > 0) { badge.textContent = total; badge.style.display = 'inline'; }
-      else badge.style.display = 'none';
-      document.getElementById('compliance-last-updated').textContent =
-        '업데이트: ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
-    } catch(e) {
-      content.innerHTML = '<div style="color:#dc2626;padding:24px;">데이터 로드 실패: ' + e.message + '</div>';
+  (function() {
+    const tabBtns = document.querySelectorAll('.soap-tab-btn');
+    const textareas = document.querySelectorAll('.textarea-control');
+    const form = document.getElementById('analysis-form');
+
+    tabBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        tabBtns.forEach(b => b.classList.remove('active'));
+        textareas.forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.target).classList.add('active');
+      });
+    });
+
+    textareas.forEach(ta => {
+      ta.addEventListener('input', () => {
+        const correspondingBtn = document.querySelector(`[data-target="${ta.id}"]`);
+        if(ta.value.trim().length > 0) { correspondingBtn.classList.add('has-text'); }
+        else { correspondingBtn.classList.remove('has-text'); }
+      });
+    });
+
+    form.addEventListener('submit', (e) => {
+      const s = document.getElementById('soap-s').value;
+      const o = document.getElementById('soap-o').value;
+      const a = document.getElementById('soap-a').value;
+      const p = document.getElementById('soap-p').value;
+      document.getElementById('final-soap-payload').value = `Subjective:\n${s}\n\nObjective:\n${o}\n\nAssessment:\n${a}\n\nPlan:\n${p}`;
+    });
+
+    function changeWorkspaceView(targetHash) {
+      document.querySelectorAll('.view-pane').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.fc-nav-item').forEach(n => n.classList.remove('active'));
+
+      if (targetHash === '#view-patients') {
+        document.getElementById('pane-patients').classList.add('active');
+        document.getElementById('menu-patients').classList.add('active');
+        loadPatients();
+      } else if (targetHash === '#view-archive') {
+        document.getElementById('pane-archive').classList.add('active');
+        document.getElementById('menu-archive').classList.add('active');
+        fetchComplianceLedger();
+      } else if (targetHash === '#view-alarms') {
+        document.getElementById('pane-alarms').classList.add('active');
+        document.getElementById('menu-alarms').classList.add('active');
+        fetchAlarmLedger();
+      } else {
+        document.getElementById('pane-analysis').classList.add('active');
+        document.getElementById('menu-analysis').classList.add('active');
+      }
     }
-  };
 
-  window.showComplianceSection = function(section) {
-    _activeSection = section;
-    document.querySelectorAll('.ctab').forEach(b => b.classList.remove('ctab-active'));
-    const tab = document.getElementById('ctab-' + section);
-    if (tab) tab.classList.add('ctab-active');
-    if (_complianceData) _renderSection(section);
-  };
+    document.querySelectorAll('.fc-nav-item').forEach(link => {
+      link.addEventListener('click', function(e) {
+        const target = this.getAttribute('href');
+        if(target.startsWith('#')) { e.preventDefault(); closeSidebar(); changeWorkspaceView(target); }
+      });
+    });
 
-  function _renderKPIs(data) {
-    _kpi('kpi-urgent',      data.urgent_count  || 0, 'urgent');
-    _kpi('kpi-overdue',     data.overdue_count || 0, 'danger');
-    _kpi('kpi-open-alerts', (data.sections.red_flags || {}).open_alerts || 0, 'warn');
-    const score = ((data.sections.exposure || {}).liability_score || 0);
-    document.getElementById('kpi-exposure').querySelector('.compliance-kpi-num').textContent = score;
-    const kpiEl = document.getElementById('kpi-exposure');
-    kpiEl.querySelector('.compliance-kpi-num').style.color =
-      score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#16a34a';
+    function _daysLabel(n) {
+      if (n == null) return '—';
+      if (n < 0)   return `<span style="color:#dc2626;font-weight:700;">D+${Math.abs(n)} overdue</span>`;
+      if (n === 0) return `<span style="color:#dc2626;font-weight:700;">Due today</span>`;
+      if (n <= 3)  return `<span style="color:#d97706;font-weight:700;">D-${n}</span>`;
+      return `D-${n}`;
+    }
+
+    function _statusBadge(status) {
+      const map = {
+        ok:      { cls: 'badge-flag NONE',   label: 'OK' },
+        urgent:  { cls: 'badge-flag YELLOW', label: 'D-3 Upcoming' },
+        overdue: { cls: 'badge-flag RED',    label: 'Overdue' },
+        done:    { cls: 'badge-flag NONE',   label: 'Done' },
+        'n/a':   { cls: 'badge-flag',        label: 'N/A' },
+        pending: { cls: 'badge-flag YELLOW', label: 'Pending' },
+      };
+      const m = map[status] || { cls: 'badge-flag', label: status || '—' };
+      return `<span class="${m.cls}" style="padding:3px 8px;border-radius:5px;font-size:11px;font-weight:700;">${m.label}</span>`;
+    }
+
+    async function fetchComplianceLedger() {
+      const container = document.getElementById('compliance-rows');
+      try {
+        const response = await fetch(URLS.compliance, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const json = await response.json();
+        const rows = (json.sections && json.sections.direct_access && json.sections.direct_access.all) || [];
+        if (rows.length === 0) {
+          container.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#64748b; padding:24px;">No logs recorded in this clinic system module.</td></tr>`;
+          return;
+        }
+        container.innerHTML = rows.map(r => `
+          <tr>
+            <td style="font-weight:700; color:#1e293b;"><code style="font-size:12px;">${r.patient_id}</code></td>
+            <td>${r.state || '—'}</td>
+            <td style="color:#64748b; font-size:13px;">${r.treatment_start_date || '—'}</td>
+            <td style="color:#64748b; font-size:13px;">${r.da_deadline_date || 'Unlimited'}</td>
+            <td>${_daysLabel(r.da_days_left)}</td>
+            <td>${_statusBadge(r.status)}</td>
+            <td>${r.physician_notified_at
+              ? `<span style="color:#16a34a;">✓ ${r.physician_notified_at}</span>`
+              : `<span style="color:#94a3b8;">Not yet</span>`}</td>
+            <td>${r.plan_of_care_sent_at
+              ? `<span style="color:#16a34a;">✓ ${r.plan_of_care_sent_at}</span>`
+              : `<span style="color:#94a3b8;">Not sent</span>`}</td>
+          </tr>
+        `).join('');
+      } catch (err) {
+        container.innerHTML = `<tr><td colspan="8" style="text-align:center; color:#ef4444; padding:24px;">Failed to trace ledger records endpoint securely.</td></tr>`;
+      }
+    }
+
+    async function fetchAlarmLedger() {
+      const container = document.getElementById('alarm-rows');
+      const countsEl  = document.getElementById('alarm-counts');
+      try {
+        const response = await fetch(URLS.alarms, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const json = await response.json();
+        const rows = [...(json.red || []), ...(json.yellow || [])];
+        const counts = json.counts || {};
+        if (countsEl) countsEl.textContent = `🔴 ${counts.red || 0} RED  ·  🟡 ${counts.yellow || 0} YELLOW`;
+        if (rows.length === 0) {
+          container.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#64748b; padding:24px;">No active alarms recorded.</td></tr>`;
+          return;
+        }
+        container.innerHTML = rows.map(r => {
+          const indicators = Array.isArray(r.matched_indicators)
+            ? r.matched_indicators.join(', ')
+            : (r.matched_indicators || '—');
+          const score = r.critical_score != null ? `${Math.round(r.critical_score)}%` : '—';
+          const levelBadge = r.alarm_level === 'RED'
+            ? `<span class="badge-flag RED" style="padding:3px 8px;border-radius:5px;font-size:11px;font-weight:700;">🔴 RED</span>`
+            : `<span class="badge-flag YELLOW" style="padding:3px 8px;border-radius:5px;font-size:11px;font-weight:700;">🟡 YELLOW</span>`;
+          return `
+            <tr>
+              <td><code style="font-size:12px;">${r.patient_id || '—'}</code></td>
+              <td>${r.patient_name || '—'}</td>
+              <td style="color:#64748b;font-size:13px;">${r.session_date || '—'}</td>
+              <td>${levelBadge}</td>
+              <td style="font-size:13px;">${r.triggered_condition || '—'}</td>
+              <td style="font-weight:700;">${score}</td>
+              <td style="font-size:12px;color:#64748b;max-width:200px;white-space:normal;">${indicators}</td>
+              <td>${r.referral_sent_at
+                ? `<span style="color:#16a34a;">✓ ${r.referral_sent_at}</span>`
+                : `<span style="color:#94a3b8;">Not sent</span>`}</td>
+              <td>${r.referral_followup_checked
+                ? `<span style="color:#16a34a;">✓ Checked</span>`
+                : `<span style="color:#94a3b8;">Pending</span>`}</td>
+            </tr>`;
+        }).join('');
+      } catch (err) {
+        container.innerHTML = `<tr><td colspan="9" style="text-align:center; color:#ef4444; padding:24px;">Failed to load alarm records.</td></tr>`;
+      }
+    }
+
+  })();
+
+  let _currentPatientId = null;
+  let _sessions = [];
+
+  function _esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
-  function _kpi(id, val, cls) {
-    const el = document.getElementById(id);
-    el.querySelector('.compliance-kpi-num').textContent = val;
+  async function loadPatients() {
+    const listEl = document.getElementById('patient-list');
+    try {
+      const r = await fetch(URLS.patients, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+      const d = await r.json();
+      _allPatients = d.patients || [];
+      renderPatientList(_allPatients);
+    } catch(e) {
+      listEl.innerHTML = `<div style="padding:24px; text-align:center; color:#ef4444; font-size:13px;">불러오기 실패</div>`;
+    }
   }
 
-  function _badge(status) {
-    const map = {ok:'ok', urgent:'urgent', overdue:'overdue', done:'done', 'n/a':'na', pending:'pending'};
-    const cls = map[status] || 'na';
-    const label = {ok:'OK', urgent:'D-3 임박', overdue:'기한초과', done:'완료', 'n/a':'해당없음', pending:'미제출'}[status] || status;
-    return `<span class="cbadge ${cls}">${label}</span>`;
-  }
+  function renderPatientList(patients) {
+    const listEl  = document.getElementById('patient-list');
+    const countEl = document.getElementById('patient-count');
+    const badgeEl = document.getElementById('patient-count-badge');
+    if (countEl) countEl.textContent = patients.length;
+    if (badgeEl) badgeEl.textContent = patients.length || '';
 
-  function _daysLabel(n) {
-    if (n == null) return '—';
-    if (n < 0)  return `<span style="color:#dc2626;font-weight:700">D+${Math.abs(n)} 초과</span>`;
-    if (n === 0) return `<span style="color:#dc2626;font-weight:700">오늘 마감</span>`;
-    if (n <= 3)  return `<span style="color:#d97706;font-weight:700">D-${n}</span>`;
-    return `D-${n}`;
-  }
-
-  function _renderSection(section) {
-    const d = _complianceData;
-    const content = document.getElementById('compliance-section-content');
-    if (!d) return;
-
-    if (section === 'direct_access')  content.innerHTML = _renderDirectAccess(d.sections.direct_access);
-    else if (section === 'insurance') content.innerHTML = _renderInsurance(d.sections.insurance);
-    else if (section === 'red_flags') content.innerHTML = _renderRedFlags(d.sections.red_flags);
-    else if (section === 'documents') content.innerHTML = _renderDocuments(d.sections.documents);
-    else if (section === 'exposure')  content.innerHTML = _renderExposure(d.sections.exposure);
-  }
-
-  /* ── Direct Access ─────────────────────────────────── */
-  function _renderDirectAccess(sec) {
-    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
-    const all = sec.all || [];
-    const rows = all.map(r => `
-      <tr>
-        <td><code style="font-size:12px;">${r.patient_id}</code></td>
-        <td>${r.state || '—'}</td>
-        <td>${r.treatment_start_date || '—'}</td>
-        <td>${r.da_deadline_date || '무제한'}</td>
-        <td>${_daysLabel(r.da_days_left)}</td>
-        <td>${_badge(r.status)}</td>
-        <td>${r.physician_notified_at ? `<span style="color:#16a34a;">✓ ${r.physician_notified_at}</span>` : '<span style="color:#94a3b8;">미완료</span>'}</td>
-        <td>${r.plan_of_care_sent_at ? `<span style="color:#16a34a;">✓ ${r.plan_of_care_sent_at}</span>` : '<span style="color:#94a3b8;">미발송</span>'}</td>
-        <td>
-          <button class="caction" onclick="openComplianceModal('${r.patient_id}')">⚙ 수정</button>
-        </td>
-      </tr>`).join('');
-
-    const noRows = all.length === 0 ? `
-      <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:24px;">
-        등록된 Direct Access 케이스 없음 — 환자 세션에서 ⚙ 를 눌러 추가하세요.
-      </td></tr>` : '';
-
-    return `
-      <div class="csection-header">
-        <div>
-          <div class="csection-title">Direct Access 추적</div>
-          <div class="csection-sub">총 ${sec.total}명 · 기한임박 ${(sec.urgent||[]).length}건 · 기한초과 ${(sec.overdue||[]).length}건</div>
-        </div>
-        <div style="display:flex;gap:8px;">
-          <span style="font-size:12px;color:#64748b;">의사 통보 대기: <strong>${sec.physician_pending||0}</strong>명</span>
-          <span style="font-size:12px;color:#64748b;">Plan of Care 미발송: <strong>${sec.plan_of_care_pending||0}</strong>명</span>
-        </div>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="ctable">
-          <thead><tr>
-            <th>Patient ID</th><th>State</th><th>치료 시작일</th><th>마감일</th>
-            <th>남은 기간</th><th>상태</th><th>의사 통보</th><th>PoC 발송</th><th></th>
-          </tr></thead>
-          <tbody>${rows}${noRows}</tbody>
-        </table>
-      </div>`;
-  }
-
-  /* ── Insurance ──────────────────────────────────────── */
-  function _renderInsurance(sec) {
-    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
-    const all = sec.all || [];
-    const rows = all.map(r => `
-      <tr>
-        <td><code style="font-size:12px;">${r.patient_id}</code></td>
-        <td>${r.insurer_name || r.insurer_type || '—'}</td>
-        <td>${r.kind === 'filing' ? '📄 청구 제출' : '⚖️ 항소'}</td>
-        <td>${r.deadline_date || '—'}</td>
-        <td>${_daysLabel(r.days_left)}</td>
-        <td>${_badge(r.status)}</td>
-        <td><button class="caction" onclick="openComplianceModal('${r.patient_id}')">⚙ 수정</button></td>
-      </tr>`).join('');
-
-    const noRows = all.length === 0 ? `
-      <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">
-        미처리 보험 청구 없음
-      </td></tr>` : '';
-
-    return `
-      <div class="csection-header">
-        <div>
-          <div class="csection-title">보험 청구 Deadline 추적</div>
-          <div class="csection-sub">청구 대기: ${sec.claim_pending||0}건 · 항소 대기: ${sec.appeal_pending||0}건</div>
-        </div>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="ctable">
-          <thead><tr>
-            <th>Patient ID</th><th>보험사</th><th>종류</th><th>마감일</th>
-            <th>남은 기간</th><th>상태</th><th></th>
-          </tr></thead>
-          <tbody>${rows}${noRows}</tbody>
-        </table>
-      </div>`;
-  }
-
-  /* ── Red Flags ──────────────────────────────────────── */
-  function _renderRedFlags(sec) {
-    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
-    const alerts = sec.alerts || [];
-    const rows = alerts.map(a => {
-      const lvlColor = a.alarm_level === 'RED' ? '#dc2626' : '#d97706';
-      return `<tr>
-        <td><span style="color:${lvlColor};font-weight:700;">${a.alarm_level}</span></td>
-        <td><code style="font-size:12px;">${a.patient_id}</code></td>
-        <td>${a.condition || '—'}</td>
-        <td>${a.session_date}</td>
-        <td>${a.referral_sent_at
-          ? `<span style="color:#16a34a;">✓ ${a.referral_sent_at}</span>`
-          : `<span style="color:#dc2626;">미발송</span>`}</td>
-        <td>${a.followup_checked
-          ? `<span style="color:#16a34a;">✓ 완료</span>`
-          : `<span style="color:#94a3b8;">미확인</span>`}</td>
-      </tr>`;
-    }).join('');
-
-    const noRows = alerts.length === 0 ? `
-      <tr><td colspan="6" style="text-align:center;color:#16a34a;padding:24px;">
-        ✓ 미완료 Red Flag 없음
-      </td></tr>` : '';
-
-    return `
-      <div class="csection-header">
-        <div>
-          <div class="csection-title">Red Flag 현황</div>
-          <div class="csection-sub">미완료 알람: ${sec.open_alerts}건 · 리퍼럴 미발송: ${sec.referral_not_sent}건 · Follow-up 미완료: ${sec.followup_incomplete}건</div>
-        </div>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="ctable">
-          <thead><tr>
-            <th>Level</th><th>Patient ID</th><th>Condition</th><th>세션 날짜</th>
-            <th>Referral 발송</th><th>Follow-up</th>
-          </tr></thead>
-          <tbody>${rows}${noRows}</tbody>
-        </table>
-      </div>`;
-  }
-
-  /* ── Documents ──────────────────────────────────────── */
-  function _renderDocuments(sec) {
-    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
-    const byType = sec.by_type || {};
-    const rows = Object.entries(byType).map(([dt, info]) => {
-      const pct = info.generated > 0 ? Math.round(info.chosen / info.generated * 100) : 0;
-      return `<tr>
-        <td>${info.title}</td>
-        <td style="text-align:center;">${info.generated}</td>
-        <td style="text-align:center;">${info.chosen}</td>
-        <td style="text-align:center;color:${info.not_generated > 0 ? '#d97706' : '#16a34a'};">${info.not_generated}</td>
-        <td>
-          <div class="exposure-bar" style="width:80px;">
-            <div class="exposure-fill" style="width:${pct}%;background:${pct>=80?'#16a34a':pct>=40?'#f59e0b':'#dc2626'};"></div>
+    if (!patients.length) {
+      listEl.innerHTML = `<div style="padding:24px; text-align:center; color:#94a3b8; font-size:12px;">환자 없음</div>`;
+      return;
+    }
+    listEl.innerHTML = patients.map(p => `
+      <div class="pt-patient-card${p.patient_id === _currentPatientId ? ' active' : ''}"
+           onclick="selectPatient('${_esc(p.patient_id)}', '${_esc(p.patient_name || p.patient_id)}')">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span class="alarm-dot ${p.latest_alarm || 'NONE'}"></span>
+          <div style="flex:1; min-width:0;">
+            <div class="pt-patient-name">${_esc(p.patient_name || p.patient_id)}</div>
+            <div class="pt-patient-meta">${_esc(p.patient_id)} · ${p.session_count}세션 · ${p.last_session || '—'}</div>
           </div>
-          <span style="font-size:11px;color:#64748b;margin-left:6px;">${pct}%</span>
-        </td>
-      </tr>`;
-    }).join('');
-
-    const incomplete = sec.incomplete || [];
-    const incList = incomplete.length > 0
-      ? `<div style="margin-top:16px;"><div class="csection-sub" style="margin-bottom:8px;">⚠️ Referral 문서 미생성 환자 (${incomplete.length}명)</div>
-         <div style="display:flex;flex-wrap:wrap;gap:6px;">
-           ${incomplete.map(pid => `<code style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:6px;font-size:12px;">${pid}</code>`).join('')}
-         </div></div>`
-      : '';
-
-    return `
-      <div class="csection-header">
-        <div class="csection-title">문서 생성 현황</div>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="ctable">
-          <thead><tr>
-            <th>문서 종류</th><th style="text-align:center;">생성</th>
-            <th style="text-align:center;">채택</th><th style="text-align:center;">미생성 환자</th>
-            <th>채택률</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      ${incList}`;
-  }
-
-  /* ── Exposure Summary ───────────────────────────────── */
-  function _renderExposure(sec) {
-    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
-    const score = sec.liability_score || 0;
-    const color = score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#16a34a';
-    const bd = sec.breakdown || {};
-
-    const factors = [
-      {label: 'RED 알람 미완료',       val: bd.open_red_alerts    || 0, unit: '건', weight: 20},
-      {label: 'YELLOW 알람 미완료',     val: bd.open_yellow_alerts || 0, unit: '건', weight: 10},
-      {label: 'Referral 미발송',        val: bd.referral_not_sent  || 0, unit: '건', weight: 15},
-      {label: 'Direct Access 기한 초과',val: bd.da_overdue         || 0, unit: '건', weight: 20},
-      {label: '보험 청구 기한 초과',     val: bd.insurance_overdue  || 0, unit: '건', weight: 15},
-    ];
-
-    const factorRows = factors.map(f => `
-      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;">
-        <div style="flex:1;font-size:13px;color:#374151;">${f.label}</div>
-        <div style="width:40px;text-align:right;font-weight:700;color:${f.val>0?'#dc2626':'#16a34a'};">${f.val}</div>
-        <div style="width:40px;font-size:11px;color:#94a3b8;">${f.unit}</div>
-        <div style="font-size:11px;color:#94a3b8;">× ${f.weight}점</div>
-        <div style="width:48px;text-align:right;font-size:12px;font-weight:700;color:${f.val>0?'#dc2626':'#94a3b8'};">
-          ${Math.min(f.val * f.weight, f.weight * 3)} pts
         </div>
       </div>`).join('');
-
-    const riskLabel = score >= 70 ? 'High Risk' : score >= 40 ? 'Moderate Risk' : 'Low Risk';
-
-    return `
-      <div class="csection-header">
-        <div class="csection-title">전체 Liability Exposure Summary</div>
-      </div>
-      <div style="display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:start;">
-        <div style="text-align:center;padding:24px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
-          <div style="font-size:52px;font-weight:900;color:${color};line-height:1;">${score}</div>
-          <div style="font-size:13px;font-weight:700;color:${color};margin:4px 0;">${riskLabel}</div>
-          <div style="font-size:11px;color:#94a3b8;">/ 100점</div>
-          <div class="exposure-bar" style="margin-top:12px;">
-            <div class="exposure-fill" style="width:${score}%;background:${color};"></div>
-          </div>
-        </div>
-        <div>
-          <div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:8px;">위험 요소별 점수</div>
-          ${factorRows}
-          <div style="margin-top:12px;font-size:11px;color:#94a3b8;">
-            * 점수가 높을수록 소송·감사 위험이 높음. 각 항목 해결 시 점수 자동 감소.
-          </div>
-        </div>
-      </div>`;
   }
 
-  /* ── Compliance Case 수정 모달 ──────────────────────── */
-  window.openComplianceModal = async function(patientId) {
-    let caseData = {};
-    try {
-      const res = await fetch(URLS.compliance_case(patientId), {headers: {'X-CSRFToken': CSRF}});
-      const d   = await res.json();
-      caseData  = d.case || {};
-    } catch(e) {}
+  function filterPatients(q) {
+    const filtered = q
+      ? _allPatients.filter(p => (p.patient_name + p.patient_id).toLowerCase().includes(q.toLowerCase()))
+      : _allPatients;
+    renderPatientList(filtered);
+  }
 
-    const html = `
-      <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;
-                  display:flex;align-items:center;justify-content:center;"
-           id="compliance-modal-overlay" onclick="if(event.target===this)closeComplianceModal()">
-        <div style="background:#fff;border-radius:14px;width:540px;max-width:95vw;max-height:90vh;
-                    overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-            <div style="font-size:16px;font-weight:700;color:#1e293b;">⚙ Compliance 설정 — ${patientId}</div>
-            <button onclick="closeComplianceModal()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#64748b;">✕</button>
-          </div>
+  async function selectPatient(pid, pname) {
+    _currentPatientId = pid;
+    renderPatientList(_allPatients.length ? _allPatients : []);
 
-          <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Direct Access</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">치료 시작일</label>
-              <input id="cm-start" type="date" class="pt-input" style="margin-top:4px;"
-                     value="${caseData.treatment_start_date || ''}">
-            </div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">주(State)</label>
-              <input id="cm-state" class="pt-input" style="margin-top:4px;text-transform:uppercase;"
-                     placeholder="e.g. CA" maxlength="2" value="${caseData.state || ''}">
-            </div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">DA Deadline (일수, 비워두면 State 기본값)</label>
-              <input id="cm-da-days" type="number" class="pt-input" style="margin-top:4px;"
-                     placeholder="예: 30" value="${caseData.da_deadline_days != null ? caseData.da_deadline_days : ''}">
-            </div>
-            <div></div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">의사 통보일</label>
-              <input id="cm-physician" type="date" class="pt-input" style="margin-top:4px;"
-                     value="${caseData.physician_notified_at || ''}">
-            </div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">Plan of Care 발송일</label>
-              <input id="cm-poc" type="date" class="pt-input" style="margin-top:4px;"
-                     value="${caseData.plan_of_care_sent_at || ''}">
-            </div>
-          </div>
-
-          <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">보험 청구</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">보험 종류</label>
-              <select id="cm-insurer" class="pt-input" style="margin-top:4px;">
-                <option value="">선택...</option>
-                <option value="medicare" ${caseData.insurer_type==='medicare'?'selected':''}>Medicare</option>
-                <option value="medicaid" ${caseData.insurer_type==='medicaid'?'selected':''}>Medicaid</option>
-                <option value="aetna"    ${caseData.insurer_type==='aetna'?'selected':''}>Aetna</option>
-                <option value="cigna"    ${caseData.insurer_type==='cigna'?'selected':''}>Cigna</option>
-                <option value="united"   ${caseData.insurer_type==='united'?'selected':''}>United Healthcare</option>
-                <option value="bcbs"     ${caseData.insurer_type==='bcbs'?'selected':''}>BCBS</option>
-                <option value="humana"   ${caseData.insurer_type==='humana'?'selected':''}>Humana</option>
-                <option value="tricare"  ${caseData.insurer_type==='tricare'?'selected':''}>TRICARE</option>
-                <option value="workers_comp" ${caseData.insurer_type==='workers_comp'?'selected':''}>Workers' Comp</option>
-                <option value="other_commercial" ${caseData.insurer_type==='other_commercial'?'selected':''}>Other Commercial</option>
-                <option value="self_pay" ${caseData.insurer_type==='self_pay'?'selected':''}>Self Pay</option>
-              </select>
-            </div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">보험사 명칭 (선택)</label>
-              <input id="cm-insurer-name" class="pt-input" style="margin-top:4px;"
-                     placeholder="예: Aetna PPO" value="${caseData.insurer_name || ''}">
-            </div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">청구 제출일</label>
-              <input id="cm-claim" type="date" class="pt-input" style="margin-top:4px;"
-                     value="${caseData.claim_submitted_at || ''}">
-            </div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">청구 거절일</label>
-              <input id="cm-rejected" type="date" class="pt-input" style="margin-top:4px;"
-                     value="${caseData.claim_rejected_at || ''}">
-            </div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">항소 제출일</label>
-              <input id="cm-appeal" type="date" class="pt-input" style="margin-top:4px;"
-                     value="${caseData.appeal_submitted_at || ''}">
-            </div>
-            <div>
-              <label style="font-size:12px;color:#374151;font-weight:600;">항소 기한 (일수, 비워두면 기본값)</label>
-              <input id="cm-appeal-days" type="number" class="pt-input" style="margin-top:4px;"
-                     placeholder="예: 60" value="${caseData.appeal_deadline_days != null ? caseData.appeal_deadline_days : ''}">
-            </div>
-          </div>
-
-          <div style="margin-bottom:20px;">
-            <label style="font-size:12px;color:#374151;font-weight:600;">메모</label>
-            <textarea id="cm-notes" class="pt-input" rows="2" style="margin-top:4px;resize:vertical;"
-                      placeholder="추가 메모...">${caseData.notes || ''}</textarea>
-          </div>
-
-          <div style="display:flex;gap:10px;justify-content:flex-end;">
-            <button onclick="closeComplianceModal()" class="caction">취소</button>
-            <button onclick="saveComplianceCase('${patientId}')" class="caction primary">저장</button>
-          </div>
-        </div>
-      </div>`;
-
-    document.body.insertAdjacentHTML('beforeend', html);
-  };
-
-  window.closeComplianceModal = function() {
-    const el = document.getElementById('compliance-modal-overlay');
-    if (el) el.remove();
-  };
-
-  window.saveComplianceCase = async function(patientId) {
-    const payload = {
-      treatment_start_date:  document.getElementById('cm-start').value     || null,
-      state:                 document.getElementById('cm-state').value.toUpperCase() || null,
-      da_deadline_days:      document.getElementById('cm-da-days').value    || null,
-      physician_notified_at: document.getElementById('cm-physician').value  || null,
-      plan_of_care_sent_at:  document.getElementById('cm-poc').value        || null,
-      insurer_type:          document.getElementById('cm-insurer').value    || null,
-      insurer_name:          document.getElementById('cm-insurer-name').value || null,
-      claim_submitted_at:    document.getElementById('cm-claim').value      || null,
-      claim_rejected_at:     document.getElementById('cm-rejected').value   || null,
-      appeal_submitted_at:   document.getElementById('cm-appeal').value     || null,
-      appeal_deadline_days:  document.getElementById('cm-appeal-days').value || null,
-      notes:                 document.getElementById('cm-notes').value      || null,
-    };
+    document.getElementById('selected-patient-name').textContent = pname || pid;
+    document.getElementById('selected-patient-id').textContent   = pid;
+    document.getElementById('session-list-items').innerHTML =
+      `<div style="padding:24px; text-align:center; font-size:12px; color:#94a3b8;">불러오는 중...</div>`;
+    document.getElementById('session-detail-panel').innerHTML =
+      `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#94a3b8;"><div style="font-size:28px;margin-bottom:8px;">⏳</div><div style="font-size:13px;">불러오는 중...</div></div>`;
+    if (window.innerWidth < 768) switchMobilePanel('sessions');
 
     try {
-      const res = await fetch(URLS.compliance_case(patientId), {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
-        body: JSON.stringify(payload),
-      });
-      const d = await res.json();
-      if (!res.ok) { alert('저장 실패: ' + (d.error || '')); return; }
-      closeComplianceModal();
-      loadComplianceData();
+      const r = await fetch(`/pt/api/patients/${encodeURIComponent(pid)}/sessions/`);
+      const d = await r.json();
+      renderSessionList(d.sessions || []);
     } catch(e) {
+      document.getElementById('session-list-items').innerHTML =
+        `<div style="padding:16px; color:#dc2626; font-size:12px;">불러오기 실패</div>`;
+    }
+  }
+
+  function renderSessionList(sessions) {
+    _sessions = sessions;
+    const listEl = document.getElementById('session-list-items');
+    if (!sessions.length) {
+      listEl.innerHTML = `<div style="padding:24px; text-align:center; font-size:12px; color:#94a3b8;">세션 없음</div>`;
+      document.getElementById('session-detail-panel').innerHTML =
+        `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#94a3b8;"><div style="font-size:28px;margin-bottom:8px;">📋</div><div style="font-size:13px;">세션이 없습니다</div></div>`;
+      return;
+    }
+    const alarmColor = { RED: '#ef4444', YELLOW: '#d97706', NONE: '#10b981' };
+    listEl.innerHTML = sessions.map((s, i) => `
+      <div class="pt-session-row${i === 0 ? ' active' : ''}" id="srow-${i}" onclick="showSessionDetail(${i})">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+          <span style="font-size:12px; font-weight:600; color:#1e293b;">${_esc(s.session_date)}</span>
+          <span class="badge-flag ${s.alarm_level}" style="padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;">${s.alarm_level}</span>
+        </div>
+        <div style="font-size:11px; color:#94a3b8;">Risk ${s.critical_score}%${s.triggered_condition ? ' · ' + _esc(s.triggered_condition) : ''}</div>
+      </div>`).join('');
+    showSessionDetail(0);
+  }
+
+  function showSessionDetail(idx) {
+    const s = _sessions[idx];
+    if (!s) return;
+    if (window.innerWidth < 768) switchMobilePanel('detail');
+
+    document.querySelectorAll('.pt-session-row').forEach((el, i) => {
+      el.classList.toggle('active', i === idx);
+    });
+
+    const alarmColors = { RED: '#dc2626', YELLOW: '#d97706', NONE: '#16a34a' };
+    const color = alarmColors[s.alarm_level] || '#64748b';
+    const indicators = Array.isArray(s.matched_indicators) ? s.matched_indicators : [];
+    const ctx = s.clinical_context || {};
+
+    const textColor = s.alarm_level !== 'NONE' ? color : '#1e293b';
+
+    let html = `
+      <div style="padding:20px; display:flex; flex-direction:column; gap:16px;">
+        <!-- Header -->
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <span class="badge-flag ${s.alarm_level}" style="padding:4px 10px;border-radius:6px;font-size:12px;font-weight:700;">${s.alarm_level}</span>
+          <span style="font-weight:700; color:${textColor};">${_esc(s.session_date)}</span>
+          <span style="font-size:12px; color:${textColor};">Risk <strong>${s.critical_score}%</strong></span>
+          ${s.triggered_condition ? `<span style="font-size:12px; color:${textColor};">${_esc(s.triggered_condition)}</span>` : ''}
+        </div>`;
+
+    if (indicators.length) {
+      const indColors = {
+        RED:    { bg: '#fee2e2', border: '#fca5a5', label: '#991b1b', text: '#7f1d1d' },
+        YELLOW: { bg: '#fef9c3', border: '#fde047', label: '#854d0e', text: '#713f12' },
+        NONE:   { bg: '#f0fdf4', border: '#86efac', label: '#14532d', text: '#166534' },
+      };
+      const ic = indColors[s.alarm_level] || indColors.YELLOW;
+      html += `
+        <div style="background:${ic.bg}; border:1px solid ${ic.border}; border-radius:8px; padding:12px 14px;">
+          <div style="font-size:11px; font-weight:700; color:${ic.label}; text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px;">Matched Indicators</div>
+          ${indicators.map(ind => `<div style="font-size:12px; color:${ic.text}; padding:2px 0;">· ${_esc(ind)}</div>`).join('')}
+        </div>`;
+    }
+
+    if (ctx.chief_complaint || ctx.vas_score || ctx.primary_diagnosis) {
+      html += `
+        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px 14px;">
+          <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Clinical Summary</div>
+          ${ctx.chief_complaint ? `<div style="font-size:12px; margin-bottom:4px;"><span style="color:#94a3b8; font-weight:600;">Chief complaint: </span>${_esc(ctx.chief_complaint)}</div>` : ''}
+          ${ctx.vas_score != null ? `<div style="font-size:12px; margin-bottom:4px;"><span style="color:#94a3b8; font-weight:600;">Pain (VAS): </span>${_esc(ctx.vas_score)}</div>` : ''}
+          ${ctx.primary_diagnosis ? `<div style="font-size:12px; margin-bottom:4px;"><span style="color:#94a3b8; font-weight:600;">Diagnosis: </span>${_esc(ctx.primary_diagnosis)}</div>` : ''}
+          ${ctx.onset_duration ? `<div style="font-size:12px;"><span style="color:#94a3b8; font-weight:600;">Onset: </span>${_esc(ctx.onset_duration)}</div>` : ''}
+        </div>`;
+    }
+
+    if (s.soap_text) {
+      html += `
+        <div style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+            <span style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.5px;">SOAP Note</span>
+            <div style="display:flex; gap:6px;">
+              <button onclick="openSoapEditModal(${s.id}, '${_esc(s.session_date)}')"
+                style="padding:5px 12px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; font-size:11px; font-weight:600; color:#475569; cursor:pointer;">Edit</button>
+              <button onclick="copyText(document.getElementById('soap-pre-${s.id}').textContent)"
+                style="padding:5px 12px; border:1px solid #e2e8f0; border-radius:6px; background:#fff; font-size:11px; font-weight:600; color:#475569; cursor:pointer;">Copy</button>
+            </div>
+          </div>
+          <pre id="soap-pre-${s.id}" style="margin:0; font-family:inherit; font-size:12px; line-height:1.6; color:#334155; white-space:pre-wrap; background:#f8fafc; padding:14px; max-height:280px; overflow-y:auto;">${_esc(s.soap_text)}</pre>
+        </div>`;
+    }
+
+    if (s.referral_sent_at || s.referral_followup_checked) {
+      html += `
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div style="font-size:12px; color:#16a34a;">✓ Referral sent: ${_esc(s.referral_sent_at)}</div>
+          ${s.referral_followup_checked ? `<div style="font-size:12px; color:#16a34a;">✓ Follow-up confirmed</div>` : ''}
+        </div>`;
+    }
+
+    // Documents section — alarm 세션에만 표시
+    if (s.alarm_level !== 'NONE') {
+      html += `
+        <div style="border-top:1px solid #e2e8f0; padding-top:16px;">
+          <div style="font-size:11px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.5px; margin-bottom:10px;">Documents</div>
+          <div id="doc-area-${s.id}">`;
+
+      if (s.referral_letter) {
+        html += renderDocCard(s.referral_letter, s.id);
+      } else {
+        html += `
+            <button id="gen-btn-${s.id}"
+              onclick="generateDoc('${_esc(_currentPatientId)}', 'referral', ${s.id})"
+              style="padding:10px 20px; border:none; border-radius:8px; background:#0f766e; color:#fff; font-size:13px; font-weight:700; cursor:pointer; transition:background .15s;"
+              onmouseover="this.style.background='#115e59'" onmouseout="this.style.background='#0f766e'">
+              Generate Referral Letter
+            </button>
+            <div id="doc-result-${s.id}" style="margin-top:12px;"></div>`;
+      }
+
+      html += `
+          </div>
+        </div>`;
+    }
+
+    html += `</div>`;
+    document.getElementById('session-detail-panel').innerHTML = html;
+  }
+
+  async function generateDoc(patientId, docType, sessionId) {
+    const btn  = document.getElementById(`gen-btn-${sessionId}`);
+    const area = document.getElementById(`doc-area-${sessionId}`);
+
+    if (btn) { btn.textContent = 'Generating...'; btn.disabled = true; }
+
+    try {
+      const r = await fetch(`/pt/api/patients/${encodeURIComponent(patientId)}/generate-doc/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({ doc_type: docType }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'Generation failed');
+
+      _pendingDocChoices[sessionId] = {
+        tmpl: { id: d.template.id, content: d.template.content },
+        ai:   d.ai ? { id: d.ai.id, content: d.ai.content } : null,
+      };
+
+      const abBtnSt = 'padding:5px 14px; border:none; border-radius:6px; font-size:11px; font-weight:700; cursor:pointer;';
+      let abHtml = `<div style="display:flex; flex-direction:column; gap:12px;">
+        <div style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f1f5f9; border-bottom:1px solid #e2e8f0;">
+            <span style="font-size:12px; font-weight:700; color:#475569; text-transform:uppercase; letter-spacing:.5px;">Template Version</span>
+            <button id="choose-tmpl-btn-${sessionId}" onclick="chooseDocVersion(${sessionId}, 'tmpl')"
+              style="${abBtnSt} background:#475569; color:#fff;">Use this</button>
+          </div>
+          <pre style="margin:0; padding:14px; font-family:inherit; font-size:12px; line-height:1.7; color:#334155; white-space:pre-wrap; max-height:240px; overflow-y:auto;">${_esc(d.template.content)}</pre>
+        </div>`;
+
+      if (d.ai && d.ai.content) {
+        abHtml += `
+        <div style="border:1px solid #6ee7b7; border-radius:8px; overflow:hidden;">
+          <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f0fdf4; border-bottom:1px solid #6ee7b7;">
+            <span style="font-size:12px; font-weight:700; color:#16a34a; text-transform:uppercase; letter-spacing:.5px;">AI Version</span>
+            <button id="choose-ai-btn-${sessionId}" onclick="chooseDocVersion(${sessionId}, 'ai')"
+              style="${abBtnSt} background:#16a34a; color:#fff;">Use this</button>
+          </div>
+          <pre style="margin:0; padding:14px; font-family:inherit; font-size:12px; line-height:1.7; color:#334155; white-space:pre-wrap; max-height:240px; overflow-y:auto;">${_esc(d.ai.content)}</pre>
+        </div>`;
+      }
+
+      abHtml += `</div>`;
+      if (area) area.innerHTML = abHtml;
+    } catch(e) {
+      if (btn) { btn.textContent = 'Generate Referral Letter'; btn.disabled = false; }
+      const result = document.getElementById(`doc-result-${sessionId}`);
+      if (result) result.innerHTML = `<div style="font-size:12px; color:#ef4444; margin-top:6px;">Generation failed: ${_esc(e.message)}</div>`;
+    }
+  }
+
+  let _editingSessionId = null;
+
+  function openSoapEditModal(sessionId, sessionDate) {
+    const s = _sessions.find(x => String(x.id) === String(sessionId));
+    if (!s) return;
+    _editingSessionId = sessionId;
+    document.getElementById('soap-edit-textarea').value = s.soap_text || '';
+    document.getElementById('soap-edit-subtitle').textContent = sessionDate || '';
+    document.getElementById('soap-edit-save-btn').textContent = 'Save';
+    document.getElementById('soap-edit-save-btn').disabled = false;
+    document.getElementById('soap-edit-overlay').classList.add('open');
+    document.getElementById('soap-edit-textarea').focus();
+  }
+
+  function closeSoapEditModal() {
+    document.getElementById('soap-edit-overlay').classList.remove('open');
+    _editingSessionId = null;
+  }
+
+  async function saveSoapEdit() {
+    if (!_editingSessionId) return;
+    const ta      = document.getElementById('soap-edit-textarea');
+    const saveBtn = document.getElementById('soap-edit-save-btn');
+    const edited  = ta.value.trim();
+    if (!edited) return;
+
+    saveBtn.textContent = '저장 중...'; saveBtn.disabled = true;
+    try {
+      const r = await fetch(`/pt/api/sessions/${_editingSessionId}/soap-edit/`, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body:    JSON.stringify({ edited_soap: edited }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'Save failed');
+
+      // 세션 캐시 업데이트
+      const s = _sessions.find(x => String(x.id) === String(_editingSessionId));
+      if (s) s.soap_text = edited;
+
+      saveBtn.textContent = '✅ 저장됨';
+      setTimeout(() => closeSoapEditModal(), 800);
+    } catch(e) {
+      saveBtn.textContent = 'Save'; saveBtn.disabled = false;
       alert('저장 실패: ' + e.message);
     }
-  };
-
-  function _setMenuActive(id) {
-    ['menu-alarms', 'menu-compliance'].forEach(mid => {
-      const el = document.getElementById(mid);
-      if (!el) return;
-      if (mid === id) {
-        el.style.background = 'rgba(99,102,241,.15)';
-        el.style.color = '#818cf8';
-      } else {
-        el.style.background = 'transparent';
-        el.style.color = '#94a3b8';
-      }
-    });
   }
-})();
-</script>
 
-<!-- Django 컨텍스트 → JS 전달 -->
-<script>
+  function renderDocCard(content, sessionId) {
+    _docOriginals[sessionId] = content;
+    const btnSt = 'padding:5px 12px; border:1px solid #cbd5e1; border-radius:6px; background:#fff; font-size:11px; font-weight:600; cursor:pointer; color:#475569;';
+    return `
+      <div style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:10px 14px; background:#f8fafc; border-bottom:1px solid #e2e8f0;">
+          <span style="font-size:13px; font-weight:600; color:#1e293b;">Physician Referral Letter</span>
+          <div style="display:flex; gap:6px;">
+            <button id="doc-edit-btn-${sessionId}" onclick="toggleDocEdit(${sessionId})" style="${btnSt}">Edit</button>
+            <button onclick="copyText(document.getElementById('doc-pre-${sessionId}').textContent)" style="${btnSt}">Copy</button>
+            <button onclick="printDocContent('doc-pre-${sessionId}')" style="${btnSt}">Print / PDF</button>
+          </div>
+        </div>
+        <pre id="doc-pre-${sessionId}" style="margin:0; padding:16px; font-family:inherit; font-size:12px; line-height:1.7; color:#334155; white-space:pre-wrap; max-height:320px; overflow-y:auto;">${_esc(content)}</pre>
+        <div id="doc-edit-area-${sessionId}" style="display:none; padding:12px; background:#fff; border-top:1px solid #e2e8f0;">
+          <textarea id="doc-edit-ta-${sessionId}" rows="10"
+            style="width:100%; font-family:inherit; font-size:12px; line-height:1.7; color:#334155; border:1px solid #cbd5e1; border-radius:6px; padding:10px; resize:vertical; box-sizing:border-box;"></textarea>
+          <div style="display:flex; gap:8px; margin-top:8px; justify-content:flex-end;">
+            <button onclick="toggleDocEdit(${sessionId})"
+              style="padding:5px 14px; border:1px solid #cbd5e1; border-radius:6px; background:#fff; font-size:11px; font-weight:600; cursor:pointer; color:#475569;">Cancel</button>
+            <button id="doc-save-btn-${sessionId}" onclick="saveDocEdit(${sessionId})"
+              style="padding:5px 14px; border:none; border-radius:6px; background:#0f766e; color:#fff; font-size:11px; font-weight:700; cursor:pointer;">Save</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function toggleDocEdit(sessionId) {
+    const pre      = document.getElementById(`doc-pre-${sessionId}`);
+    const editArea = document.getElementById(`doc-edit-area-${sessionId}`);
+    const btn      = document.getElementById(`doc-edit-btn-${sessionId}`);
+    const ta       = document.getElementById(`doc-edit-ta-${sessionId}`);
+    if (!pre || !editArea) return;
+    const isOpen = editArea.style.display !== 'none';
+    if (isOpen) {
+      editArea.style.display = 'none';
+      pre.style.display = '';
+      if (btn) btn.textContent = 'Edit';
+    } else {
+      ta.value = pre.textContent;
+      editArea.style.display = 'block';
+      pre.style.display = 'none';
+      if (btn) btn.textContent = 'Cancel';
+      ta.focus();
+    }
+  }
+
+  async function saveDocEdit(sessionId) {
+    const original = _docOriginals[sessionId];
+    const ta       = document.getElementById(`doc-edit-ta-${sessionId}`);
+    const saveBtn  = document.getElementById(`doc-save-btn-${sessionId}`);
+    if (!ta || !saveBtn) return;
+    const edited = ta.value.trim();
+    if (!edited) return;
+    if (edited === original) { toggleDocEdit(sessionId); return; }
+
+    saveBtn.textContent = 'Saving...'; saveBtn.disabled = true;
+    try {
+      const r = await fetch(
+        `/pt/api/patients/${encodeURIComponent(_currentPatientId)}/doc/referral/edit/`,
+        {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+          body:    JSON.stringify({ original_doc: original, edited_doc: edited }),
+        }
+      );
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || 'Save failed');
+      const pre = document.getElementById(`doc-pre-${sessionId}`);
+      if (pre) pre.textContent = edited;
+      _docOriginals[sessionId] = edited;
+      toggleDocEdit(sessionId);
+    } catch(e) {
+      saveBtn.textContent = 'Save'; saveBtn.disabled = false;
+      alert('Save failed: ' + e.message);
+    }
+  }
+
+  async function copyText(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch(_) {
+      const ta = document.createElement('textarea');
+      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); document.body.removeChild(ta);
+    }
+  }
+
+  async function chooseDocVersion(sessionId, versionKey) {
+    const pending = _pendingDocChoices[sessionId];
+    if (!pending) return;
+    const chosen = versionKey === 'ai' ? pending.ai : pending.tmpl;
+    if (!chosen) return;
+
+    const tmplBtn = document.getElementById(`choose-tmpl-btn-${sessionId}`);
+    const aiBtn   = document.getElementById(`choose-ai-btn-${sessionId}`);
+    if (tmplBtn) tmplBtn.disabled = true;
+    if (aiBtn)   aiBtn.disabled   = true;
+
+    try {
+      await fetch(`/pt/api/docs/${chosen.id}/choose/`, {
+        method: 'POST', headers: { 'X-CSRFToken': CSRF }
+      });
+    } catch(_) { /* non-blocking */ }
+
+    const area = document.getElementById(`doc-area-${sessionId}`);
+    if (area) area.innerHTML = renderDocCard(chosen.content, sessionId);
+    delete _pendingDocChoices[sessionId];
+  }
+
+  function printDocContent(preId) {
+    const el = document.getElementById(preId);
+    if (!el) return;
+    const w = window.open('', '_blank', 'width=800,height=900');
+    w.document.write(`<!DOCTYPE html><html><head><title>Referral Letter</title>
+      <style>body{font-family:Georgia,serif;font-size:13px;line-height:1.8;padding:48px;color:#111;}
+      pre{white-space:pre-wrap;font-family:inherit;}
+      @media print{body{padding:24px;}}</style></head>
+      <body><pre>${el.innerHTML}</pre><script>window.print();<\/script></body></html>`);
+    w.document.close();
+  }
+
   const CSRF = '{{ csrf_token }}';
-  const URLS = {
-    transcribe:  "{% url 'vertical_pt:pt_transcribe' %}",
-    compliance:  "{% url 'vertical_pt:pt_compliance' %}",
-    compliance_case: (pid) => `/pt/api/compliance/${pid}/`,
-  };
-  const APP_CONTEXT = {
-    isAuthenticated: {{ user.is_authenticated|lower }},
-  };
-  const FEATURES = {
-    ab_comparison:     {{ FEATURES.ab_comparison|lower }},
-    email_send:        {{ FEATURES.email_send|lower }},
-    schedule_tracking: {{ FEATURES.schedule_tracking|lower }},
-  };
+
+  async function runReseed() {
+    if (!confirm('전체 세션을 삭제하고 실습 데이터를 재적재합니다. 계속할까요?')) return;
+    const btn = document.getElementById('reseed-btn');
+    btn.textContent = '⏳ Seeding...'; btn.disabled = true;
+    try {
+      const r = await fetch('/pt/api/admin/reseed/', { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+      const d = await r.json();
+      btn.textContent = d.ok ? `✅ ${d.seeded} seeded` : '❌ Error';
+    } catch(e) {
+      btn.textContent = '❌ ' + e.message;
+    }
+    setTimeout(() => { btn.textContent = '🌱 Clear & Reseed All'; btn.disabled = false; }, 3000);
+  }
+
+  async function runBackfill() {
+    const btn = document.getElementById('rescore-btn');
+    btn.textContent = '⏳ Running...'; btn.disabled = true;
+    try {
+      const r = await fetch('/pt/api/backfill-rescore/', { method: 'POST', headers: { 'X-CSRFToken': CSRF } });
+      const d = await r.json();
+      btn.textContent = d.ok ? `✅ ${d.changed}/${d.total} updated` : '❌ Error';
+    } catch(e) {
+      btn.textContent = '❌ ' + e.message;
+    }
+    setTimeout(() => { btn.textContent = '🔄 Re-score All'; btn.disabled = false; }, 3000);
+  }
+
+  // ===== Mobile: sidebar slide-in toggle =====
+  function toggleSidebar() {
+    document.querySelector('.fc-sidebar').classList.toggle('mobile-open');
+    document.getElementById('fc-sidebar-backdrop').classList.toggle('visible');
+  }
+  function closeSidebar() {
+    document.querySelector('.fc-sidebar').classList.remove('mobile-open');
+    document.getElementById('fc-sidebar-backdrop').classList.remove('visible');
+  }
+
+  // ===== Mobile: 3-panel tab navigation =====
+  function switchMobilePanel(name) {
+    if (window.innerWidth >= 768) return;
+    const panelMap = {
+      patients: 'pt-panel-patients',
+      sessions: 'pt-panel-sessions',
+      detail:   'pt-panel-detail'
+    };
+    document.querySelectorAll('.pt-panel').forEach(p => p.classList.remove('mobile-active'));
+    document.querySelectorAll('.pt-mobile-tab').forEach(t => t.classList.remove('active'));
+    const el = document.getElementById(panelMap[name]);
+    if (el) el.classList.add('mobile-active');
+    const tab = document.querySelector(`.pt-mobile-tab[data-panel="${name}"]`);
+    if (tab) tab.classList.add('active');
+  }
 </script>
-<script src="{% static 'js/pt_app.js' %}"></script>
 </body>
 </html>

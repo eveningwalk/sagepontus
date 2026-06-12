@@ -16,8 +16,14 @@ const descriptors: Record<Tab, string> = {
   seo: 'Semantic HTML · cite / blockquote / aria-hidden',
 }
 
+const isDev = process.env.NODE_ENV === 'development'
+
 export function PageTabs({ children }: Props) {
-  const [tab, setTab] = useState<Tab>('original')
+  // Production: SEO page only, no tab UI
+  if (!isDev) return <SeoPage />
+
+  // Dev: full tab switcher, defaulting to seo
+  const [tab, setTab] = useState<Tab>('seo')
 
   function switchTo(next: Tab) {
     setTab(next)
@@ -26,7 +32,7 @@ export function PageTabs({ children }: Props) {
 
   return (
     <>
-      {/* ── Tab switcher — fixed top-right, always visible ─────── */}
+      {/* ── Tab switcher — fixed top-right, dev only ─────────── */}
       <div className="fixed top-3 right-4 z-50 flex flex-col items-end gap-1.5">
         <div className="flex items-center gap-1 rounded-full border border-slate-200/80 bg-white/90 backdrop-blur-md p-1 shadow-[0_8px_24px_-10px_rgba(15,23,42,.25)]">
           {(['original', 'authority', 'seo'] as Tab[]).map((t) => (
