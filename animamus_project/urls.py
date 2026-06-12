@@ -16,10 +16,27 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.http import HttpResponse
 from questionnaire import views
 from .auth_views import email_token_auth
 
+def sitemap_xml(request):
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        '  <url><loc>https://pt.sagepontus.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n'
+        '  <url><loc>https://pt.sagepontus.com/pt-alarm</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n'
+        '</urlset>'
+    )
+    return HttpResponse(xml, content_type='application/xml')
+
+def robots_txt(request):
+    body = 'User-agent: *\nAllow: /\nSitemap: https://pt.sagepontus.com/sitemap.xml'
+    return HttpResponse(body, content_type='text/plain')
+
 urlpatterns = [
+    path('sitemap.xml', sitemap_xml, name='sitemap'),
+    path('robots.txt', robots_txt, name='robots'),
     path('admin/', admin.site.urls),
     path('questionnaire/', include('questionnaire.urls')),
     path('accounts/', include('accounts.urls')),
