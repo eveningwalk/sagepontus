@@ -230,9 +230,9 @@ export function SeoPage() {
                 </span>
               </h1>
               <p className="mt-6 text-lg leading-relaxed text-slate-600">
-                  Enter symptoms. SagePontus screens against Goodman&apos;s 6{' '}
+                  Enter symptoms. SagePontus screens against{' '}
                   <strong className="font-semibold text-slate-900">
-                    physical therapy red flag criteria
+                    Goodman&apos;s 6 physical therapy red flag criteria
                   </strong>{' '}
                   in real time — and alerts before your PTA takes another step.
               </p>
