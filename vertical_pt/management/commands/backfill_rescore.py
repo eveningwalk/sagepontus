@@ -1,5 +1,5 @@
 """
-기존 PatientTimeline 세션을 최신 VPPS로 재스코어링.
+기존 PatientTimeline 세션을 최신 VPPA로 재스코어링.
 
 사용법:
     python manage.py backfill_rescore
@@ -17,7 +17,7 @@ from vertical_pt.models import PatientTimeline, RedFlagAlert
 
 
 class Command(BaseCommand):
-    help = "기존 세션 VPPS 재스코어링 + RedFlagAlert 재생성"
+    help = "기존 세션 VPPA 재스코어링 + RedFlagAlert 재생성"
 
     def add_arguments(self, parser):
         parser.add_argument("--username",   default="", help="특정 계정만 처리")

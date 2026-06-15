@@ -59,7 +59,7 @@ def analyze(request):
     # ── 이전 세션 컨텍스트 로드 ───────────────────────────────────────────
     patient_ctx = build_patient_context(patient_id, request.user.id)
 
-    # ── VPPS + Scorer ─────────────────────────────────────────────────────
+    # ── VPPA + Scorer ─────────────────────────────────────────────────────
     result = score_soap(soap_text, use_ai=use_ai)
 
     # ── clinical_context 추출 (Gemini) ───────────────────────────────────

@@ -350,7 +350,7 @@ SCREENING COMPLIANCE SUMMARY:
   YELLOW Flags Monitored:       {len(st['yellow'])}
   Screening Compliance Rate:    100%
   Episode Duration:             {st['first']} to {st['last']}
-  Screening Tool:               Sage Pontus VPPS (Vertical Prompt Propagation System)
+  Screening Tool:               Sage Pontus VPPA (Vertical Prompt Propagation Architecture)
                                 based on Goodman & Snyder Differential Diagnosis
 
 DETAILED SESSION SCREENING RECORD:

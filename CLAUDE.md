@@ -19,7 +19,7 @@ PT(물리치료사) 전용 AI SOAP 노트 자동화 + Red Flag 알람 SaaS → C
 기존 EMR(WebPT 등) 화면에 올라타는 **Chrome Extension** — 이중입력 없음, 워크플로우 침투형
 
 ### 핵심 기술
-- **VPPS** (Vertical Prompt Propagation): 비정형 SOAP 텍스트 → 증상 팩트 JSON 추출 (할루시네이션 배제, Goodman's 가이드라인 기반)
+- **VPPA** (Vertical Prompt Propagation Architecture): 비정형 SOAP 텍스트 → 증상 팩트 JSON 추출 (할루시네이션 배제, Goodman's 가이드라인 기반)
 - **CRA** (Context Retention Algorithm): 환자 수개월 치 세션 시계열 누적 → 점진적 악화 패턴 포착 (`questionnaire/prompts/cra_engine.py` 기존 구현 존재)
 
 ---
@@ -106,7 +106,7 @@ sagepontus/
 |-------|------|--------|
 | 1 | Goodman's → Red Flag JSON 트리 추출 | `data/red_flag_protocols/*.json` |
 | 2 | 가상 시나리오 100건 알고리즘 검증 | 민감도/특이도 수치 |
-| 3 | VPPS + CRA + scorer 백엔드 구현 | `vertical_pt/engine/` |
+| 3 | VPPA + CRA + scorer 백엔드 구현 | `vertical_pt/engine/` |
 | 4 | Chrome Extension API 엔드포인트 | `vertical_pt/api/` |
 | 5 | Chrome Extension UI | `chrome_extension/` |
 | 6 | PT Red Flag 전용 랜딩 페이지 | `landingpage_source/app/pt-alarm/` |
@@ -202,7 +202,7 @@ RAG 인프라는 pgvector(기존 PostgreSQL 활용) + Gemini Embedding으로 구
 
 ### 핵심 원칙
 
-- RAG는 **할루시네이션 방지 도구가 아님** — VPPS KB 매칭이 그 역할. RAG는 "근거 제시" 용도
+- RAG는 **할루시네이션 방지 도구가 아님** — VPPA KB 매칭이 그 역할. RAG는 "근거 제시" 용도
 - 생성이 아닌 **검색 후 인용** — LLM이 내용을 만들지 않고 원문 발췌 후 출처 표기
 - 저작권 우선 해결 — Goodman's는 공개 인용 범위 확인 전까지 APTA CPG로 대체
 

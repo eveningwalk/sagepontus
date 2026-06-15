@@ -1,6 +1,6 @@
 """
 Red Flag Scorer
-VPPS 추출 결과 + 프로토콜 → 알람 레벨 + 조건 결정 (멀티 컨디션)
+VPPA 추출 결과 + 프로토콜 → 알람 레벨 + 조건 결정 (멀티 컨디션)
 """
 
 from __future__ import annotations
@@ -121,7 +121,7 @@ def _score_condition(protocol: dict, hits: list[dict]) -> dict[str, Any]:
 
 def detect_red_flags(vpps_result: dict) -> dict[str, Any]:
     """
-    VPPS 결과 → 전체 프로토콜 스캔 → 전체 활성 조건 + 최고 알람 반환.
+    VPPA 결과 → 전체 프로토콜 스캔 → 전체 활성 조건 + 최고 알람 반환.
 
     Returns:
         {
@@ -209,7 +209,7 @@ def detect_red_flags(vpps_result: dict) -> dict[str, Any]:
 
 def score_soap(soap_text: str, use_ai: bool = False,
                pre_confirmed_ids: list[str] | None = None) -> dict[str, Any]:
-    """SOAP 텍스트 입력 → 알람 결과 반환 (VPPS + Scorer 통합 진입점)."""
+    """SOAP 텍스트 입력 → 알람 결과 반환 (VPPA + Scorer 통합 진입점)."""
     from .vpps import extract_symptoms
     vpps = extract_symptoms(soap_text, use_ai=use_ai, pre_confirmed_ids=pre_confirmed_ids)
     result = detect_red_flags(vpps)

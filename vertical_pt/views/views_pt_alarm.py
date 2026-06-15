@@ -190,7 +190,7 @@ def delete_session(request, session_id):
     return JsonResponse({"ok": True, "patient_id": patient_id, "remaining": remaining})
 
 
-# ── AJAX: SOAP 저장 (VPPS 분석 포함) ─────────────────────────────
+# ── AJAX: SOAP 저장 (VPPA 분석 포함) ─────────────────────────────
 
 @login_required
 @require_http_methods(["POST"])
@@ -912,7 +912,7 @@ def _create_session(user, patient_id, patient_name, session_date, soap_text):
 @login_required
 @require_http_methods(["POST"])
 def backfill_rescore_ajax(request):
-    """사이드바 임시 버튼 — 현재 유저의 세션을 최신 VPPS로 재스코어링."""
+    """사이드바 임시 버튼 — 현재 유저의 세션을 최신 VPPA로 재스코어링."""
     from vertical_pt.engine import score_soap
     from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
 

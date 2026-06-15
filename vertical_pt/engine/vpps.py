@@ -1,5 +1,5 @@
 """
-VPPS (Vertical Prompt Propagation System)
+VPPA (Vertical Prompt Propagation Architecture)
 비정형 SOAP 텍스트 → 증상 팩트 JSON 추출
 
 핵심 원칙:
@@ -107,7 +107,7 @@ def _regex_match(text: str, kb: dict, seen: set[str]) -> list[dict]:
                     hits.append(_make_hit(kb_id, entry))
                     break
             except re.error as e:
-                logger.warning("VPPS regex error kb_id=%s pattern=%r: %s", kb_id, raw_pattern, e)
+                logger.warning("VPPA regex error kb_id=%s pattern=%r: %s", kb_id, raw_pattern, e)
 
     return hits
 
@@ -191,5 +191,5 @@ def _ai_extract(soap_text: str, kb: dict) -> list[dict] | None:
             for kb_id in matched_ids if kb_id in kb
         ]
     except Exception as e:
-        logger.warning("VPPS AI extract 실패: %s", e)
+        logger.warning("VPPA AI extract 실패: %s", e)
         return None
