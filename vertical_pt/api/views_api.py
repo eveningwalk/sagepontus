@@ -24,7 +24,7 @@ from rest_framework.response import Response
 from vertical_pt.engine import score_soap, build_patient_context
 from vertical_pt.engine.referral import generate_referral_letter
 from vertical_pt.engine.soap_extractor import extract_clinical_context
-from vertical_pt.models import PatientTimeline, RedFlagAlert
+from vertical_pt.models import PatientTimeline, RedFlagAlert, WaitlistEntry
 from .serializers import (
     AnalyzeRequestSerializer,
     AnalyzeResponseSerializer,
@@ -218,6 +218,8 @@ def waitlist(request):
 
     if not re.match(r"^[^\s@]+@[^\s@]+\.[^\s@]+$", email):
         return Response({"error": "Invalid email address."}, status=400)
+
+    _, created = WaitlistEntry.objects.get_or_create(email=email, defaults={"source": source})
 
     api_key     = os.environ.get("RESEND_API_KEY", "")
     audience_id = os.environ.get("RESEND_AUDIENCE_ID", "")
