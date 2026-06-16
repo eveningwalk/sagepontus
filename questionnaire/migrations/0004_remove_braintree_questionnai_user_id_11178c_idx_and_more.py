@@ -81,6 +81,10 @@ class Migration(migrations.Migration):
             field=models.PositiveIntegerField(default=0, editable=False),
             preserve_default=False,
         ),
+        migrations.RunSQL(
+            "DROP INDEX IF EXISTS questionnaire_brainblocknode_tree_id_d073f00f;",
+            reverse_sql="",
+        ),
         migrations.AddField(
             model_name='brainblocknode',
             name='tree_id',
