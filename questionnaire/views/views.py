@@ -48,7 +48,10 @@ def _demo_flow_template(request, base_name: str) -> str:
 
 
 def root(request):
-    if request.user.is_authenticated:
+    host = request.get_host().split(':')[0]
+    is_pt_domain = (host == 'pt.sagepontus.com')
+
+    if not is_pt_domain and request.user.is_authenticated:
         demo_username = getattr(settings, "DEMO_USER_USERNAME", "")
         if getattr(settings, "DEMO_ENABLED", False) and demo_username and request.user.get_username() == demo_username:
             response = redirect("demo")
