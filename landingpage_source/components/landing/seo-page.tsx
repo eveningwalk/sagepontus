@@ -88,6 +88,11 @@ const proof = {
       attribution: 'Outpatient PT · r/physicaltherapy',
     },
     {
+      initials: 'PT',
+      quote: 'A thorough examination and history is probably the most important thing we do. Unfortunately it takes time, and that is what seems to be constantly being taken away.',
+      attribution: 'Outpatient PT · r/physicaltherapy',
+    },
+    {
       initials: 'DPT',
       quote: "I'd rather get over-communicated to than find out three sessions later that something important was missed.",
       attribution: 'DPT · r/physicaltherapy',
@@ -518,7 +523,7 @@ export function SeoPage() {
     </div>
 
     {/* 리뷰 카드 그리드 (blockquote + cite 구조 유지) */}
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
       {proof.quotes.map((q, i) => (
         <blockquote
           key={i}
