@@ -1,0 +1,49 @@
+steps:
+  # ── 1. 테스트 — 실패 시 빌드/배포 중단 ────────────────────────────────────
+  - name: 'python:3.12-slim'
+    id: test
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        pip install --quiet django dj-database-url python-dotenv pytest pytest-django
+        python -m pytest vertical_pt/tests/ -v --tb=short
+    env:
+      - 'DATABASE_URL=sqlite:////tmp/test.db'
+      - 'DJANGO_SECRET_KEY=ci-only-not-a-real-secret'
+      - 'DJANGO_ALLOWED_HOSTS=*'
+
+  # ── 2. Docker 이미지 빌드 ──────────────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: build
+    args:
+      - build
+      - -t
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/eveningwalk-sagepontus/sagepontus:$COMMIT_SHA'
+      - .
+    waitFor: [test]
+
+  # ── 3. Artifact Registry 푸시 ─────────────────────────────────────────────
+  - name: 'gcr.io/cloud-builders/docker'
+    id: push
+    args:
+      - push
+      - 'us-east4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/eveningwalk-sagepontus/sagepontus:$COMMIT_SHA'
+
+  # ── 4. Cloud Run 배포 ─────────────────────────────────────────────────────
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: deploy
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - sagepontus
+      - '--image=us-east4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/eveningwalk-sagepontus/sagepontus:$COMMIT_SHA'
+      - '--region=us-east4'
+      - '--quiet'
+
+images:
+  - 'us-east4-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/eveningwalk-sagepontus/sagepontus:$COMMIT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
