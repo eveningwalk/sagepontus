@@ -1,11 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Sage Pontus — PT Red Flag Alert",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AI-powered Red Flag screening for Physical Therapists. Paste SOAP notes to detect clinical warning signs instantly.",
 
   "action": {
-    "default_popup": "popup/popup.html",
     "default_title": "PT Red Flag Alert",
     "default_icon": {
       "16":  "icons/icon16.png",
@@ -18,10 +17,20 @@
     "service_worker": "background.js"
   },
 
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+
   "permissions": [
     "storage",
     "clipboardRead",
-    "clipboardWrite"
+    "clipboardWrite",
+    "scripting",
+    "activeTab"
   ],
 
   "host_permissions": [
