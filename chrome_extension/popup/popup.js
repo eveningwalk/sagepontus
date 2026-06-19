@@ -4,7 +4,7 @@
  */
 
 // ── 상수 ───────────────────────────────────────────────────────────
-const DEFAULT_SERVER = "https://sagepontus-284182376290.asia-northeast1.run.app";
+const DEFAULT_SERVER = "https://sagepontus-284182376290.us-east4.run.app";
 
 const CONDITION_LABELS = {
   cauda_equina: "Cauda Equina Syndrome",

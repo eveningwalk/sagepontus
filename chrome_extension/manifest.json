@@ -25,7 +25,7 @@
   ],
 
   "host_permissions": [
-    "https://sagepontus-284182376290.asia-northeast1.run.app/*",
+    "https://sagepontus-284182376290.us-east4.run.app/*",
     "http://localhost:8000/*",
     "http://127.0.0.1:8000/*"
   ],
