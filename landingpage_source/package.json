@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "mkdir -p ../static/landing ../static/_next && cp -r out/* ../static/landing/ && cp -r out/_next/* ../static/_next/",
+    "postbuild": "mkdir -p ../static/landing ../static/_next && cp -r out/_next/. ../static/_next/ && cp -r out/. ../static/landing/ && rm -rf ../static/landing/_next",
     "start": "next start",
     "lint": "eslint ."
   },

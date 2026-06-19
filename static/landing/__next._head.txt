@@ -1,6 +1,0 @@
-1:"$Sreact.fragment"
-2:I[46608,["/static/_next/static/chunks/0-jkjjzq~pqlz.js","/static/_next/static/chunks/0_8b2jiliqu_y.js"],"ViewportBoundary"]
-3:I[46608,["/static/_next/static/chunks/0-jkjjzq~pqlz.js","/static/_next/static/chunks/0_8b2jiliqu_y.js"],"MetadataBoundary"]
-4:"$Sreact.suspense"
-5:I[91530,["/static/_next/static/chunks/0-jkjjzq~pqlz.js","/static/_next/static/chunks/0_8b2jiliqu_y.js"],"IconMark"]
-0:{"rsc":["$","$1","h",{"children":[null,["$","$L2",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1"}]]}],["$","div",null,{"hidden":true,"children":["$","$L3",null,{"children":["$","$4",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"SagePontus | PT Red Flag Screening & Compliance Shield"}],["$","meta","1",{"name":"description","content":"Protect your physical therapy clinic from malpractice lawsuits and claim denials. SagePontus screens Goodman's 6 criteria in real time."}],["$","link","2",{"rel":"icon","href":"/favicon.png"}],["$","link","3",{"rel":"apple-touch-icon","href":"/apple-icon.png"}],["$","$L5","4",{}]]}]}]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"isPartial":false,"staleTime":300,"varyParams":null,"buildId":"pY15MkJxMdCpp9Hagpm9T"}

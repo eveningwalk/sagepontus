@@ -100,7 +100,9 @@ Desktop.ini
 tmp_envvars.yaml
 
 # -----------------------------------------------------------------------------
-# Next.js build artifacts
+# Next.js build artifacts (Dockerfile에서 빌드 — git 추적 불필요)
 # -----------------------------------------------------------------------------
 landingpage_source/out/
 landingpage_source/tsconfig.tsbuildinfo
+static/_next/
+static/landing/
