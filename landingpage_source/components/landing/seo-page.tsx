@@ -13,19 +13,21 @@ const BASE = process.env.NEXT_PUBLIC_ASSET_BASE ?? ''
 
 // ── [Hook] 카운트업 ────────────────────────────────────────────────────────────
 function useCountUp(end: number, duration = 1200, active = false) {
-  const [count, setCount] = useState(0)
+  // SSR: 최종값으로 초기화 → 정적 HTML / JS 미로딩 시에도 올바른 숫자 표시
+  const [count, setCount] = useState(end)
   const hasAnimated = useRef(false)
 
   useEffect(() => {
-    if (!active || hasAnimated.current || end === 0) return
+    if (!active || hasAnimated.current) return
+    hasAnimated.current = true
     let startTs: number | null = null
     const step = (ts: number) => {
       if (!startTs) startTs = ts
       const progress = Math.min((ts - startTs) / duration, 1)
       const eased = 1 - Math.pow(1 - progress, 3)
-      setCount(Math.floor(eased * end))
+      setCount(Math.round(eased * end))
       if (progress < 1) window.requestAnimationFrame(step)
-      else hasAnimated.current = true
+      else setCount(end)
     }
     window.requestAnimationFrame(step)
   }, [end, duration, active])
