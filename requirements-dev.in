@@ -4,3 +4,7 @@
 jupyterlab
 matplotlib
 debugpy
+
+# 테스트
+pytest
+pytest-django

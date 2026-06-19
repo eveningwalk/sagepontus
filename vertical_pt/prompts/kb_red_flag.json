@@ -245,7 +245,8 @@
       "slipped on",
       "slipping",
       "미끄러짐",
-      "미끄러져"
+      "미끄러져",
+      "fall down stairs"
     ],
     "patterns": [
       "(?:바닥|계단|사다리|지붕|나무|자전거|오토바이|말)에서\\s*떨어짐",
@@ -673,9 +674,11 @@
       "pain unchanged with position",
       "does not change with position",
       "no change with movement",
-      "pain same with movement"
+      "pain same with movement",
+      "does not change with movement or position",
+      "does not change with movement"
     ],
-    "depth": 0.8,
+    "depth": 0.65,
     "category": "red_flag_urgent",
     "condition_ref": "vascular",
     "alarm_level": "RED",
@@ -752,7 +755,6 @@
       "가만히 있으면 악화",
       "improves with activity",
       "worsens with rest",
-      "better with movement",
       "worse at rest",
       "improves with exercise"
     ],
