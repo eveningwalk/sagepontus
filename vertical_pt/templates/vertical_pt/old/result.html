@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Red Flag Result — Sage Pontus{% endblock %}
+
+{% block extra_css %}
+<style>
+  .pt-wrap { max-width: 560px; margin: 48px auto; padding: 0 16px; }
+
+  /* ── Alarm Banner ── */
+  .alarm-banner { display:flex; align-items:center; gap:14px;
+                  padding:16px; border-radius:12px; margin-bottom:16px; border:2px solid; }
+  .alarm-banner.red    { background:#fef2f2; border-color:#dc2626; }
+  .alarm-banner.yellow { background:#fffbeb; border-color:#d97706; }
+  .alarm-banner.none   { background:#f0fdf4; border-color:#16a34a; }
+
+  .alarm-icon  { font-size:40px; line-height:1; }
+  .alarm-level { font-size:18px; font-weight:900; }
+  .alarm-banner.red    .alarm-level { color:#dc2626; }
+  .alarm-banner.yellow .alarm-level { color:#d97706; }
+  .alarm-banner.none   .alarm-level { color:#16a34a; }
+  .alarm-cond  { font-size:13px; color:#6b7280; margin-top:3px; }
+
+  /* ── Trigger ── */
+  .trigger-box { background:#fef2f2; border-radius:7px; padding:9px 12px;
+                 font-size:12px; margin-bottom:12px; }
+  .trigger-box span { color:#9ca3af; }
+  .trigger-box strong { color:#dc2626; }
+
+  /* ── Sections ── */
+  .section { margin-bottom:16px; }
+  .section-title { font-size:11px; font-weight:700; color:#6b7280;
+                   text-transform:uppercase; letter-spacing:.5px; margin-bottom:6px; }
+  .matched-list { list-style:none; display:flex; flex-direction:column; gap:4px; }
+  .matched-list li { padding:7px 11px; background:#fff; border:1px solid #e5e7eb;
+                     border-radius:7px; font-size:12px; color:#374151; }
+  .matched-list li::before { content:"⚑ "; color:#f59e0b; }
+
+  .context-box { background:#fff; border:1px solid #e5e7eb; border-radius:7px;
+                 padding:10px 12px; font-size:12px; color:#374151; line-height:1.6; }
+
+  /* ── Referral ── */
+  .referral-letter { background:#fff; border:1px solid #d1d5db; border-radius:7px;
+                     padding:12px; font-family:monospace; font-size:11px; line-height:1.6;
+                     white-space:pre-wrap; max-height:260px; overflow-y:auto; color:#1f2937; }
+  .btn-copy { margin-top:8px; padding:7px 14px; border-radius:7px; border:1px solid #d1d5db;
+              background:#f9fafb; font-size:12px; cursor:pointer; }
+  .btn-copy:hover { background:#f3f4f6; }
+
+  /* ── Score Bar ── */
+  .score-row { display:flex; align-items:center; gap:10px;
+               padding-top:12px; border-top:1px solid #e5e7eb; margin-top:12px; }
+  .score-label { font-size:11px; color:#9ca3af; white-space:nowrap; }
+  .score-bar-wrap { flex:1; height:6px; background:#e5e7eb; border-radius:99px; overflow:hidden; }
+  .score-bar { height:100%; border-radius:99px; }
+  .score-value { font-size:12px; font-weight:700; color:#374151; white-space:nowrap; }
+
+  /* ── Back button ── */
+  .back-link { display:inline-block; font-size:13px; color:#6b7280;
+               text-decoration:none; margin-bottom:16px; }
+  .back-link:hover { color:#4f46e5; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pt-wrap">
+
+  <a href="{% url 'vertical_pt:pt_index' %}" class="back-link">← New Analysis</a>
+
+  {% with alarm|lower as alarm_class %}
+  <div class="alarm-banner {{ alarm_class }}">
+    <div class="alarm-icon">
+      {% if alarm == "RED" %}🚨{% elif alarm == "YELLOW" %}⚠️{% else %}✅{% endif %}
+    </div>
+    <div>
+      {% if alarm == "RED" %}
+        <div class="alarm-level">RED ALERT — Immediate Action Required</div>
+      {% elif alarm == "YELLOW" %}
+        <div class="alarm-level">YELLOW FLAG — Physician Notification</div>
+      {% else %}
+        <div class="alarm-level">No Red Flags Detected</div>
+      {% endif %}
+      {% if condition %}
+      <div class="alarm-cond">{{ condition|title }}</div>
+      {% endif %}
+    </div>
+  </div>
+  {% endwith %}
+
+  {% if trigger %}
+  <div class="trigger-box">
+    <span>Primary trigger: </span><strong>{{ trigger }}</strong>
+  </div>
+  {% endif %}
+
+  {% if matched %}
+  <div class="section">
+    <div class="section-title">Detected Indicators</div>
+    <ul class="matched-list">
+      {% for item in matched %}
+      <li>{{ item }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if patient_context.session_count %}
+  <div class="section">
+    <div class="section-title">Patient History ({{ patient_context.session_count }} sessions)</div>
+    <div class="context-box">{{ patient_context.summary }}</div>
+  </div>
+  {% endif %}
+
+  {% if referral_letter %}
+  <div class="section">
+    <div class="section-title">📄 Physician Referral Letter</div>
+    <div class="referral-letter" id="referral-text">{{ referral_letter }}</div>
+    <button class="btn-copy" onclick="copyReferral()">📋 Copy Letter</button>
+  </div>
+  {% endif %}
+
+  <div class="score-row">
+    <span class="score-label">Risk score</span>
+    <div class="score-bar-wrap">
+      <div class="score-bar" id="score-bar"></div>
+    </div>
+    <span class="score-value">{{ score_pct }}%</span>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const score = {{ score|default:0 }};
+    const alarm = "{{ alarm }}";
+    const colors = { RED: "#dc2626", YELLOW: "#d97706", NONE: "#16a34a" };
+    const bar = document.getElementById("score-bar");
+    if (bar) {
+      bar.style.width = Math.round(score * 100) + "%";
+      bar.style.background = colors[alarm] || "#6b7280";
+    }
+  })();
+
+  function copyReferral() {
+    const text = document.getElementById("referral-text").innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = event.target;
+      btn.textContent = "✅ Copied!";
+      setTimeout(() => { btn.textContent = "📋 Copy Letter"; }, 2000);
+    });
+  }
+</script>
+{% endblock %}

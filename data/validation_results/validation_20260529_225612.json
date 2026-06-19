@@ -1,0 +1,15 @@
+{
+  "timestamp": "20260529_225612",
+  "scenario_count": 28,
+  "passed": 27,
+  "accuracy": 96.4,
+  "sensitivity": 92.9,
+  "specificity": 100.0,
+  "fnr": 7.1,
+  "fpr": 0.0,
+  "false_negatives": [
+    "FX_03"
+  ],
+  "kb_path": "/home/chrisnam/sage-pontus/sagepontus/questionnaire/prompts/kb/pt_red_flag.json",
+  "protocols_dir": "/home/chrisnam/sage-pontus/sagepontus/data/red_flag_protocols"
+}

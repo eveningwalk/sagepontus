@@ -156,15 +156,19 @@ export function SeoPage() {
   // Effect: Hero typing
   useEffect(() => {
     let i = 0
+    let blinkTimer: ReturnType<typeof setTimeout> | null = null
     const timer = setInterval(() => {
       setHeroText(FULL_TEXT.slice(0, i + 1))
       i++
       if (i >= FULL_TEXT.length) {
         clearInterval(timer)
-        setTimeout(() => setIsAlertActive(true), 400)
+        blinkTimer = setTimeout(() => setIsAlertActive(true), 400)
       }
     }, 25)
-    return () => clearInterval(timer)
+    return () => {
+      clearInterval(timer)
+      if (blinkTimer) clearTimeout(blinkTimer)
+    }
   }, [])
 
   // Effect: Scroll observers

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>FlagChart — Landing Version 3</title>
+  <link rel="stylesheet" href="./dashboard..css">
+</head>
+<body class="landing-version-c">
+<section class="landing-page" id="landing-page" style="display:none;">
+  <header class="landing-nav">
+    <div class="landing-brand">
+      <span class="brand-mark">FC</span>
+      <span>FlagChart</span>
+    </div>
+    <button class="landing-login-btn" onclick="showApp()">Open demo app</button>
+  </header>
+
+  <main class="landing-main">
+    <section class="landing-hero">
+      <div class="landing-copy">
+        <div class="eyebrow">PT/PTA clinical escalation and defensible documentation</div>
+        <h1>Turn red, yellow, and green flag screening into referral-ready documentation.</h1>
+        <p>FlagChart helps physical therapy teams classify concerning symptoms, document clinical reasoning, and generate physician referral, insurance, and legal audit trail packets from the same visit workflow.</p>
+        <div class="landing-actions">
+          <button class="landing-primary" onclick="showApp()">Enter demo workspace</button>
+          <button class="landing-secondary" onclick="showLandingSection('protocol')">View protocol</button>
+        </div>
+      </div>
+      <figure class="landing-photo-card" aria-label="Physical therapist reviewing FlagChart protocol with a patient">
+        <img src="./Gemini_Generated_Image_vz3er2vz3er2vz3e.png" alt="Physical therapist consulting with a patient in a clinic while reviewing documentation on a tablet">
+        <figcaption class="photo-overlay-panel">
+          <div class="preview-row red">
+            <strong>RED</strong>
+            <span>Immediate referral</span>
+          </div>
+          <div class="preview-row yellow">
+            <strong>YELLOW</strong>
+            <span>Physician checkup</span>
+          </div>
+          <div class="preview-row green">
+            <strong>GREEN</strong>
+            <span>Continue PT</span>
+          </div>
+          <div class="preview-doc">
+            <span>Generated packet</span>
+            <p>Referral letter · Insurance rationale · Legal audit trail</p>
+          </div>
+        </figcaption>
+      </figure>
+    </section>
+
+    <section class="landing-section" id="landing-protocol">
+      <div class="landing-section-header">
+        <div class="eyebrow">Clinical workflow</div>
+        <h2>Built around the way PTs screen and document risk</h2>
+      </div>
+      <div class="landing-card-grid">
+        <article class="landing-card red">
+          <strong>Red flag escalation</strong>
+          <p>Identify signs that may require urgent physician evaluation before routine PT continues.</p>
+        </article>
+        <article class="landing-card yellow">
+          <strong>Yellow flag monitoring</strong>
+          <p>Support provider checkup recommendations, follow-up plans, and patient education records.</p>
+        </article>
+        <article class="landing-card green">
+          <strong>Green flag documentation</strong>
+          <p>Preserve rationale for continuing skilled PT when escalation triggers are not present.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="landing-section">
+      <div class="landing-section-header">
+        <div class="eyebrow">Outputs</div>
+        <h2>One screen, three defensible documents</h2>
+      </div>
+      <div class="landing-output-grid">
+        <div>Physician referral summary</div>
+        <div>Payer medical necessity rationale</div>
+        <div>Legal audit trail and communication log</div>
+      </div>
+    </section>
+  </main>
+</section>
+
+<div class="app-shell" id="app-shell">
+
+  <aside class="app-sidebar">
+    <div class="app-sidebar__brand">
+      <span class="brand-mark">FC</span>
+      <span>FlagChart</span>
+    </div>
+
+    <div class="pt-account-box">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div class="pt-avatar">
+          ML
+        </div>
+        <div style="min-width:0;flex:1;">
+          <div class="pt-user-name">
+            Maya Lee, DPT
+          </div>
+          <div class="pt-user-meta">
+            Physical Therapist · Ortho Clinic
+          </div>
+        </div>
+        <a href="#" title="Sign out" class="pt-logout-icon-btn" onclick="showLanding(); return false;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </a>
+      </div>
+    </div>
+
+    <button class="pt-new-btn" id="menu-new" onclick="showNewSession()">
+      <span style="font-size:16px;line-height:1">＋</span> New Session
+    </button>
+
+    <div class="pt-menu-group">
+      <button id="menu-alarms" onclick="showAlarms()" class="pt-menu-btn">
+        <span class="nav-dot red"></span>
+        <span>Flag Board</span>
+        <span id="alarm-badge" class="pt-menu-badge">0</span>
+      </button>
+      <button id="menu-docs" onclick="showDocs()" class="pt-menu-btn">
+        <span class="nav-dot yellow"></span>
+        <span>Documentation</span>
+      </button>
+      <button id="menu-protocol" onclick="showProtocolGuide()" class="pt-menu-btn">
+        <span class="nav-dot green"></span>
+        <span>Protocol Guide</span>
+      </button>
+    </div>
+
+    <div class="pt-search-wrap">
+      <span class="pt-search-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </span>
+      <input class="pt-search" type="text" placeholder="Search patients..." id="patient-search" oninput="filterPatients(this.value)" />
+    </div>
+
+    <div class="app-sidebar__section-label" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Patients</span>
+      <span id="patient-count" class="pt-count-badge">0</span>
+    </div>
+    
+    <nav class="app-sidebar__nav" id="patient-list" style="padding:0 6px;gap:0;">
+      </nav>
+
+    <div class="pt-dev-tools">
+      <div class="pt-dev-title">Prototype Tools</div>
+      <button id="reseed-btn" onclick="runReseed()" class="pt-dev-btn">Reset demo</button>
+      <button id="rescore-btn" onclick="runBackfill()" class="pt-dev-btn">Review flag board</button>
+    </div>
+
+    <div class="app-sidebar__footer">
+      <a href="#" class="app-sidebar__footer-link" onclick="showLanding(); return false;">Sign out</a>
+    </div>
+  </aside>
+
+  <main class="app-main">
+    <div class="pt-main">
+      <section class="hero-band">
+        <div>
+          <div class="eyebrow">PT/PTA clinical escalation and documentation</div>
+          <h1>FlagChart</h1>
+          <p>Screen SOAP notes against red, yellow, and green flag protocols, then generate referral, legal, and payer-ready documentation.</p>
+        </div>
+        <div class="protocol-grid" aria-label="Flag protocol legend">
+          <div class="protocol-card red">
+            <strong>Red</strong>
+            <span>Immediate medical referral</span>
+          </div>
+          <div class="protocol-card yellow">
+            <strong>Yellow</strong>
+            <span>Physician checkup recommended</span>
+          </div>
+          <div class="protocol-card green">
+            <strong>Green</strong>
+            <span>Continue PT with documentation</span>
+          </div>
+        </div>
+      </section>
+      
+      <div id="view-new">
+        <div class="pt-panels">
+
+          <div class="pt-card">
+            <div class="pt-card-header pt-card-header-split">
+              <span>Clinical Note Intake</span>
+              <span class="pt-status-pill" id="draft-status">Draft</span>
+            </div>
+            <div class="pt-card-body">
+              <form id="soapForm" onsubmit="handleAnalyze(event)">
+                <div class="pt-row">
+                  <div>
+                    <label class="pt-label">Patient Name</label>
+                    <input class="pt-input" id="inp-name" placeholder="e.g. Jordan Miller" required />
+                  </div>
+                  <div>
+                    <label class="pt-label">Patient ID</label>
+                    <div style="display:flex;gap:6px;">
+                      <input class="pt-input" id="inp-id" placeholder="e.g. FC-260518-001" style="flex:1;" oninput="this.value=this.value.toUpperCase()" required />
+                      <button type="button" onclick="generatePatientId()" class="pt-inline-btn" title="Generate a visit-based patient ID">Generate</button>
+                    </div>
+                  </div>
+                </div>
+                <div style="margin-bottom:12px">
+                  <label class="pt-label">Session Date</label>
+                  <input class="pt-input" id="inp-date" type="date" required />
+                </div>
+
+                <div>
+                  <label class="pt-label">SOAP Note Content</label>
+                  <div class="soap-tab-bar">
+                    <button type="button" class="soap-tab-btn active" id="stab-S" onclick="switchSoapTab('S')">
+                      <span>S</span><small>Subjective</small><i></i>
+                    </button>
+                    <button type="button" class="soap-tab-btn" id="stab-O" onclick="switchSoapTab('O')">
+                      <span>O</span><small>Objective</small><i></i>
+                    </button>
+                    <button type="button" class="soap-tab-btn" id="stab-A" onclick="switchSoapTab('A')">
+                      <span>A</span><small>Assessment</small><i></i>
+                    </button>
+                    <button type="button" class="soap-tab-btn" id="stab-P" onclick="switchSoapTab('P')">
+                      <span>P</span><small>Plan</small><i></i>
+                    </button>
+                  </div>
+                  <textarea class="pt-textarea" id="soap-content" rows="10" placeholder="Chief complaint, symptom behavior, onset, aggravating/easing factors, medical history..."></textarea>
+                  <div class="soap-helper-row">
+                    <span id="soap-helper">S: Capture patient-reported symptoms, history, and functional impact.</span>
+                    <span id="soap-counter">0 chars</span>
+                  </div>
+                </div>
+
+                <div class="rf-panel">
+                  <span class="rf-chip-label">Red Flag: urgent medical referral</span>
+                  <div class="rf-chip-row">
+                    <button type="button" class="rf-chip red" data-flag="cauda" data-level="RED" onclick="toggleChip(this)">Cauda equina signs</button>
+                    <button type="button" class="rf-chip red" data-flag="neuro" data-level="RED" onclick="toggleChip(this)">Progressive neuro deficit</button>
+                    <button type="button" class="rf-chip red" data-flag="trauma" data-level="RED" onclick="toggleChip(this)">Major trauma</button>
+                  </div>
+                  <span class="rf-chip-label">Yellow Flag: physician checkup recommended</span>
+                  <div class="rf-chip-row">
+                    <button type="button" class="rf-chip yellow" data-flag="weight" data-level="YELLOW" onclick="toggleChip(this)">Unexplained weight loss</button>
+                    <button type="button" class="rf-chip yellow" data-flag="night" data-level="YELLOW" onclick="toggleChip(this)">Night pain</button>
+                    <button type="button" class="rf-chip yellow" data-flag="steroid" data-level="YELLOW" onclick="toggleChip(this)">Steroid use / osteoporosis</button>
+                  </div>
+                </div>
+
+                <div class="form-alert" id="form-alert" aria-live="polite"></div>
+                <button type="submit" class="pt-analyze-btn" id="analyze-btn">
+                  <span class="pt-spinner" id="btn-spinner" style="display:none;"></span>
+                  Run Flag Protocol
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div class="pt-card" id="analysis-result-panel">
+            <div class="pt-card-header pt-card-header-split">
+              <span>Protocol Result & Documentation</span>
+              <span class="pt-status-pill neutral" id="result-status">Ready</span>
+            </div>
+            <div class="pt-card-body" id="result-placeholder">
+              <div class="pt-empty">
+                <div class="pt-empty-icon">Protocol</div>
+                <div class="pt-empty-title">Ready to classify this visit</div>
+                <div class="pt-empty-text">FlagChart will return the care escalation level, clinical rationale, and documentation packet for referral, insurance, and legal defensibility.</div>
+              </div>
+            </div>
+            
+            <div class="pt-card-body" id="result-content" style="display:none;">
+              <div class="pt-alarm-banner" id="res-banner">
+                <div class="pt-alarm-icon" id="res-icon">RED</div>
+                <div>
+                  <div class="pt-alarm-level" id="res-level">RED FLAG</div>
+                  <div class="pt-alarm-cond" id="res-cond">Clinical escalation rationale</div>
+                </div>
+              </div>
+
+              <div class="pt-score-row">
+                <span class="pt-score-label">Protocol score</span>
+                <div class="pt-score-bar"><div class="pt-score-fill" id="res-score-bar"></div></div>
+                <span class="pt-score-val" id="res-score-pct">0%</span>
+              </div>
+
+              <div class="pt-section-title">Detected clinical indicators</div>
+              <div class="pt-hit-list" id="res-hits"></div>
+
+              <div class="doc-output-row">
+                <span>Physician referral</span>
+                <span>Insurance rationale</span>
+                <span>Legal audit trail</span>
+              </div>
+
+              <div class="pt-section-title">Documentation packet draft</div>
+              <div class="pt-referral" id="res-letter"></div>
+              <button class="pt-copy-btn" onclick="copyReferralText(event)">Copy documentation</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div id="view-alarms" class="view-section" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="eyebrow">Clinical work queue</div>
+            <h2>Flag Board</h2>
+          </div>
+          <button class="pt-inline-btn" onclick="showNewSession()">New screen</button>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-card red">
+            <span>Red flags</span>
+            <strong>1</strong>
+            <p>Immediate referral queue</p>
+          </div>
+          <div class="summary-card yellow">
+            <span>Yellow flags</span>
+            <strong>1</strong>
+            <p>Physician checkup advised</p>
+          </div>
+          <div class="summary-card green">
+            <span>Green visits</span>
+            <strong>1</strong>
+            <p>Continue PT with documentation</p>
+          </div>
+        </div>
+
+        <div class="pt-card">
+          <div class="pt-card-header pt-card-header-split">
+            <span>Patients requiring review</span>
+            <span class="pt-status-pill neutral">Today</span>
+          </div>
+          <div class="flag-board-list">
+            <button class="flag-row red" onclick="selectPatient('FC-260518-001')">
+              <span class="flag-level">RED</span>
+              <span class="flag-main">Jordan Miller</span>
+              <span class="flag-desc">Progressive neuro deficit documented. Referral packet pending.</span>
+              <span class="flag-action">Open case</span>
+            </button>
+            <button class="flag-row yellow" onclick="selectPatient('FC-260515-042')">
+              <span class="flag-level">YELLOW</span>
+              <span class="flag-main">Avery Chen</span>
+              <span class="flag-desc">Night pain and medical history warrant physician checkup.</span>
+              <span class="flag-action">Review note</span>
+            </button>
+            <button class="flag-row green" onclick="selectPatient('FC-260510-011')">
+              <span class="flag-level">GREEN</span>
+              <span class="flag-main">Morgan Davis</span>
+              <span class="flag-desc">No current referral trigger. Continue PT and monitor.</span>
+              <span class="flag-action">View chart</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="view-docs" class="view-section" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="eyebrow">Payer and legal defensibility</div>
+            <h2>Documentation</h2>
+          </div>
+          <span class="pt-status-pill success">3 templates ready</span>
+        </div>
+
+        <div class="doc-template-grid">
+          <div class="doc-template-card">
+            <div class="doc-type red">Referral</div>
+            <h3>Physician Referral Letter</h3>
+            <p>Summarizes clinical findings, escalation rationale, requested medical review, and PT hold/continue guidance.</p>
+            <button class="pt-copy-btn" onclick="previewDoc('referral')">Preview template</button>
+          </div>
+          <div class="doc-template-card">
+            <div class="doc-type yellow">Insurance</div>
+            <h3>Medical Necessity Rationale</h3>
+            <p>Connects patient symptoms, objective findings, flag status, and plan of care to payer review language.</p>
+            <button class="pt-copy-btn" onclick="previewDoc('insurance')">Preview template</button>
+          </div>
+          <div class="doc-template-card">
+            <div class="doc-type green">Audit</div>
+            <h3>Legal Audit Trail</h3>
+            <p>Records screening logic, patient education, provider notification, and follow-up instructions for defensible documentation.</p>
+            <button class="pt-copy-btn" onclick="previewDoc('audit')">Preview template</button>
+          </div>
+        </div>
+
+        <div class="pt-card">
+          <div class="pt-card-header">Document preview</div>
+          <div class="pt-referral doc-preview" id="doc-preview">Select a template to preview the generated documentation style.</div>
+        </div>
+      </div>
+
+      <div id="view-protocol" class="view-section" style="display:none;">
+        <div class="view-header">
+          <div>
+            <div class="eyebrow">Clinic policy support</div>
+            <h2>Protocol Guide</h2>
+          </div>
+          <span class="pt-status-pill neutral">Mock content</span>
+        </div>
+
+        <div class="protocol-detail-grid">
+          <div class="protocol-detail red">
+            <strong>Red Flag</strong>
+            <p>Findings that may require urgent medical referral before continuing routine PT treatment.</p>
+            <ul>
+              <li>Cauda equina signs</li>
+              <li>Progressive neurological deficit</li>
+              <li>Major trauma with concerning presentation</li>
+            </ul>
+          </div>
+          <div class="protocol-detail yellow">
+            <strong>Yellow Flag</strong>
+            <p>Findings that support physician checkup, monitoring, documentation, and communication.</p>
+            <ul>
+              <li>Unexplained weight loss</li>
+              <li>Night pain or systemic symptoms</li>
+              <li>Steroid use, osteoporosis, or complex history</li>
+            </ul>
+          </div>
+          <div class="protocol-detail green">
+            <strong>Green Flag</strong>
+            <p>No current escalation trigger identified. Continue PT with routine re-screening.</p>
+            <ul>
+              <li>Stable presentation</li>
+              <li>No selected escalation indicators</li>
+              <li>Plan of care and monitoring documented</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="./dashboard.js"></script>
+</body>
+</html>

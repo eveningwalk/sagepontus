@@ -92,3 +92,15 @@ ehthumbs.db
 Desktop.ini
 *.Zone.Identifier
 *:Zone.Identifier
+*.lnk
+
+# -----------------------------------------------------------------------------
+# Local secrets / temp
+# -----------------------------------------------------------------------------
+tmp_envvars.yaml
+
+# -----------------------------------------------------------------------------
+# Next.js build artifacts
+# -----------------------------------------------------------------------------
+landingpage_source/out/
+landingpage_source/tsconfig.tsbuildinfo
