@@ -1,0 +1,146 @@
+{
+  "SOAP_001": {
+    "label": "주요 호소 증상 (Chief Complaint)",
+    "synonyms": ["주요 증상", "불편 부위", "아픈 곳", "주증상", "통증 주소"],
+    "depth": 0.90,
+    "category": "symptom"
+  },
+  "SOAP_002": {
+    "label": "진단명 (Diagnosis)",
+    "synonyms": ["진단", "진단명", "병명", "의심 질환", "확인된 질환", "소견서 진단"],
+    "depth": 0.95,
+    "category": "diagnosis"
+  },
+  "SOAP_003": {
+    "label": "통증 강도 NRS (Numeric Rating Scale)",
+    "synonyms": ["NRS", "통증 점수", "통증 숫자", "통증 강도", "0에서 10"],
+    "depth": 0.85,
+    "category": "assessment"
+  },
+  "SOAP_004": {
+    "label": "방사통 (Radiculopathy)",
+    "synonyms": ["저리다", "저린", "찌릿", "방사통", "다리로 내려가는 통증", "팔로 내려가는"],
+    "depth": 0.85,
+    "category": "symptom"
+  },
+  "SOAP_005": {
+    "label": "관절 가동 범위 (ROM)",
+    "synonyms": ["ROM", "가동 범위", "관절 범위", "굴곡", "신전", "측방굴곡", "회전"],
+    "depth": 0.88,
+    "category": "objective"
+  },
+  "SOAP_006": {
+    "label": "도수 근력 검사 (MMT)",
+    "synonyms": ["MMT", "근력 검사", "근력 등급", "근력 측정", "힘 약화"],
+    "depth": 0.88,
+    "category": "objective"
+  },
+  "SOAP_007": {
+    "label": "일상생활 동작 제한 (ADL)",
+    "synonyms": ["ADL", "일상생활", "보행 제한", "앉기 어려움", "계단", "일상 동작"],
+    "depth": 0.82,
+    "category": "function"
+  },
+  "SOAP_008": {
+    "label": "신경학적 검사 (Neurological Exam)",
+    "synonyms": ["신경 검사", "DTR", "심부건반사", "감각 저하", "피부분절", "Babinski"],
+    "depth": 0.87,
+    "category": "objective"
+  },
+  "SOAP_009": {
+    "label": "특수 검사 (Special Tests)",
+    "synonyms": ["SLR", "Slump test", "FABER", "특수검사", "정형외과적 검사", "유발 검사"],
+    "depth": 0.86,
+    "category": "objective"
+  },
+  "SOAP_010": {
+    "label": "자세 및 촉진 (Posture & Palpation)",
+    "synonyms": ["압통", "근경련", "자세 불균형", "촉진", "근긴장도", "측만"],
+    "depth": 0.80,
+    "category": "objective"
+  },
+  "SOAP_011": {
+    "label": "문제 목록 (Problem List)",
+    "synonyms": ["문제 목록", "임상 문제", "problem list", "기능 문제", "치료 문제"],
+    "depth": 0.88,
+    "category": "assessment"
+  },
+  "SOAP_012": {
+    "label": "치료 가설 (Clinical Reasoning)",
+    "synonyms": ["치료 가설", "임상 추론", "병리 기전", "원인 분석", "치료 방향"],
+    "depth": 0.85,
+    "category": "assessment"
+  },
+  "SOAP_013": {
+    "label": "예후 예측 (Prognosis)",
+    "synonyms": ["예후", "예후 예측", "회복 기간", "치료 기간 예측", "호전 가능성"],
+    "depth": 0.83,
+    "category": "assessment"
+  },
+  "SOAP_014": {
+    "label": "도수치료 (Manual Therapy)",
+    "synonyms": ["도수치료", "관절 가동술", "mobilization", "manipulation", "도수"],
+    "depth": 0.90,
+    "category": "intervention"
+  },
+  "SOAP_015": {
+    "label": "운동치료 (Therapeutic Exercise)",
+    "synonyms": ["운동치료", "재활 운동", "코어 운동", "강화 운동", "스트레칭"],
+    "depth": 0.90,
+    "category": "intervention"
+  },
+  "SOAP_016": {
+    "label": "전기치료 (Electrical Stimulation)",
+    "synonyms": ["전기치료", "TENS", "EST", "전기 자극", "전기"],
+    "depth": 0.87,
+    "category": "intervention"
+  },
+  "SOAP_017": {
+    "label": "온열치료 (Thermotherapy)",
+    "synonyms": ["핫팩", "온열치료", "온찜질", "찜질"],
+    "depth": 0.82,
+    "category": "intervention"
+  },
+  "SOAP_018": {
+    "label": "신경 가동화 (Neural Mobilization)",
+    "synonyms": ["신경 가동화", "신경 이동", "신경 스트레칭", "nerve mobilization"],
+    "depth": 0.84,
+    "category": "intervention"
+  },
+  "SOAP_019": {
+    "label": "치료 목표 (Treatment Goal)",
+    "synonyms": ["치료 목표", "기능 회복", "통증 감소", "복직", "일상 복귀"],
+    "depth": 0.88,
+    "category": "goal"
+  },
+  "SOAP_020": {
+    "label": "차기 세션 계획 (Next Session Plan)",
+    "synonyms": ["다음 세션", "다음 치료", "치료 계획", "재평가", "진행 계획"],
+    "depth": 0.82,
+    "category": "plan"
+  },
+  "SOAP_021": {
+    "label": "소견서 (Medical Referral)",
+    "synonyms": ["소견서", "의사 소견", "진료 의뢰서", "referral", "진단서"],
+    "depth": 0.92,
+    "category": "context"
+  },
+  "SOAP_022": {
+    "label": "추간판 탈출증 (HNP / Disc Herniation)",
+    "synonyms": ["디스크", "허리 디스크", "목 디스크", "추간판 탈출", "HNP"],
+    "depth": 0.93,
+    "category": "diagnosis"
+  },
+  "SOAP_023": {
+    "label": "척추관 협착증 (Spinal Stenosis)",
+    "synonyms": ["협착증", "척추 협착", "좁아진", "걸으면 다리 저림"],
+    "depth": 0.93,
+    "category": "diagnosis"
+  },
+  "SOAP_024": {
+    "label": "회전근개 파열 (Rotator Cuff Tear)",
+    "synonyms": ["회전근개", "어깨 힘줄", "어깨 파열", "어깨 들기 힘든"],
+    "depth": 0.93,
+    "category": "diagnosis"
+  }
+}

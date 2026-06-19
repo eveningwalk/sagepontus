@@ -65,6 +65,8 @@ body {
   display: flex;
   flex-direction: column;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  height: 100%;
 }
 
 .app-sidebar__brand {
@@ -91,7 +93,13 @@ body {
   gap: 0.25rem;
   padding: 0 0.75rem;
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
+
+.app-sidebar__nav::-webkit-scrollbar { width: 4px; }
+.app-sidebar__nav::-webkit-scrollbar-track { background: transparent; }
+.app-sidebar__nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 4px; }
 
 .app-sidebar__link {
   display: block;

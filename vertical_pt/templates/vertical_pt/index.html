@@ -1,0 +1,65 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Sign In — Sage Pontus</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 15px; line-height: 1.5; color: #1a1d21; background: #e8eaef;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .auth-card {
+      background: #ffffff; border-radius: 12px; width: 100%; max-width: 420px;
+      padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #dcdfe4;
+    }
+    .auth-brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+    .auth-brand h2 { margin: 0; font-size: 20px; font-weight: 800; color: #0f172a; }
+    .form-group { margin-bottom: 20px; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .form-control {
+      width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px;
+      background: #f8fafc; font-size: 14px; color: #1e293b; outline: none; transition: border 0.15s;
+    }
+    .form-control:focus { border-color: #0d9488; background: #ffffff; }
+    .btn-submit {
+      width: 100%; padding: 12px; border: none; border-radius: 8px; background: #0f766e;
+      color: #ffffff; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.15s;
+    }
+    .btn-submit:hover { background: #115e59; }
+    .auth-footer { text-align: center; margin-top: 24px; font-size: 13px; color: #64748b; }
+    .auth-footer a { color: #0d9488; text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+<div class="auth-card">
+  <div class="auth-brand">
+    <div style="font-size: 24px;">🛡️</div>
+    <div>
+      <h2>Sage Pontus</h2>
+      <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Clinical Security Stack</div>
+    </div>
+  </div>
+  <form method="post" action="{% url 'accounts:login' %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="/pt/">
+    <div class="form-group">
+      <label class="form-label">Practitioner Username</label>
+      <input type="text" name="username" class="form-control" required autocomplete="username">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Security Key / Password</label>
+      <input type="password" name="password" class="form-control" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn-submit">Verify Identity Module</button>
+  </form>
+  <div class="auth-footer">
+    New register tracking? <a href="{% url 'accounts:signup' %}">Create account matrix</a>
+  </div>
+</div>
+</body>
+</html>

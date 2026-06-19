@@ -12,12 +12,16 @@
     <h1 class="text-xl font-bold text-foreground">{{ braintree.title }}</h1>
     <p class="text-xs text-muted-foreground mt-0.5">노드를 클릭하면 오른쪽 패널에서 질문·답변을 확인할 수 있습니다 · 스크롤로 줌 · 드래그로 이동</p>
   </div>
+  {% if request.session.demo_mode %}
   <a href="{% url 'questionnaire:demo_session_list' %}"
+  {% else %}
+  <a href="{% url 'questionnaire:my_trees' %}"
+  {% endif %}
      class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground px-4 h-9 rounded-lg border border-border hover:bg-muted transition-colors">
     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M11 17l-5-5m0 0l5-5m-5 5h12"/>
     </svg>
-    세션 목록
+    목록으로
   </a>
 </div>
 
@@ -30,6 +34,10 @@
   <span class="flex items-center gap-1.5">
     <span class="w-3 h-3 rounded-full inline-block" style="background:#5b5ef4"></span>
     공통 질문 블록
+  </span>
+  <span class="flex items-center gap-1.5">
+    <span class="w-3 h-3 rounded-full inline-block" style="background:#7c3aed"></span>
+    버티컬 프로필
   </span>
   <span class="flex items-center gap-1.5">
     <span class="w-3 h-3 rounded-full inline-block" style="background:#1db887"></span>
@@ -49,6 +57,18 @@
   </span>
 </div>
 
+<!-- + 루트 블록 추가 버튼 -->
+<div class="mb-3 flex justify-end">
+  <button onclick="openAddBlockPanel(null)"
+          class="inline-flex items-center gap-1.5 text-sm font-medium px-4 h-9 rounded-lg
+                 bg-primary text-primary-foreground hover:opacity-90 transition-opacity">
+    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+    </svg>
+    블록 추가
+  </button>
+</div>
+
 <!-- Main layout: tree + side panel -->
 <div class="flex gap-4 items-start">
 
@@ -57,12 +77,12 @@
     <div id="tree-container" style="min-height: 520px; cursor: grab;"></div>
   </div>
 
-  <!-- Side panel (hidden until node click) -->
+  <!-- Side panel -->
   <div id="side-panel"
-       class="hidden w-80 flex-shrink-0 bg-card rounded-2xl border border-border shadow-sm"
+       class="hidden w-96 flex-shrink-0 bg-card rounded-2xl border border-border shadow-sm"
        style="min-height: 520px;">
     <div class="px-5 py-4 border-b border-border flex items-center justify-between">
-      <h2 class="text-sm font-semibold text-foreground">질문 · 답변</h2>
+      <h2 id="panel-title" class="text-sm font-semibold text-foreground">질문 · 답변</h2>
       <button id="panel-close"
               class="w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -70,8 +90,8 @@
         </svg>
       </button>
     </div>
-    <div id="panel-content" class="p-5 space-y-4 overflow-y-auto" style="max-height: 600px;">
-      <p class="text-sm text-muted-foreground text-center mt-8">트리에서 질문 노드를 클릭하세요</p>
+    <div id="panel-content" class="p-5 space-y-4 overflow-y-auto" style="max-height: 680px;">
+      <p class="text-sm text-muted-foreground text-center mt-8">노드를 클릭하세요</p>
     </div>
   </div>
 
@@ -84,19 +104,23 @@
 <script>
 (function () {
 
-const API_URL = "{% url 'questionnaire:brainblock_tree_json' braintree.id %}";
+const API_URL       = "{% url 'questionnaire:brainblock_tree_json' braintree.id %}";
+const ADD_BLOCK_URL = "{% url 'questionnaire:add_block_node' braintree.id %}";
+const CSRF          = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+const BRAINTREE_ID  = {{ braintree.id }};
 
 const COLOR = {
-  root:       '#0f1a2e',
-  common:     '#5b5ef4',
-  domain:     '#1db887',
-  ai_followup:'#f59e0b',
-  user_custom:'#10b981',
-  question:   '#eef0f5',
-  qStroke:    '#dde1ea',
-  link:       '#dde1ea',
-  text:       '#0f1a2e',
-  textMuted:  '#637087',
+  root:             '#0f1a2e',
+  common:           '#5b5ef4',
+  vertical_profile: '#7c3aed',
+  domain:           '#1db887',
+  ai_followup:      '#f59e0b',
+  user_custom:      '#10b981',
+  question:         '#eef0f5',
+  qStroke:          '#dde1ea',
+  link:             '#dde1ea',
+  text:             '#0f1a2e',
+  textMuted:        '#637087',
 };
 
 /* ── data transform ────────────────────────────────────────── */
@@ -136,12 +160,20 @@ function escHtml(s) {
     .replace(/\n/g,'<br>');
 }
 
-/* ── side panel ────────────────────────────────────────────── */
-function showPanel(data) {
-  const panel   = document.getElementById('side-panel');
-  const content = document.getElementById('panel-content');
-  panel.classList.remove('hidden');
+/* ── side panel helpers ─────────────────────────────────────── */
+function openPanel(title) {
+  document.getElementById('panel-title').textContent = title;
+  document.getElementById('side-panel').classList.remove('hidden');
+}
+function closePanel() {
+  document.getElementById('side-panel').classList.add('hidden');
+}
+document.getElementById('panel-close').addEventListener('click', closePanel);
 
+/* 질문 노드 → Q&A 표시 */
+function showQAPanel(data) {
+  openPanel('질문 · 답변');
+  const rawNodeId = (data.id || '').replace('bn-', '');
   const answersHtml = data.answers && data.answers.length
     ? data.answers.map(a => `
         <div class="rounded-xl border border-border bg-muted/40 p-4">
@@ -149,8 +181,7 @@ function showPanel(data) {
           <p class="text-sm text-foreground leading-relaxed">${escHtml(a.answer)}</p>
         </div>`).join('')
     : '<p class="text-sm text-muted-foreground italic">저장된 답변이 없습니다.</p>';
-
-  content.innerHTML = `
+  document.getElementById('panel-content').innerHTML = `
     <div class="rounded-xl border border-secondary/20 bg-secondary/5 p-4">
       <p class="text-xs font-medium text-secondary mb-1.5">${escHtml(data.title)}</p>
       <p class="text-sm font-semibold text-foreground leading-snug">${escHtml(data.fullQuestion || data.title)}</p>
@@ -158,14 +189,234 @@ function showPanel(data) {
     <div>
       <p class="text-xs font-medium text-muted-foreground mb-2">답변</p>
       ${answersHtml}
-    </div>`;
+    </div>
+    ${rawNodeId ? `
+    <details class="group mt-2 border-t border-border pt-3">
+      <summary class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold uppercase tracking-wide mb-2 select-none">
+        <svg class="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        수정 / 삭제
+      </summary>
+      <div class="space-y-2">
+        <input id="edit-node-q" type="text" placeholder="제목 / 질문"
+               value="${escHtml(data.fullQuestion || '')}"
+               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"/>
+        <textarea id="edit-node-a" rows="3" placeholder="내용 / 답변"
+                  class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/40">${escHtml(data.answers?.[0]?.answer || '')}</textarea>
+        <div class="flex gap-2">
+          <button onclick="submitUpdateNode('${rawNodeId}')"
+                  class="flex-1 rounded-lg bg-primary text-primary-foreground text-sm font-medium py-2 hover:opacity-90 transition-opacity">
+            저장
+          </button>
+          <button onclick="submitDeleteNode('${rawNodeId}')"
+                  class="rounded-lg border border-red-200 bg-red-50 text-red-600 text-sm font-medium px-3 py-2 hover:bg-red-100 transition-colors">
+            삭제
+          </button>
+        </div>
+      </div>
+    </details>` : ''}`;
 }
 
-document.getElementById('panel-close').addEventListener('click', () => {
-  document.getElementById('side-panel').classList.add('hidden');
-});
+/* 블록 노드 → 편집 패널 */
+function showBlockPanel(data) {
+  _nodeRowCount = 1;
+  openPanel('블록 편집');
+  const rawId = (data.id || '').replace('block-', '');
+  document.getElementById('panel-content').innerHTML = `
+    <details open class="group mb-4">
+      <summary class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold uppercase tracking-wide mb-2 select-none">
+        <svg class="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        블록 수정
+      </summary>
+      <div class="space-y-2">
+        <input id="edit-block-title" type="text" value="${escHtml(data.title)}"
+               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"/>
+        <input id="edit-block-desc" type="text" placeholder="설명 (선택)"
+               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"/>
+        <div class="flex gap-2">
+          <button onclick="submitUpdateBlock('${rawId}')"
+                  class="flex-1 rounded-lg bg-primary text-primary-foreground text-sm font-medium py-2 hover:opacity-90 transition-opacity">
+            저장
+          </button>
+          <button onclick="submitDeleteBlock('${rawId}', '${escHtml(data.title)}')"
+                  class="rounded-lg border border-red-200 bg-red-50 text-red-600 text-sm font-medium px-3 py-2 hover:bg-red-100 transition-colors">
+            삭제
+          </button>
+        </div>
+      </div>
+    </details>
+    <hr class="border-border mb-4"/>
+    <details open class="group mb-4">
+      <summary class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold uppercase tracking-wide mb-2 select-none">
+        <svg class="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        하위 블록 추가
+      </summary>
+      <div class="space-y-2">
+        <input id="new-block-title" type="text" placeholder="블록 제목 *"
+               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"/>
+        <input id="new-block-desc" type="text" placeholder="설명 (선택)"
+               class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"/>
+        <button onclick="submitAddBlock('${rawId}')"
+                class="w-full rounded-lg bg-primary text-primary-foreground text-sm font-medium py-2 hover:opacity-90 transition-opacity">
+          + 블록 추가
+        </button>
+      </div>
+    </details>
+    <hr class="border-border"/>
+    <details open class="group mt-3">
+      <summary class="flex items-center gap-1.5 cursor-pointer text-xs font-semibold uppercase tracking-wide mb-2 select-none mt-1">
+        <svg class="w-3 h-3 transition-transform group-open:rotate-90" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        노드 추가
+      </summary>
+      <div id="node-inputs-${rawId}" class="space-y-2 mb-2">${nodeInputRow(0)}</div>
+      <button onclick="addNodeInputRow('${rawId}')"
+              class="w-full rounded-lg border border-dashed border-border text-sm text-muted-foreground py-1.5 hover:border-primary hover:text-primary transition-colors mb-2">
+        + 항목 추가
+      </button>
+      <button onclick="submitAddNodes('${rawId}')"
+              class="w-full rounded-lg bg-primary text-primary-foreground text-sm font-medium py-2 hover:opacity-90 transition-opacity">
+        저장
+      </button>
+    </details>
+    <p id="panel-msg" class="text-xs text-center mt-3 text-muted-foreground"></p>`;
+}
+
+/* 루트 레벨 블록 추가 */
+function openAddBlockPanel(parentId) {
+  _nodeRowCount = 1;
+  openPanel('블록 추가');
+  document.getElementById('panel-content').innerHTML = `
+    <div class="space-y-2">
+      <input id="new-block-title" type="text" placeholder="블록 제목 *"
+             class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"/>
+      <input id="new-block-desc" type="text" placeholder="설명 (선택)"
+             class="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/40"/>
+      <button onclick="submitAddBlock(${parentId ? `'${parentId}'` : 'null'})"
+              class="w-full rounded-lg bg-primary text-primary-foreground text-sm font-medium py-2 hover:opacity-90 transition-opacity">
+        + 블록 추가
+      </button>
+    </div>
+    <p id="panel-msg" class="text-xs text-center mt-3 text-muted-foreground"></p>`;
+  document.getElementById('new-block-title').focus();
+}
+
+/* 노드 입력 행 */
+let _nodeRowCount = 1;
+function nodeInputRow(idx) {
+  return `<div class="rounded-lg border border-border p-2 space-y-1.5">
+    <input type="text" placeholder="제목 / 질문"
+           class="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary/40"
+           data-node-q="${idx}"/>
+    <textarea rows="2" placeholder="내용 / 답변 (선택)"
+              class="w-full rounded-md border border-border bg-background px-2 py-1.5 text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary/40"
+              data-node-a="${idx}"></textarea>
+  </div>`;
+}
+function addNodeInputRow(blockId) {
+  const c = document.getElementById(`node-inputs-${blockId}`);
+  if (!c) return;
+  const d = document.createElement('div');
+  d.innerHTML = nodeInputRow(_nodeRowCount++);
+  c.appendChild(d.firstElementChild);
+}
+
+/* ── API 호출 ───────────────────────────────────────────────── */
+async function submitAddBlock(parentBlockId) {
+  const title = document.getElementById('new-block-title')?.value.trim();
+  const desc  = document.getElementById('new-block-desc')?.value.trim() || '';
+  const msg   = document.getElementById('panel-msg');
+  if (!title) { if (msg) msg.textContent = '제목을 입력하세요'; return; }
+  const body  = { title, description: desc };
+  if (parentBlockId) body.parent_id = parentBlockId;
+  const r = await fetch(ADD_BLOCK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify(body),
+  });
+  const d = await r.json();
+  if (d.ok) { closePanel(); reloadTree(); }
+  else if (msg) msg.textContent = d.error || '오류 발생';
+}
+
+async function submitUpdateBlock(blockId) {
+  const title = document.getElementById('edit-block-title')?.value.trim();
+  const desc  = document.getElementById('edit-block-desc')?.value.trim() || '';
+  if (!title) { alert('제목을 입력하세요'); return; }
+  const r = await fetch(`/questionnaire/api/brainblock/${blockId}/update/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify({ title, description: desc }),
+  });
+  const d = await r.json();
+  if (d.ok) { closePanel(); reloadTree(); }
+  else alert(d.error || '수정 실패');
+}
+
+async function submitUpdateNode(nodeId) {
+  const q = document.getElementById('edit-node-q')?.value.trim() || '';
+  const a = document.getElementById('edit-node-a')?.value.trim() || '';
+  const r = await fetch(`/questionnaire/api/brainnode/${nodeId}/update/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify({ question_text: q, answer_text: a }),
+  });
+  const d = await r.json();
+  if (d.ok) { closePanel(); reloadTree(); }
+  else alert(d.error || '수정 실패');
+}
+
+async function submitDeleteBlock(blockId, title) {
+  if (!confirm(`"${title}" 블록과 하위 노드를 모두 삭제합니다. 계속할까요?`)) return;
+  const r = await fetch(`/questionnaire/api/brainblock/${blockId}/delete/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF },
+  });
+  const d = await r.json();
+  if (d.ok) { closePanel(); reloadTree(); }
+  else alert(d.error || '삭제 실패');
+}
+
+async function submitDeleteNode(nodeId) {
+  if (!confirm('이 노드를 삭제합니다. 계속할까요?')) return;
+  const r = await fetch(`/questionnaire/api/brainnode/${nodeId}/delete/`, {
+    method: 'POST',
+    headers: { 'X-CSRFToken': CSRF },
+  });
+  const d = await r.json();
+  if (d.ok) { closePanel(); reloadTree(); }
+  else alert(d.error || '삭제 실패');
+}
+
+async function submitAddNodes(blockId) {
+  const qEls  = document.querySelectorAll('[data-node-q]');
+  const aEls  = document.querySelectorAll('[data-node-a]');
+  const nodes = [];
+  qEls.forEach((el, i) => {
+    const q = el.value.trim(), a = aEls[i]?.value.trim() || '';
+    if (q || a) nodes.push({ question_text: q, answer_text: a });
+  });
+  const msg = document.getElementById('panel-msg');
+  if (!nodes.length) { if (msg) msg.textContent = '내용을 입력하세요'; return; }
+  const r = await fetch(`/questionnaire/api/brainblock/${blockId}/add-nodes/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    body: JSON.stringify({ nodes }),
+  });
+  const d = await r.json();
+  if (d.ok) {
+    if (msg) msg.textContent = `✓ ${d.created}개 저장됨`;
+    setTimeout(() => { closePanel(); reloadTree(); }, 600);
+  } else if (msg) msg.textContent = d.error || '오류 발생';
+}
 
 /* ── D3 tree ───────────────────────────────────────────────── */
+function reloadTree() {
+  const container = document.getElementById('tree-container');
+  container.innerHTML = '';
+  renderTree();
+}
+
+function renderTree() {
+  const container = document.getElementById('tree-container');
 fetch(API_URL)
   .then(r => r.json())
   .then(data => {
@@ -219,8 +470,18 @@ fetch(API_URL)
       .enter().append('path')
       .attr('class', 'link')
       .attr('fill', 'none')
-      .attr('stroke', COLOR.link)
-      .attr('stroke-width', 1.5)
+      .attr('stroke', d => {
+        const t = d.target.data.nodeType;
+        if (t === 'vertical_profile') return '#c4b5fd';
+        if (t === 'domain')           return '#a7f3d0';
+        if (t === 'ai_followup')      return '#fde68a';
+        if (t === 'common')           return '#c7d2fe';
+        return COLOR.link;
+      })
+      .attr('stroke-width', d => {
+        const t = d.target.data.nodeType;
+        return (t === 'vertical_profile' || t === 'domain') ? 2 : 1.5;
+      })
       .attr('d', d3.linkHorizontal().x(d => d.y).y(d => d.x));
 
     /* node groups */
@@ -237,11 +498,12 @@ fetch(API_URL)
       return 14;
     };
     const fillColor = d => {
-      if (d.data.nodeType === 'root')        return COLOR.root;
-      if (d.data.nodeType === 'common')      return COLOR.common;
-      if (d.data.nodeType === 'domain')      return COLOR.domain;
-      if (d.data.nodeType === 'ai_followup') return COLOR.ai_followup;
-      if (d.data.nodeType === 'user_custom') return COLOR.user_custom;
+      if (d.data.nodeType === 'root')             return COLOR.root;
+      if (d.data.nodeType === 'common')           return COLOR.common;
+      if (d.data.nodeType === 'vertical_profile') return COLOR.vertical_profile;
+      if (d.data.nodeType === 'domain')           return COLOR.domain;
+      if (d.data.nodeType === 'ai_followup')      return COLOR.ai_followup;
+      if (d.data.nodeType === 'user_custom')      return COLOR.user_custom;
       return COLOR.question;
     };
 
@@ -264,10 +526,11 @@ fetch(API_URL)
       .attr('font-size', d => d.data.nodeType === 'root' ? '9px' : '8px')
       .attr('font-weight', 'bold')
       .text(d => {
-        if (d.data.nodeType === 'root')        return 'SP';
-        if (d.data.nodeType === 'common')      return '공통';
-        if (d.data.nodeType === 'ai_followup') return 'AI';
-        if (d.data.nodeType === 'user_custom') return '+';
+        if (d.data.nodeType === 'root')             return 'SP';
+        if (d.data.nodeType === 'common')           return '공통';
+        if (d.data.nodeType === 'vertical_profile') return 'PF';
+        if (d.data.nodeType === 'ai_followup')      return 'AI';
+        if (d.data.nodeType === 'user_custom')      return '+';
         return '도메인';
       });
 
@@ -293,43 +556,58 @@ fetch(API_URL)
         return truncate(d.data.title, max);
       });
 
-    /* hover + click on question nodes */
+    /* hover + click — 질문 노드 */
     node.filter(d => d.data.nodeType === 'question')
       .on('mouseover', function (event, d) {
-        d3.select(this).select('circle')
-          .transition().duration(120)
-          .attr('fill', '#d4d5fb')
-          .attr('r', 13);
+        d3.select(this).select('circle').transition().duration(120).attr('fill', '#d4d5fb').attr('r', 13);
       })
       .on('mouseout', function (event, d) {
-        d3.select(this).select('circle')
-          .transition().duration(120)
-          .attr('fill', COLOR.question)
-          .attr('r', radius(d));
+        d3.select(this).select('circle').transition().duration(120).attr('fill', COLOR.question).attr('r', radius(d));
       })
       .on('click', (event, d) => {
         event.stopPropagation();
-        showPanel(d.data);
-        /* highlight selected */
-        g.selectAll('circle').attr('stroke-width', d2 =>
-          d2.data.nodeType === 'question' ? 1.5 : 0
-        );
-        d3.select(event.currentTarget).select('circle')
-          .attr('stroke', '#5b5ef4')
-          .attr('stroke-width', 2.5);
+        showQAPanel(d.data);
+        g.selectAll('circle').attr('stroke-width', d2 => d2.data.nodeType === 'question' ? 1.5 : 0);
+        d3.select(event.currentTarget).select('circle').attr('stroke', '#5b5ef4').attr('stroke-width', 2.5);
       });
 
-    /* click on blank = deselect */
+    /* hover + click — 블록 노드 (root 제외) */
+    node.filter(d => d.data.nodeType !== 'question' && d.data.nodeType !== 'root')
+      .style('cursor', 'pointer')
+      .on('mouseover', function (event, d) {
+        d3.select(this).select('circle').transition().duration(120).attr('r', radius(d) + 2).attr('opacity', 0.85);
+      })
+      .on('mouseout', function (event, d) {
+        d3.select(this).select('circle').transition().duration(120).attr('r', radius(d)).attr('opacity', 1);
+      })
+      .on('click', (event, d) => {
+        event.stopPropagation();
+        showBlockPanel(d.data);
+      });
+
+    /* 빈 곳 클릭 = 선택 해제 */
     svg.on('click', () => {
-      g.selectAll('circle[data-type=question]').attr('stroke', COLOR.qStroke).attr('stroke-width', 1.5);
+      g.selectAll('circle').attr('stroke-width', d2 => d2.data.nodeType === 'question' ? 1.5 : 0);
     });
 
   })
   .catch(err => {
-    document.getElementById('tree-container').innerHTML =
-      '<p class="p-8 text-sm text-muted-foreground text-center">트리 데이터를 불러올 수 없습니다.</p>';
+    container.innerHTML = '<p class="p-8 text-sm text-muted-foreground text-center">트리 데이터를 불러올 수 없습니다.</p>';
     console.error(err);
   });
+} // end renderTree
+
+renderTree();
+
+/* ── 전역 노출 (onclick 접근용) ─────────────────────────────── */
+window.openAddBlockPanel  = openAddBlockPanel;
+window.submitAddBlock     = submitAddBlock;
+window.submitAddNodes     = submitAddNodes;
+window.addNodeInputRow    = addNodeInputRow;
+window.submitUpdateBlock  = submitUpdateBlock;
+window.submitUpdateNode   = submitUpdateNode;
+window.submitDeleteBlock  = submitDeleteBlock;
+window.submitDeleteNode   = submitDeleteNode;
 
 })();
 </script>

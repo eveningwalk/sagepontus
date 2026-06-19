@@ -1,0 +1,33 @@
+{
+  "category": "therapist_profile",
+  "questions": [
+    {
+      "order": 1,
+      "question_text": "근무 환경을 알려주세요.",
+      "description": "현재 소속된 기관 유형과 병동·부서를 기술합니다.",
+      "hint": "예: '재활병원 신경과 병동', '스포츠 클리닉 외래', '재택방문 물리치료'",
+      "purpose": "context"
+    },
+    {
+      "order": 2,
+      "question_text": "전문 치료 영역과 주요 경력을 알려주세요.",
+      "description": "전문화된 치료 분야와 임상 경력 연수를 기술합니다.",
+      "hint": "예: '신경계 재활 8년, 뇌졸중·척수손상 전담', '근골격계 도수치료 5년, 스포츠 손상 전문'",
+      "purpose": "context"
+    },
+    {
+      "order": 3,
+      "question_text": "주로 담당하는 환자군을 알려주세요.",
+      "description": "주 환자 연령대, 주요 진단군, 급성·아급성·만성 여부를 기술합니다.",
+      "hint": "예: '60~80대 뇌졸중 편마비 만성기', '20~40대 수술 후 근골격계 아급성기'",
+      "purpose": "context"
+    },
+    {
+      "order": 4,
+      "question_text": "주요 치료 접근법과 철학을 알려주세요.",
+      "description": "선호하는 치료 프레임워크, EBP 적용 방식, 환자 중심 케어 원칙을 기술합니다.",
+      "hint": "예: 'PNF + 과제지향훈련 기반, EBP 근거 우선', 'MDT + 도수치료, 환자 자가관리 교육 중시'",
+      "purpose": "context"
+    }
+  ]
+}

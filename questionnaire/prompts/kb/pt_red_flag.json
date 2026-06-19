@@ -41,7 +41,7 @@
   },
   "RF_006": {
     "label": "Significant Trauma (중대 외상력)",
-    "synonyms": ["낙상", "교통사고", "떨어짐", "충격", "fall", "motor vehicle accident", "MVA", "trauma", "부딪힘", "사고 났음", "차 사고", "넘어짐"],
+    "synonyms": ["낙상", "교통사고", "떨어짐", "충격", "fall", "motor vehicle accident", "MVA", "trauma", "부딪힘", "사고 났음", "차 사고", "넘어짐", "slip", "slipped", "미끄러짐", "미끄러져"],
     "depth": 0.80,
     "category": "red_flag_urgent",
     "condition_ref": "fracture",

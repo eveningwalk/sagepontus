@@ -15,6 +15,11 @@ import importlib.util
 import os
 
 import dj_database_url
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+load_dotenv(Path(__file__).resolve().parent.parent / ".env.local", override=True)
+load_dotenv(Path(__file__).resolve().parent.parent / "landingpage_source" / ".env.local", override=True)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -74,14 +79,15 @@ _default_origins = (
 # Docker 등에서 CSRF_TRUSTED_ORIGINS= 만 넘어오면 빈 문자열이 되어 기본 목록이 무시됨 → 비었을 때는 기본값 사용
 _raw_origins = os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip() or _default_origins
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
-# 커스텀 도메인 데모: CSRF_TRUSTED_ORIGINS 미설정 시 https/http demo 호스트 보강
-if not os.environ.get("CSRF_TRUSTED_ORIGINS", "").strip():
-    for _demo_origin in (
-        "https://demo.sagepontus.com",
-        "http://demo.sagepontus.com",
-    ):
-        if _demo_origin not in CSRF_TRUSTED_ORIGINS:
-            CSRF_TRUSTED_ORIGINS.append(_demo_origin)
+# sagepontus.com 커스텀 도메인 — 환경변수 설정 여부와 무관하게 항상 병합 (ALLOWED_HOSTS와 동일 패턴)
+for _sp_origin in (
+    "https://pt.sagepontus.com",
+    "https://demo.sagepontus.com",
+    "https://sagepontus.com",
+    "http://demo.sagepontus.com",
+):
+    if _sp_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(_sp_origin)
 # ngrok HTTPS로 접속 시 Origin 이 https://서브도메인.ngrok-free.app 이므로, 와일드카드 불가 → 전체 출처 한 줄
 _ngrok_origin = os.environ.get("DJANGO_NGROK_ORIGIN", "").strip()
 if _ngrok_origin and _ngrok_origin not in CSRF_TRUSTED_ORIGINS:
@@ -116,12 +122,15 @@ HF_MODEL_ID = os.environ.get("HF_MODEL_ID", "").strip()
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'adminsortable2',
     'django_extensions',
     'rest_framework',
+    'rest_framework.authtoken',
     'animamus_common',
     'accounts',
     'questionnaire',
+    'vertical_pt',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -132,6 +141,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
 # Gunicorn/Cloud Run 등에서는 runserver 가 없어 정적 파일이 404 가 됨 → WhiteNoise(Docker 이미지에 포함)
 if importlib.util.find_spec("whitenoise"):
@@ -165,6 +175,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'questionnaire.context_processors.demo_flags',
+                'animamus_project.context_processors.feature_flags',
             ],
         },
     },
@@ -260,6 +271,25 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# ── Email (SMTP) ──────────────────────────────────────────────────────────────
+EMAIL_BACKEND       = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
+EMAIL_HOST          = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT          = int(os.environ.get("EMAIL_PORT", 587))
+EMAIL_USE_TLS       = os.environ.get("EMAIL_USE_TLS", "True").lower() != "false"
+EMAIL_HOST_USER     = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
+DEFAULT_FROM_EMAIL  = os.environ.get("DEFAULT_FROM_EMAIL", EMAIL_HOST_USER or "noreply@sagepontus.com")
+
+# ── Feature Flags ──────────────────────────────────────────────────────────────
+def _flag(name, default="false"):
+    return os.environ.get(name, default).lower() == "true"
+
+FEATURES = {
+    "ab_comparison":     _flag("FEAT_AB_COMPARE",  "true"),
+    "email_send":        _flag("FEAT_EMAIL_SEND",  "false"),
+    "schedule_tracking": _flag("FEAT_SCHEDULE",    "false"),
+}
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -270,3 +300,16 @@ LOGGING = {
         "questionnaire": {"handlers": ["console"], "level": "INFO", "propagate": False},
     },
 }
+
+# ── CORS (Chrome Extension + 외부 클라이언트) ──────────────────────────────────
+# Token 인증 기반 API는 쿠키를 사용하지 않으므로 credentials 불필요
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "origin",
+    "x-csrftoken",
+    "x-requested-with",
+]

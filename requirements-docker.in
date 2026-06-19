@@ -1,0 +1,5 @@
+# Docker / Cloud Run 전용
+-r requirements-base.in
+
+gunicorn
+whitenoise

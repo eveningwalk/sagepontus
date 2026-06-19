@@ -11,17 +11,19 @@ cd "$LANDING"
 npm run build
 
 echo "▶ Copying assets to Django static..."
-# _next/ assets → served by whitenoise at /static/_next/
 rm -rf "$STATIC/_next"
 cp -r "$LANDING/out/_next" "$STATIC/_next"
 
-# index.html → Django root view reads this file
 mkdir -p "$STATIC/landing"
 cp "$LANDING/out/index.html" "$STATIC/landing/index.html"
 
-# Copy any other static assets (images etc.)
 for f in "$LANDING/out"/*.png "$LANDING/out"/*.ico "$LANDING/out"/*.svg; do
   [ -f "$f" ] && cp "$f" "$STATIC/landing/"
 done
+
+# Fix image paths: Next.js exports /img.png but Django serves at /static/landing/img.png
+sed -i 's|src="/\([^_][^"]*\.png\)"|src="/static/landing/\1"|g' "$STATIC/landing/index.html"
+sed -i 's|src="/\([^_][^"]*\.svg\)"|src="/static/landing/\1"|g' "$STATIC/landing/index.html"
+sed -i 's|src="/\([^_][^"]*\.ico\)"|src="/static/landing/\1"|g' "$STATIC/landing/index.html"
 
 echo "✓ Landing page built and deployed to static/"

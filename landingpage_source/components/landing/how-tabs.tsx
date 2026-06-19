@@ -4,38 +4,38 @@ import { useState } from 'react'
 
 const tabs = [
   {
-    id: 'ptas',
-    label: 'For PTAs',
-    steps: [
-      {
-        k: 'No new workflow required',
-        v: 'Capture the session, any way you work. Paste a note, or upload a file — SagePontus works with however your clinic already documents.',
-      },
-      {
-        k: 'SagePontus screens in real time',
-        v: "Every symptom is cross-checked against Goodman's 6 red flag criteria.",
-      },
-      {
-        k: 'Flagged or cleared — instantly',
-        v: "If a red flag fires, a physician referral letter is ready before the patient leaves the room. If not, the session is documented and closed.",
-      },
-    ],
-  },
-  {
     id: 'directors',
     label: 'For Clinic Directors',
     steps: [
       {
-        k: 'Screening proof, not just session notes',
-        v: "Every red flag screening is timestamped and stored separately from your SOAP note. When a lawyer asks 'did you screen?' — you have a record, not a memory.",
+        k: 'Every session, automatically screened',
+        v: "SagePontus runs Goodman's 6 criteria on every PTA session — with a timestamped record that screening happened.",
       },
       {
-        k: 'From red flag to documentation — in seconds',
-        v: 'When a red flag fires, SagePontus generates the physician referral letter, medical necessity documentation, insurance appeal, and legal defense trail — before the patient leaves the room.',
+        k: 'From red flag to legal-ready documentation',
+        v: 'Physician referral, medical necessity, insurance appeal, and legal defense trail — generated before the patient leaves the room.',
       },
       {
-        k: 'Real-time liability dashboard',
-        v: 'See every open alert, pending referral, and follow-up status across your entire clinic. Know your exposure before the insurer does.',
+        k: 'Compliance deadlines, tracked automatically',
+        v: 'Direct Access notification windows, pending referrals, and claim filing deadlines — all tracked in real time with a live Liability Score.',
+      },
+    ],
+  },
+  {
+    id: 'ptas',
+    label: 'For PTs & PTAs',
+    steps: [
+      {
+        k: 'No new workflow required',
+        v: 'Paste a session note, upload a file, or type directly — SagePontus works with however your clinic already documents.',
+      },
+      {
+        k: 'SagePontus screens in real time',
+        v: "Every symptom is automatically cross-checked against Goodman's 6 red flag criteria.",
+      },
+      {
+        k: 'Flagged or cleared — instantly',
+        v: "If a red flag fires, a physician referral letter is ready before the patient leaves the room. If not, the screening is recorded and the session closes clean.",
       },
     ],
   },
@@ -46,36 +46,45 @@ export function HowTabs() {
 
   return (
     <>
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <h2 className="max-w-xl text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold tracking-[-0.02em]">
-          From blind spot to documented proof.
-        </h2>
-        <div className="inline-flex rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-1">
-          {tabs.map((t, i) => (
-            <button
-              key={t.id}
-              onClick={() => setActive(i)}
-              className={[
-                'rounded-lg px-4 py-2 text-[14px] font-semibold transition',
-                active === i
-                  ? 'bg-white text-[#0F172A] shadow-sm'
-                  : 'text-[#64748B] hover:text-[#0F172A]',
-              ].join(' ')}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
+      {/* h2 — centered (matches reference Heading with center prop) */}
+      <h2 className="text-center mx-auto max-w-xl font-display text-[clamp(1.8rem,3.5vw,2.6rem)] font-bold tracking-[-0.02em]">
+        From blind spot to documented proof.
+      </h2>
+
+      {/* tablist — left-aligned, same as reference Tabs component top */}
+      <div
+        className="mt-6 inline-flex rounded-lg border border-slate-200 bg-white p-1 gap-1"
+        role="tablist"
+      >
+        {tabs.map((t, i) => (
+          <button
+            key={t.id}
+            role="tab"
+            aria-selected={active === i}
+            onClick={() => setActive(i)}
+            className={
+              active === i
+                ? 'px-5 py-2.5 rounded-md text-sm font-semibold bg-slate-900 text-white transition'
+                : 'px-5 py-2.5 rounded-md text-sm font-semibold text-slate-500 hover:text-slate-900 transition'
+            }
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      <div key={active} className="fade-up mt-10 grid gap-5 sm:grid-cols-3">
+      {/* step grid — exact reference authority stepGrid */}
+      <div
+        key={active}
+        className="mt-10 grid gap-px md:grid-cols-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-200"
+      >
         {tabs[active].steps.map((s, i) => (
-          <div key={i} className="relative rounded-2xl border border-[#E2E8F0] bg-white p-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0F172A] text-[14px] font-bold text-white">
-              {i + 1}
+          <div key={i} className="h-full bg-white p-7">
+            <div className="font-display text-2xl font-bold text-slate-200">
+              {String(i + 1).padStart(2, '0')}
             </div>
-            <div className="mt-4 text-[16px] font-semibold">{s.k}</div>
-            <p className="mt-1.5 text-[14px] leading-relaxed text-[#64748B]">{s.v}</p>
+            <div className="font-display mt-2 text-lg font-semibold text-slate-900 leading-snug">{s.k}</div>
+            <p className="mt-2 text-[15px] leading-relaxed text-slate-600">{s.v}</p>
           </div>
         ))}
       </div>

@@ -16,12 +16,32 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from questionnaire import views  # ✅ 이 줄을 추가해줘
+from django.http import HttpResponse
+from questionnaire import views
+from .auth_views import email_token_auth
+
+def sitemap_xml(request):
+    xml = (
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        '  <url><loc>https://pt.sagepontus.com/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n'
+        '  <url><loc>https://pt.sagepontus.com/pt-alarm</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>\n'
+        '</urlset>'
+    )
+    return HttpResponse(xml, content_type='application/xml')
+
+def robots_txt(request):
+    body = 'User-agent: *\nAllow: /\nSitemap: https://pt.sagepontus.com/sitemap.xml'
+    return HttpResponse(body, content_type='text/plain')
 
 urlpatterns = [
+    path('sitemap.xml', sitemap_xml, name='sitemap'),
+    path('robots.txt', robots_txt, name='robots'),
     path('admin/', admin.site.urls),
     path('questionnaire/', include('questionnaire.urls')),
-    path('accounts/', include('accounts.urls')),  # 사용자 기능은 여기에
+    path('accounts/', include('accounts.urls')),
+    path('api/auth/token/', email_token_auth, name='api_token'),
+    path('', include('vertical_pt.urls')),
     path('landing/', views.landing, name='landing'),
     path('demo/', views.demo_entry, name='demo'),
     path('', views.root, name='home'),

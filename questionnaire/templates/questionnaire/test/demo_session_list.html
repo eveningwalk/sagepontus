@@ -3,6 +3,13 @@
 {% block page_title %}세션 목록 · Sage Pontus{% endblock %}
 
 {% block header_extra %}
+<a href="{% url 'questionnaire:perf_test' %}"
+   class="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground bg-muted hover:bg-muted/70 px-3 py-1.5 rounded-lg border border-border transition-colors">
+  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+  </svg>
+  성능 비교
+</a>
 <a href="{% url 'demo' %}"
    class="inline-flex items-center gap-1.5 text-xs font-medium text-foreground bg-muted hover:bg-muted/70 px-3 py-1.5 rounded-lg border border-border transition-colors">
   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -105,10 +112,107 @@
 </div>
 {% endif %}
 
+<!-- 성능 비교 테스트 결과 -->
+<div class="mt-10">
+  <div class="flex items-center justify-between mb-4">
+    <div>
+      <h2 class="text-base font-semibold text-foreground">성능 비교 테스트</h2>
+      <p class="text-xs text-muted-foreground mt-0.5">기존 방식 vs Sage Pontus A/B 비교 결과</p>
+    </div>
+    <a href="{% url 'questionnaire:perf_test' %}"
+       class="inline-flex items-center gap-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all ring-1 ring-secondary/20">
+      <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+      </svg>
+      새 테스트
+    </a>
+  </div>
+
+  {% if perf_history %}
+  <div class="rounded-xl border border-border overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-muted/50 text-xs text-muted-foreground">
+          <th class="px-4 py-3 text-left font-medium">케이스</th>
+          <th class="px-4 py-3 text-center font-medium">토큰 절감</th>
+          <th class="px-4 py-3 text-center font-medium">입력량 절감</th>
+          <th class="px-4 py-3 text-center font-medium">투표 결과</th>
+          <th class="px-4 py-3 text-right font-medium">날짜</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-border">
+        {% for p in perf_history %}
+        <tr class="hover:bg-muted/30 transition-colors cursor-pointer" onclick="window.location='{% url 'questionnaire:perf_test' %}?load={{ p.id }}'">
+          <td class="px-4 py-3">
+            <span class="font-medium text-foreground">{{ p.case_name|default:"(이름 없음)" }}</span>
+          </td>
+          <td class="px-4 py-3 text-center">
+            {% if p.tokens.reduction %}
+            <span class="inline-flex items-center gap-1 text-xs font-semibold
+              {% if p.tokens.reduction > 0 %}text-emerald-700 bg-emerald-50 border border-emerald-200{% else %}text-muted-foreground bg-muted border border-border{% endif %}
+              px-2.5 py-0.5 rounded-full">
+              {% if p.tokens.reduction > 0 %}▼ {{ p.tokens.reduction }}%{% else %}—{% endif %}
+            </span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="px-4 py-3 text-center">
+            {% if p.tokens.writing_reduction %}
+            <span class="text-xs text-muted-foreground">{{ p.tokens.writing_reduction }}% 감소</span>
+            {% else %}—{% endif %}
+          </td>
+          <td class="px-4 py-3 text-center">
+            {% if p.vote == "B" %}
+            <span class="inline-flex items-center gap-1 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 px-2.5 py-0.5 rounded-full">
+              Sage Pontus 승
+            </span>
+            {% elif p.vote == "A" %}
+            <span class="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted border border-border px-2.5 py-0.5 rounded-full">
+              기존 방식 선택
+            </span>
+            {% else %}
+            <span class="text-xs text-muted-foreground">미투표</span>
+            {% endif %}
+          </td>
+          <td class="px-4 py-3 text-right text-xs text-muted-foreground">
+            {{ p.created_at|date:"m/d H:i" }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 승률 요약 -->
+  {% with total=perf_history|length %}
+  {% if total > 0 %}
+  <div class="mt-3 flex items-center gap-3 flex-wrap">
+    <span class="text-xs text-muted-foreground">최근 {{ total }}건</span>
+    <span class="text-xs text-muted-foreground">·</span>
+    <a href="{% url 'questionnaire:perf_test' %}" class="text-xs text-primary hover:underline font-medium">전체 결과 보기 →</a>
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  {% else %}
+  <div class="rounded-xl border border-border bg-card p-8 text-center">
+    <div class="w-10 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto mb-3">
+      <svg class="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+      </svg>
+    </div>
+    <p class="text-sm text-muted-foreground mb-3">아직 성능 테스트 결과가 없습니다.</p>
+    <a href="{% url 'questionnaire:perf_test' %}"
+       class="inline-flex items-center gap-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/90 text-white px-4 py-2 rounded-lg shadow-sm transition-all">
+      첫 테스트 실행하기
+    </a>
+  </div>
+  {% endif %}
+</div>
+
 <!-- Bottom actions -->
 {% if sessions %}
 <div class="mt-8 flex items-center justify-between">
-  <a href="{% url 'landing' %}"
+  <a href="{% url 'home' %}"
      class="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground px-5 h-10 rounded-lg border border-border hover:bg-muted transition-colors">
     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
       <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>

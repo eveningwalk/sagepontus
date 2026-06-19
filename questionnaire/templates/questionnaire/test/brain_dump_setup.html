@@ -32,13 +32,13 @@
     <p class="text-sm font-semibold text-foreground mb-3">도메인 선택</p>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8" id="domain-grid">
       {% for category in categories %}
-        {% if category.name == allowed_domain %}
+        {% if category.name in allowed_domains %}
         <label class="cursor-pointer">
           <input type="radio" name="domain" value="{{ category.name }}" class="sr-only peer" required>
           <div class="flex items-center justify-center h-12 rounded-xl border-2 border-primary/30 bg-primary/5 text-primary font-semibold text-sm
                       peer-checked:bg-primary peer-checked:text-white peer-checked:border-primary
                       hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm hover:shadow-md">
-            {{ category.name }}
+            {% if category.name == "therapist_soap" %}SOAP 노트{% else %}{{ category.name }}{% endif %}
           </div>
         </label>
         {% else %}

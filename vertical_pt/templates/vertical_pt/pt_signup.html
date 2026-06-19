@@ -1,0 +1,63 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <title>Sign Up — Sage Pontus</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #e8eaef; display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .auth-card {
+      background: #ffffff; border-radius: 12px; width: 100%; max-width: 460px;
+      padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #dcdfe4;
+    }
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase; }
+    .form-control, select {
+      width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px;
+      background: #f8fafc; font-size: 14px; color: #1e293b; outline: none;
+    }
+    .btn-submit {
+      width: 100%; padding: 12px; border: none; border-radius: 8px; background: #0f766e;
+      color: #ffffff; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px;
+    }
+    .auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: #64748b; }
+    .auth-footer a { color: #0d9488; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="auth-card">
+  <h2 style="margin-top:0; font-size:20px; font-weight:800; color:#0f172a; margin-bottom:24px;">Register Practitioner Node</h2>
+  <form method="post">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input type="text" name="username" class="form-control" required>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Clinical Core Specialty Role</label>
+      <select name="role">
+        <option value="PT">Physical Therapist (PT)</option>
+        <option value="DPT">Doctor of Physical Therapy (DPT)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Clinic Facility Name</label>
+      <input type="text" name="clinic_name" class="form-control">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Secure Access Password</label>
+      <input type="password" name="password" class="form-control" required>
+    </div>
+    <button type="submit" class="btn-submit">Initialize System Engine</button>
+  </form>
+  <div class="auth-footer">
+    Operational practitioner already? <a href="{% url 'accounts:login' %}">Sign In</a>
+  </div>
+</div>
+</body>
+</html>

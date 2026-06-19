@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <title>Analysis Report — Sage Pontus</title>
+  <style>
+    :root {
+      --bg-workspace: #11222e;        
+      --bg-sidebar: #121d17;          
+      --bg-card: #1f3848;             
+      --border-glow: rgba(177, 212, 226, 0.08);
+      --brand-sage: #4f7c5f;          
+      --brand-pontus: #2c7595;        
+      --brand-ice: #27a0c6;           
+      --text-main: #eef6f9;           
+      --text-muted: #7eb6cd;          
+      --active-cyan: #86d5ec;         
+    }
+    body { background-color: var(--bg-workspace); color: var(--text-main); font-family: -apple-system, sans-serif; padding: 40px; margin: 0; }
+    .report-card { max-width: 760px; margin: 0 auto; background: var(--bg-card); border-radius: 16px; padding: 32px; border: 1px solid var(--border-glow); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+    
+    .status-banner { display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid; }
+    .status-banner.RED { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #f87171; }
+    .status-banner.YELLOW { background: rgba(245,158,11,0.1); border-color: #f59e0b; color: #fbbf24; }
+    .status-banner.NONE { background: rgba(16,185,129,0.1); border-color: #10b981; color: #34d399; }
+
+    .box-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.8px; }
+    .box-content { background: rgba(0,0,0,0.25); padding: 18px; border-radius: 10px; font-size: 14px; line-height: 1.6; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.02); }
+    
+    .metric-row { display: flex; align-items: center; gap: 14px; margin-top: 24px; }
+    .progress-track { flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
+    .progress-fill { height: 100%; width: 0%; transition: width 0.5s ease; }
+    
+    .btn-nav { padding: 12px 20px; border: none; border-radius: 8px; background: var(--brand-pontus); color: #fff; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 13px; display: inline-block; transition: filter 0.2s; }
+    .btn-nav:hover { filter: brightness(1.1); }
+
+    @media (max-width: 767px) {
+      body { padding: 16px; }
+      .report-card { padding: 20px; }
+      .btn-nav { min-height: 44px; display: inline-flex; align-items: center; }
+    }
+  </style>
+</head>
+<body>
+<div class="report-card">
+  <div class="status-banner {{ alarm }}">
+    <div style="font-size:28px;">{% if alarm == 'RED' %}🚨{% elif alarm == 'YELLOW' %}⚠️{% else %}✅{% endif %}</div>
+    <div>
+      <div style="font-weight:800; font-size:16px;">Clinical Flag Matrix: {{ alarm }}</div>
+      <div style="font-size:12px; opacity:0.7;">Structural extraction layer scanning routine finalized.</div>
+    </div>
+  </div>
+
+  <div class="box-title">Identified Evidence Mapping</div>
+  <div class="box-content">{% if triggers %}{{ triggers }}{% else %}No immediate critical markers extracted.{% endif %}</div>
+
+  {% if referral_letter %}
+  <div class="box-title">Generated Physician Referral Document</div>
+  <div class="box-content" id="letter-body" style="font-family:'Courier New', Courier, monospace;">{{ referral_letter }}</div>
+  <button class="btn-nav" onclick="copyReferralText()" style="margin-bottom:24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main);">Copy Document Text</button>
+  {% endif %}
+
+  <div class="metric-row">
+    <span style="font-size:12px; font-weight:700; color:var(--text-muted); width:80px;">Risk Core</span>
+    <div class="progress-track"><div class="progress-fill" id="track-fill"></div></div>
+    <span style="font-size:14px; font-weight:700; color:var(--active-cyan);">{{ score_pct }}%</span>
+  </div>
+  
+  <div style="margin-top:32px; border-top:1px solid rgba(255,255,255,0.05); padding-top:20px;">
+    <a href="{% url 'vertical_pt:pt_app' %}" class="btn-nav" style="background:rgba(255,255,255,0.03); color:var(--text-muted); border: 1px solid var(--border-glow);">← Return to Analysis Panel</a>
+  </div>
+</div>
+
+<script>
+  (function() {
+    const scorePct = {{ score_pct|default:0 }};
+    const alarm = "{{ alarm }}";
+    const colorMap = { RED: "#ef4444", YELLOW: "#f59e0b", NONE: "#10b981" };
+    const fill = document.getElementById("track-fill");
+    if (fill) { fill.style.width = scorePct + "%"; fill.style.background = colorMap[alarm] || "#475569"; }
+  })();
+  function copyReferralText() {
+    navigator.clipboard.writeText(document.getElementById("letter-body").innerText).then(() => { alert("Referral transcript copied."); });
+  }
+</script>
+</body>
+</html>

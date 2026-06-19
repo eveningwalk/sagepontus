@@ -1,0 +1,110 @@
+{
+  "category": "therapist_soap",
+  "questions": [
+    {
+      "order": 1,
+      "question_text": "[S] 주요 통증 부위와 통증 양상을 기술해주세요.",
+      "description": "통증 위치, 성격(둔통·예리한 통증·저림 등), NRS 점수(0~10), 악화·완화 요인을 기술합니다.",
+      "hint": "예: '우측 요부 L4-5 수준, 둔통+방사통(우측 하지), NRS 6/10, 앉았다 일어날 때 악화'",
+      "purpose": "context"
+    },
+    {
+      "order": 2,
+      "question_text": "[S] 병력 및 발병일을 기술해주세요.",
+      "description": "진단명, 발병일 또는 증상 시작 시기, 관련 수술·외상·기왕력을 기술합니다.",
+      "hint": "예: '요추 추간판 탈출증(L4-5), 3주 전 물건 들다가 발생, 3년 전 요추 수술력 있음'",
+      "purpose": "context"
+    },
+    {
+      "order": 3,
+      "question_text": "[S] 일상생활 동작(ADL) 제한 사항을 기술해주세요.",
+      "description": "보행, 계단 오르내리기, 앉기·서기·눕기, 직업적 동작 중 제한되는 항목을 기술합니다.",
+      "hint": "예: '10분 이상 보행 어려움, 30분 이상 착석 불가, 직업상 장시간 운전 필요'",
+      "purpose": "constraint"
+    },
+    {
+      "order": 4,
+      "question_text": "[S] 환자의 치료 목표를 기술해주세요.",
+      "description": "환자 본인이 원하는 기능 회복 수준, 복귀하고 싶은 활동, 기대 치료 기간 등을 기술합니다.",
+      "hint": "예: '통증 없이 출근 가능한 상태 회복, 2개월 내 복직 희망'",
+      "purpose": "motivation"
+    },
+    {
+      "order": 5,
+      "question_text": "[O] 관절 가동 범위(ROM) 측정 결과를 기술해주세요.",
+      "description": "주요 관절의 ROM(굴곡·신전·측방굴곡·회전 등)을 각도 또는 정성적으로 기술합니다. 정상 대비 제한 여부를 명시합니다.",
+      "hint": "예: '요추 굴곡 40°(정상 대비 -20°), 신전 15°(정상), 우측 측방굴곡 제한'",
+      "purpose": "context"
+    },
+    {
+      "order": 6,
+      "question_text": "[O] 도수 근력 검사(MMT) 결과를 기술해주세요.",
+      "description": "주요 근육군별 MMT 등급(0~5) 또는 좌우 비교 소견을 기술합니다.",
+      "hint": "예: '우측 엉덩관절 굴곡 4/5, 족관절 배측굴곡 3/5(좌측 5/5 대비 저하)'",
+      "purpose": "context"
+    },
+    {
+      "order": 7,
+      "question_text": "[O] 특수 검사(Special Tests) 결과를 기술해주세요.",
+      "description": "시행한 특수 검사명과 결과(양성/음성)를 기술합니다. 해당 없으면 'N/A'로 기재합니다.",
+      "hint": "예: 'SLR 우측 30° 양성, Slump test 양성, FABER 음성'",
+      "purpose": "context"
+    },
+    {
+      "order": 8,
+      "question_text": "[O] 자세 및 촉진 소견을 기술해주세요.",
+      "description": "정적 자세 관찰(측만·전만·후만 등), 압통점, 근긴장도, 연부조직 상태를 기술합니다.",
+      "hint": "예: '요추 전만 증가, L4-5 극간 압통(+), 요방형근 우측 근경련 촉지됨'",
+      "purpose": "context"
+    },
+    {
+      "order": 9,
+      "question_text": "[O] 신경학적 검사 결과를 기술해주세요.",
+      "description": "감각 검사(피부분절 이상), 심부건반사(DTR), 근피부반사 등 신경학적 소견을 기술합니다. 해당 없으면 'WNL' 또는 'N/A'로 기재합니다.",
+      "hint": "예: '우측 L5 피부분절 감각 저하, 슬관절 DTR 2+ 양측 대칭, Babinski 음성'",
+      "purpose": "context"
+    },
+    {
+      "order": 10,
+      "question_text": "[A] 문제 목록(Problem List)을 작성해주세요.",
+      "description": "기능적·구조적·활동 제한·참여 제한 측면에서 우선순위 순으로 문제를 나열합니다.",
+      "hint": "예: '1) 우측 하지 방사통으로 인한 보행 제한, 2) 요추 굴곡 ROM 제한, 3) 핵심 안정화 근력 약화'",
+      "purpose": "context"
+    },
+    {
+      "order": 11,
+      "question_text": "[A] 치료 가설을 기술해주세요.",
+      "description": "문제 목록에 기반한 병리 기전 및 치료적 접근 방향에 대한 임상적 추론을 기술합니다.",
+      "hint": "예: '신경근 압박으로 인한 방사통 — 신경 가동화 및 요추 감압 운동 우선 적용'",
+      "purpose": "context"
+    },
+    {
+      "order": 12,
+      "question_text": "[A] 예후 예측을 기술해주세요.",
+      "description": "치료 반응 예측, 목표 달성 가능성, 예상 치료 기간, 예후에 영향을 미칠 인자를 기술합니다.",
+      "hint": "예: '급성 발병 + 신경학적 징후 경미 → 4~6주 치료 시 70% 이상 기능 회복 예상'",
+      "purpose": "motivation"
+    },
+    {
+      "order": 13,
+      "question_text": "[P] 치료 목표(LTG/STG)를 기술해주세요.",
+      "description": "장기 목표(LTG)와 단기 목표(STG)를 기능 회복·통증 수준 기준으로 기술합니다. 보험 청구 및 치료 정당화에 필수 항목입니다.",
+      "hint": "예: 'LTG: Return to ADL, Shoulder pain VAS 0 / STG: Trunk ROM Flx/Ext/Rot Full, Shoulder pain VAS 2'",
+      "purpose": "motivation"
+    },
+    {
+      "order": 14,
+      "question_text": "[P] 오늘 시행한 치료 내용을 기술해주세요.",
+      "description": "적용한 치료 기법, 강도·빈도·시간, 사용 장비, 가정 운동 처방 등을 기술합니다.",
+      "hint": "예: '핫팩 15분, 도수치료(요추 traction + mobilization), 신경 가동화 운동 10회×3세트, 가정 운동 처방'",
+      "purpose": "context"
+    },
+    {
+      "order": 15,
+      "question_text": "[P] 차기 세션 계획을 기술해주세요.",
+      "description": "다음 치료 방향, 재평가 항목, 치료 강도 조정 계획, 환자 교육 내용 등을 기술합니다.",
+      "hint": "예: '다음 세션: ROM 재평가 후 진행 여부 결정, 코어 안정화 운동 강도 상향, ADL 교육 추가'",
+      "purpose": "context"
+    }
+  ]
+}

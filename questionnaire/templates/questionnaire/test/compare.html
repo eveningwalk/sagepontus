@@ -1,0 +1,88 @@
+{% extends "index.html" %}
+
+{% block page_title %}응답 비교 — Sage Pontus{% endblock %}
+
+{% block main %}
+<div class="max-w-5xl">
+
+  <div class="mb-5">
+    <h1 class="text-base font-semibold text-foreground">{{ record.case_name|default:"AI 응답 비교" }}</h1>
+    <p class="text-xs text-muted-foreground mt-0.5">두 응답 중 더 도움이 된 쪽을 선택해 주세요</p>
+  </div>
+
+  <!-- 응답 비교 -->
+  <div class="grid grid-cols-2 gap-4 mb-4">
+
+    <div class="bg-card border border-border rounded-xl overflow-hidden flex flex-col">
+      <div class="px-4 py-2.5 border-b border-border bg-muted/30">
+        <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">응답 1</p>
+      </div>
+      <div class="p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap flex-1">{{ result_1 }}</div>
+    </div>
+
+    <div class="bg-card border border-border rounded-xl overflow-hidden flex flex-col">
+      <div class="px-4 py-2.5 border-b border-border bg-muted/30">
+        <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">응답 2</p>
+      </div>
+      <div class="p-4 text-sm text-foreground leading-relaxed whitespace-pre-wrap flex-1">{{ result_2 }}</div>
+    </div>
+
+  </div>
+
+  <!-- 투표 -->
+  {% if not voted %}
+  <div id="vote-section" class="flex items-center justify-center gap-6 py-4">
+    <button onclick="castVote('1')"
+            class="px-8 py-3 rounded-xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 text-sm font-semibold text-foreground transition-all">
+      응답 1이 더 좋아요
+    </button>
+    <span class="text-xs text-muted-foreground">둘 중 하나를 선택해 주세요</span>
+    <button onclick="castVote('2')"
+            class="px-8 py-3 rounded-xl border-2 border-border bg-card hover:border-primary hover:bg-primary/5 text-sm font-semibold text-foreground transition-all">
+      응답 2가 더 좋아요
+    </button>
+  </div>
+  <div id="vote-reveal" class="hidden text-center py-4">
+    <p class="text-sm font-semibold text-foreground">선택하신 응답은 <span id="reveal-winner" class="text-primary"></span>이었습니다</p>
+    <p id="reveal-detail" class="text-xs text-muted-foreground mt-1"></p>
+  </div>
+  {% else %}
+  <!-- 이미 투표한 경우 -->
+  <div class="text-center py-4">
+    <p class="text-sm font-semibold text-foreground">선택하신 응답은 <span class="text-primary">{{ winner }}</span>이었습니다</p>
+    <p class="text-xs text-muted-foreground mt-1">응답 {{ chosen_num }} = {{ winner }}</p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<form id="csrf-form">{% csrf_token %}</form>
+<script>
+  const CSRF = document.getElementById('csrf-form').querySelector('[name=csrfmiddlewaretoken]').value;
+  const RECORD_ID = {{ record.pk }};
+
+  function castVote(chosen) {
+    const data = new FormData();
+    data.append('record_id', RECORD_ID);
+    data.append('chosen', chosen);
+
+    fetch("{% url 'questionnaire:perf_test_vote' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+      body: data,
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) return;
+      document.getElementById('vote-section').classList.add('hidden');
+      const reveal = document.getElementById('vote-reveal');
+      reveal.classList.remove('hidden');
+      document.getElementById('reveal-winner').textContent = d.winner;
+      document.getElementById('reveal-detail').textContent =
+        `응답 ${chosen} = ${d.winner}`;
+    });
+  }
+</script>
+{% endblock %}

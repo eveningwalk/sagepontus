@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SagePontus — Anchor colors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Inter+Tight:wght@600;700;800&display=swap" rel="stylesheet" />
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      fontFamily: {
+        inter: ['Inter','ui-sans-serif','system-ui','sans-serif'],
+        display: ['"Inter Tight"','Inter','ui-sans-serif','sans-serif'],
+      },
+      colors: {
+        // Brand-derived scales for the name "SagePontus":
+        //  · sage   — a calm, clinical green (Sage)
+        //  · pontus — a deep sea blue (Pontus = Greek for "the sea")
+        sage: {
+          50:'#f1f6f2',100:'#dfe9e1',200:'#bfd4c4',300:'#97b79f',
+          400:'#6c977a',500:'#4f7c5f',600:'#3d634b',700:'#324f3d',
+          800:'#2a4033',900:'#24352b',950:'#121d17',
+        },
+        pontus: {
+          50:'#eef6f9',100:'#d6e9f0',200:'#b1d4e2',300:'#7eb6cd',
+          400:'#4892b1',500:'#2c7595',600:'#235e7c',700:'#214d65',
+          800:'#214154',900:'#1f3848',950:'#11222e',
+        },
+        // ice — a cool, bright glacier blue
+        ice: {
+          50:'#f0fafd',100:'#dbf2fa',200:'#b9e6f5',300:'#86d5ec',
+          400:'#4dbcdd',500:'#27a0c6',600:'#2280a6',700:'#216785',
+          800:'#22556d',900:'#20475c',950:'#102e3d',
+        },
+      },
+    }}
+  };
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Inter', system-ui, sans-serif; }
+
+  /* scroll-triggered reveal (mirrors the <Reveal> component) */
+  [data-reveal] {
+    opacity: 0; transform: translateY(22px);
+    transition: opacity .7s cubic-bezier(.16,1,.3,1), transform .7s cubic-bezier(.16,1,.3,1);
+    will-change: opacity, transform;
+  }
+  [data-reveal="in"] { opacity: 1; transform: none; }
+
+  /* accent-filled primary buttons — Teal, baked in for production (no JS needed) */
+  .btn-accent { background-color: #14B8A6 !important; color: #fff !important; box-shadow: 0 10px 26px -10px rgba(20,184,166,.55) !important; }
+  .btn-accent:hover { background-color: #0D9488 !important; box-shadow: 0 14px 30px -10px rgba(20,184,166,.6) !important; }
+
+  /* live "red alert" pulsing border on the real extension panel */
+  @keyframes pulseBorder {
+    0%, 100% { border-color: rgba(244,63,94,.25); box-shadow: 0 18px 40px -18px rgba(244,63,94,.35); }
+    50%      { border-color: rgba(244,63,94,.7);  box-shadow: 0 0 22px 2px rgba(244,63,94,.22), 0 18px 40px -18px rgba(244,63,94,.45); }
+  }
+  .alert-pulse { animation: pulseBorder 2s cubic-bezier(.4,0,.6,1) infinite; }
+  @media (prefers-reduced-motion: reduce) { .alert-pulse { animation: none; } }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    [data-reveal] { opacity: 1 !important; transform: none !important; transition: none; }
+  }
+</style>
+</head>
+<body class="bg-white text-slate-900 antialiased">
+
+<div id="app"></div>
+
+<!-- ── Page content (built with JS so reveal wiring is trivial) ── -->
+<script>
+const BRAND = { sky: '#0EA5E9', teal: '#14B8A6', ink: '#0F172A' };
+
+const pains = [
+  { tag: 'HPSO Report', stat: '$134K', title: 'Average PT Malpractice Lawsuit', body: "PT is the #1 medical field for malpractice claims. Your PTA's blind spot is your legal exposure.", source: 'Source: HPSO Physical Therapy Malpractice Report, 4th Edition' },
+  { tag: 'Revenue Loss', stat: '$30K–$90K/yr', title: 'Lost to Claim Denials', body: 'PT clinics lose $30K–$90K annually to preventable denials. "Missing information" is the #1 reason.', source: 'Source: WebPT / APTA Benchmark Data' },
+  { tag: 'CMS Compliance', stat: 'Zero Notice', title: 'Before Medicare Exclusion', body: "A single PTA supervision violation can trigger repayment demands and full Medicare exclusion. Most clinics don't know until it's too late.", source: 'Regulatory Risk Factor: OIG Audit Protocol' },
+];
+
+const features = [
+  { title: 'The Malpractice Shield', body: 'Every session gets screened. SagePontus catches the hidden cancer, fracture, or vascular emergency before it becomes a $134K lawsuit.', tag: 'For Clinic Directors',
+    points: ["Goodman's 6-criteria screen in real time", 'Referral letter auto-generated on trigger', 'Documented chain of custody — timestamped'], icon: 'shield-alert' },
+  { title: 'Audit-Proof Documentation', body: 'When a lawyer asks "did you screen?" — you have a record, not a memory. When an insurer says "missing information" — you have documentation that holds up.', tag: 'For Clinic Directors',
+    points: ['Every session timestamped and linked to criteria', 'Flags cite Goodman guideline chapter + page', 'Exportable PDF trail for legal or audit review'], icon: 'file' },
+  { title: 'Liability Score, not gut feeling', body: 'SagePontus gives you a compliance number before anyone asks. Updated after every session, across every patient.', tag: 'For Clinic Directors',
+    points: ['Live score updated after every session', 'Aggregated across every PTA in your clinic', 'Flags compliance deadlines before they expire'], icon: 'clipboard' },
+];
+
+const quotes = [
+  { quote: "First tool I've seen that actually addresses the supervision gap. This is what PT needs.", name: 'Dr. Rivera', role: 'DPT · Austin, TX', initials: 'RM' },
+  { quote: 'We had a near-miss last year. Sagepontus would have caught it in session 2.', name: 'J. Lin', role: 'Clinic Director · San Diego, CA', initials: 'JL' },
+  { quote: "Charting in 10 seconds isn't a gimmick. I tested it on my hardest note of the week.", name: 'A. Kaur', role: 'PTA · Miami, FL', initials: 'AK' },
+];
+
+// minimal inline icons
+function ic(name, size = 20) {
+  const p = {
+    'shield-alert': '<path d="M12 2.5 5 5v6c0 4.3 2.9 7.7 7 9 4.1-1.3 7-4.7 7-9V5l-7-2.5Z"/><path d="M12 8v4"/><path d="M12 16h.01"/>',
+    'clock': '<circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3 1.8"/>',
+    'clipboard': '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3.2A1.2 1.2 0 0 1 10.2 2h3.6A1.2 1.2 0 0 1 15 4"/><path d="M9 11h6"/><path d="M9 15h4"/>',
+    'file': '<path d="M7 3h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M13 3v5h5"/>',
+    'check': '<path d="M5 12.5 10 17l9-10"/>',
+    'arrow': '<path d="M5 12h13"/><path d="m13 6 6 6-6 6"/>',
+    'users': '<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M17 13.5a5.5 5.5 0 0 1 3.5 5.5"/>',
+  }[name] || '';
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">${p}</svg>`;
+}
+
+// realistic waitlist-form mock with validation + success
+function formMock(id, dark) {
+  const inputCls = dark
+    ? 'h-12 w-full rounded-xl border border-white/20 bg-white/10 px-4 text-[15px] text-white placeholder:text-white/60 shadow-sm outline-none transition focus:border-white/50 focus:ring-4 focus:ring-white/20'
+    : 'h-12 w-full rounded-xl border border-slate-200 bg-white px-4 text-[15px] text-slate-900 placeholder:text-slate-400 shadow-sm outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/15';
+  const btnCls = 'group h-12 px-5 rounded-xl font-semibold btn-accent transition active:scale-[.98] inline-flex items-center justify-center gap-2 whitespace-nowrap';
+  return `
+  <form data-form="${id}" novalidate class="relative z-10 w-full max-w-md">
+    <div class="flex flex-col gap-2.5 sm:flex-row">
+      <input type="email" placeholder="you@clinic.com" aria-label="Work email"
+        class="${inputCls}" />
+      <button type="submit" class="${btnCls}">
+        Join the Waitlist ${ic('arrow', 17)}
+      </button>
+    </div>
+    <p data-err class="mt-1.5 text-xs font-medium opacity-0 ${dark ? 'text-rose-200' : 'text-rose-500'}">Please enter a valid email address.</p>
+  </form>`;
+}
+
+const WRAP = 'mx-auto max-w-6xl px-5 sm:px-8';
+
+function painCard(p, i) {
+  return `
+  <div data-reveal style="transition-delay:${i*90}ms" class="h-full">
+    <div class="group relative flex h-full flex-col justify-between rounded-2xl border border-slate-100 bg-white p-8 shadow-[0_2px_8px_rgba(15,23,42,0.02)] transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-200/80 hover:shadow-[0_16px_32px_-12px_rgba(15,23,42,0.1)]">
+      <div>
+        <div class="mb-6 inline-flex items-center rounded border border-slate-200/60 bg-slate-50 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-slate-400">${p.tag}</div>
+        <div class="mb-2 font-sans text-4xl font-black tracking-tight text-sky-500">${p.stat}</div>
+        <h3 class="mb-3 text-lg font-bold tracking-tight text-slate-900">${p.title}</h3>
+        <p class="text-sm leading-relaxed text-slate-500">${p.body}</p>
+      </div>
+      ${p.source ? `<div class="mt-6 border-t border-slate-100 pt-4 text-[11px] font-medium italic text-slate-400">${p.source}</div>` : ''}
+    </div>
+  </div>`;
+}
+
+function featureCard(f, i) {
+  return `
+  <div data-reveal style="transition-delay:${i*90}ms" class="h-full">
+    <div class="relative h-full rounded-2xl border border-slate-200 bg-white p-7 transition duration-200 hover:border-teal-300 hover:shadow-[0_20px_50px_-28px_rgba(15,23,42,.3)]">
+      <div class="flex items-center justify-between gap-4">
+        <div class="grid h-14 w-14 place-items-center rounded-xl border border-teal-200 bg-teal-50 text-teal-600">${ic(f.icon, 26)}</div>
+        <span class="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 text-xs font-semibold text-slate-600">${ic('users',11)} ${f.tag}</span>
+      </div>
+      <h3 class="mt-5 font-display text-2xl font-bold tracking-tight text-slate-900">${f.title}</h3>
+      <p class="mt-3 text-[15px] leading-relaxed text-slate-600">${f.body}</p>
+      <ul class="mt-6 space-y-3">
+        ${f.points.map(pt => `<li class="flex items-start gap-2.5 text-[15px] text-slate-700"><span class="mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border border-teal-100 bg-teal-50 text-teal-600">${ic('check',12)}</span>${pt}</li>`).join('')}
+      </ul>
+    </div>
+  </div>`;
+}
+
+function inlineCTA(heading, sub, id) {
+  return `
+  <section data-reveal class="anchor-strip ${WRAP} py-12 sm:py-14">
+    <div class="flex flex-col justify-between gap-6 rounded-2xl px-7 py-8 text-white shadow-[0_24px_60px_-30px_rgba(20,184,166,.6)] sm:px-10 sm:py-9 md:flex-row md:items-center md:gap-10"
+         style="background:linear-gradient(135deg, ${BRAND.teal}, ${BRAND.sky})">
+      <div class="md:max-w-sm">
+        <h3 class="font-display text-xl font-bold tracking-tight sm:text-2xl">${heading}</h3>
+        <p class="mt-1.5 text-sm text-white/85 sm:text-[15px]">${sub}</p>
+      </div>
+      <div class="w-full shrink-0 md:w-auto md:min-w-[360px]">${formMock(id, true)}</div>
+    </div>
+  </section>`;
+}
+
+// Real extension alarm panel, with a pulsing red "live alert" border
+function alarmPanel(maxW) {
+  return `<div class="alert-pulse relative overflow-hidden rounded-xl border border-rose-200 bg-white shadow-[0_18px_40px_-18px_rgba(244,63,94,.45)]" style="max-width:${maxW}px">
+    <img src="alarm-panel.png" width="355" height="340" alt="SagePontus red alert — Spinal Malignancy, risk score 100%" class="block h-auto w-full" />
+  </div>`;
+}
+
+// DRAFT A — "EMR Workspace": full daily-note simulation with the alert intercepted on the right
+function productMockA() {
+  return `
+  <div class="relative mx-auto w-full">
+    <div class="overflow-hidden rounded-2xl bg-white shadow-[0_40px_80px_-36px_rgba(15,23,42,.28)] ring-1 ring-slate-200/80">
+      <div class="flex h-11 items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 text-slate-400">
+        <span class="flex gap-1.5"><span class="h-2.5 w-2.5 rounded-full bg-slate-200"></span><span class="h-2.5 w-2.5 rounded-full bg-slate-200"></span><span class="h-2.5 w-2.5 rounded-full bg-slate-200"></span></span>
+        <span class="ml-2 font-mono text-[10.5px] uppercase tracking-wider text-slate-400">EMR · Daily Note</span>
+        <span class="ml-auto inline-flex items-center gap-1 rounded-full border border-sky-100 bg-sky-50 px-2.5 py-0.5 text-[10.5px] font-bold text-sky-700">${ic('shield-alert',11)} SagePontus Active</span>
+      </div>
+      <div class="grid gap-4 bg-white p-4 sm:grid-cols-[1fr_auto] sm:p-5">
+        <div class="space-y-3.5 sm:border-r sm:border-slate-100 sm:pr-4">
+          <div>
+            <span class="block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">Subjective</span>
+            <p class="mt-1.5 rounded-lg border border-slate-200/60 bg-slate-50 p-2.5 text-[12px] leading-relaxed text-slate-700">Worsening, deep, constant low back pain × 3 weeks. Unrelieved by rest. Hx prostate cancer tx 4 yrs ago.</p>
+          </div>
+          <div>
+            <span class="block text-[10.5px] font-bold uppercase tracking-wide text-slate-400">Objective</span>
+            <div class="mt-1.5 space-y-1.5">
+              <div class="flex items-center justify-between border-b border-slate-100 pb-1 text-[12px]"><span class="text-slate-500">Lumbar Flexion</span><span class="font-medium text-slate-800">45° · pain-limited</span></div>
+              <div class="flex items-center justify-between text-[12px]"><span class="text-slate-500">Neuro Screen</span><span class="font-medium text-slate-800">WNL · L2–S1</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center justify-center">${alarmPanel(220)}</div>
+      </div>
+    </div>
+    <div class="absolute -bottom-4 right-5 rounded-md bg-slate-900 px-3 py-1 font-mono text-[10.5px] tracking-tight text-white shadow-md">Goodman red-flag verification</div>
+  </div>`;
+}
+
+// DRAFT B — "Session Tracking": narrative of the intercept, alert docked on the right
+function productMockB() {
+  return `
+  <div class="relative mx-auto w-full">
+    <div class="overflow-hidden rounded-2xl bg-white shadow-[0_40px_80px_-36px_rgba(15,23,42,.28)] ring-1 ring-slate-200/80">
+      <div class="grid sm:grid-cols-[1fr_auto]">
+        <div class="bg-white p-5">
+          <span class="block font-mono text-[10.5px] font-semibold uppercase tracking-wider text-slate-400">Active EMR session</span>
+          <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[12.5px]"><span class="font-semibold text-slate-900">Patient:</span> <span class="text-slate-600">Robert M. · 62M, unremitting lumbar pain</span></div>
+          <ul class="mt-4 space-y-2.5 text-[12.5px]">
+            <li class="flex items-center gap-2 text-slate-600"><span class="text-teal-500">${ic('check',14)}</span> Symptoms parsed from chart</li>
+            <li class="flex items-center gap-2 text-slate-600"><span class="text-teal-500">${ic('check',14)}</span> Screened vs Goodman's 6 criteria</li>
+            <li class="flex items-center gap-2 font-semibold text-rose-600">${ic('shield-alert',14)} Red flag intercepted</li>
+          </ul>
+          <div class="mt-4 inline-flex items-center gap-1.5 rounded-full border border-sky-100 bg-sky-50 px-2.5 py-1 text-[10.5px] font-bold text-sky-700">${ic('shield-alert',11)} SagePontus Active</div>
+        </div>
+        <div class="relative flex items-center justify-center border-t border-slate-100 bg-slate-50/70 p-4 sm:border-l sm:border-t-0">
+          ${alarmPanel(250)}
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+
+const MOCKS = { A: productMockA, B: productMockB };
+function productMock(draft) { return (MOCKS[draft] || productMockA)(); }
+
+document.getElementById('app').innerHTML = `
+  <header class="relative overflow-hidden pb-24 pt-24" style="background:linear-gradient(180deg,#f8fafc,#ffffff)">
+    <div aria-hidden class="pointer-events-none absolute inset-0" style="background-image:linear-gradient(rgba(15,23,42,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,.05) 1px,transparent 1px);background-size:58px 58px;-webkit-mask-image:radial-gradient(120% 90% at 70% 0%, #000 30%, transparent 75%);mask-image:radial-gradient(120% 90% at 70% 0%, #000 30%, transparent 75%)"></div>
+    <div class="relative ${WRAP}">
+      <div class="grid items-center gap-14 lg:grid-cols-2 lg:gap-10">
+        <div data-reveal>
+          <span class="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">✦ Chrome extension · Private beta</span>
+          <h1 class="mt-5 font-display text-[clamp(2.4rem,4.6vw,3.9rem)] font-bold leading-[1.04] tracking-[-0.025em] text-slate-900">Red Flag Detected.<br><span class="bg-gradient-to-r from-teal-500 to-sky-500 bg-clip-text text-transparent">Before Treatment Starts.</span></h1>
+          <p class="mt-6 text-lg leading-relaxed text-slate-600">Enter symptoms. SagePontus screens against Goodman's 6 criteria in real time — and alerts before your PTA takes the first step.</p>
+          <div class="mt-8">${formMock('hero', false)}</div>
+          <div class="mt-5 flex w-fit flex-wrap items-center gap-x-5 gap-y-2 rounded-full border border-slate-100 bg-white/75 px-4 py-2 shadow-sm backdrop-blur-sm">
+            <span class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><span class="text-teal-500">${ic('check',14)}</span> Free during beta</span>
+            <span class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600"><span class="text-teal-500">${ic('check',14)}</span> No credit card</span>
+          </div>
+        </div>
+        <div data-reveal style="transition-delay:150ms" class="lg:pl-6"><div id="heroMock" class="pb-10 pt-4 lg:pt-0">${productMock('A')}</div></div>
+      </div>
+    </div>
+  </header>
+
+  <section class="py-20 sm:py-28">
+    <div class="${WRAP}">
+      <div data-reveal>
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">The hidden cost</p>
+        <h2 class="mt-2.5 max-w-3xl font-display text-[clamp(1.85rem,3.4vw,2.7rem)] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900">Every clinic loses time and carries risk they can't see.</h2>
+        <p class="mt-4 max-w-2xl text-lg text-slate-600">Documentation eats your day — and a missed Red Flag can end your career. Sagepontus takes on both.</p>
+      </div>
+      <div class="mt-12 grid gap-5 md:grid-cols-3">${pains.map(painCard).join('')}</div>
+    </div>
+  </section>
+
+
+  <section class="border-y border-slate-200/80 bg-slate-50/70 py-20 sm:py-28">
+    <div class="${WRAP}">
+      <div data-reveal class="mx-auto max-w-2xl text-center">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">How it works</p>
+        <h2 class="mt-2.5 font-display text-[clamp(1.85rem,3.4vw,2.7rem)] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900">From symptom entry to alert in seconds.</h2>
+        <p class="mt-4 text-lg text-slate-600">Your <span class="font-semibold text-slate-700">HowTabs</span> component renders here in the real app.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="py-20 sm:py-28">
+    <div class="${WRAP}">
+      <div data-reveal class="mx-auto max-w-2xl text-center">
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-sky-600">What you get</p>
+        <h2 class="mt-2.5 font-display text-[clamp(1.85rem,3.4vw,2.7rem)] font-bold leading-[1.1] tracking-[-0.02em] text-slate-900">Three layers of protection. One extension.</h2>
+      </div>
+      <div class="mt-12 grid gap-6 md:grid-cols-3">${features.map(featureCard).join('')}</div>
+    </div>
+  </section>
+
+
+  <section class="border-y border-slate-200/80 bg-slate-50/70 py-20 sm:py-28">
+    <div class="${WRAP}">
+      <div data-reveal><p class="text-center text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Trusted by early-access PTs across California, Texas, and Florida</p></div>
+      <div class="mt-10 grid gap-5 md:grid-cols-3">
+        ${quotes.map((q,i) => `
+        <div data-reveal style="transition-delay:${i*90}ms" class="h-full">
+          <figure class="h-full rounded-xl border border-slate-200 bg-white p-7">
+            <blockquote class="text-[15px] leading-relaxed text-slate-700">&ldquo;${q.quote}&rdquo;</blockquote>
+            <figcaption class="mt-5 flex items-center gap-3">
+              <span class="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-teal-100 text-xs font-bold text-teal-700">${q.initials}</span>
+              <span><span class="block text-sm font-semibold text-slate-900">${q.name}</span><span class="block text-xs text-slate-500">${q.role}</span></span>
+            </figcaption>
+          </figure>
+        </div>`).join('')}
+      </div>
+    </div>
+  </section>
+
+  <section id="final-cta-anchor" class="bg-sky-950 py-20 sm:py-28">
+    <div class="${WRAP}">
+      <div data-reveal class="grid items-center gap-10 lg:grid-cols-2">
+        <div>
+          <h2 class="font-display text-[clamp(1.9rem,4vw,3rem)] font-bold leading-tight tracking-[-0.02em] text-white">Be first when we launch.</h2>
+          <p class="mt-3 text-lg text-slate-300">Beta access is limited. Early members get 6 months free.</p>
+        </div>
+        <div class="flex flex-col gap-3 lg:items-end">${formMock('bottom', true)}<p class="text-sm text-slate-400">No credit card · Cancel anytime</p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="border-t border-slate-200">
+    <div class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-9 sm:flex-row sm:px-8">
+      <span class="font-display text-lg font-bold tracking-tight text-slate-900">SagePontus</span>
+      <p class="text-sm text-slate-500">© 2026 SagePontus · For Physical Therapists</p>
+    </div>
+  </footer>
+`;
+
+// ── scroll reveal ────────────────────────────────────────────
+const els = [...document.querySelectorAll('[data-reveal]')];
+els.forEach(e => e.setAttribute('data-reveal', 'out'));
+function check() {
+  const vh = window.innerHeight;
+  els.forEach(el => {
+    const r = el.getBoundingClientRect();
+    if (r.top < vh * 0.9 && r.bottom > 0) el.setAttribute('data-reveal', 'in');
+  });
+}
+['scroll','resize','load'].forEach(ev => window.addEventListener(ev, check, { passive: true }));
+// fire immediately + a few delayed passes (robust even when rAF is throttled offscreen)
+check();
+[60, 180, 400, 800].forEach(t => setTimeout(check, t));
+// safety net: never leave content hidden if timers/observers were throttled
+setTimeout(() => els.forEach(e => e.setAttribute('data-reveal', 'in')), 1400);
+
+// ── form validation + success (mirrors WaitlistForm behavior) ──
+const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+document.addEventListener('submit', (e) => {
+  const form = e.target.closest('form[data-form]');
+  if (!form) return;
+  e.preventDefault();
+  const input = form.querySelector('input');
+  const err = form.querySelector('[data-err]');
+  const val = (input.value || '').trim();
+  if (!EMAIL.test(val)) { err.classList.remove('opacity-0'); input.focus(); return; }
+  const dark = form.closest('[id="final-cta-anchor"]') || form.closest('.anchor-strip');
+  form.innerHTML = `<div class="flex items-center gap-3.5 rounded-xl border px-4 py-3.5 ${dark ? 'border-white/25 bg-white/10' : 'border-teal-200 bg-teal-50'}">
+    <div class="grid h-9 w-9 shrink-0 place-items-center rounded-full ${dark ? 'bg-white text-slate-900' : 'bg-teal-500 text-white'}">${ic('check',18)}</div>
+    <div><p class="font-semibold ${dark ? 'text-white' : 'text-slate-900'}">You're on the list! 🎉</p>
+    <p class="text-sm ${dark ? 'text-white/80' : 'text-slate-600'}">We'll reach <span class="font-semibold">${val}</span> when beta invites open.</p></div>
+  </div>`;
+  applyPalette(STATE.idx, form); // recolor the freshly-injected success markup
+});
+
+// ── Palette explorer ──────────────────────────────────────────
+// Each palette = a Tailwind primary + a secondary (the gradient partner).
+// Chosen to avoid the page's semantic colors (rose = Red Flag, amber/emerald = mock dots).
+const PALETTES = [
+  { name: 'Sage · Pontus', primary: 'sage',    secondary: 'pontus', hex: '#4f7c5f', hex2: '#2c7595', brand: true },
+  { name: 'Sage · Ice',    primary: 'sage',    secondary: 'ice',    hex: '#4f7c5f', hex2: '#27a0c6', brand: true },
+  { name: 'Sage · Sky',    primary: 'sage',    secondary: 'sky',    hex: '#4f7c5f', hex2: '#0EA5E9', brand: true },
+  { name: 'Teal',          primary: 'teal',    secondary: 'sky',    hex: '#14B8A6', hex2: '#0EA5E9' },
+  { name: 'Ocean',         primary: 'blue',    secondary: 'cyan',   hex: '#2563EB', hex2: '#06B6D4' },
+  { name: 'Royal',         primary: 'indigo',  secondary: 'violet', hex: '#4F46E5', hex2: '#7C3AED' },
+  { name: 'Magenta',       primary: 'fuchsia', secondary: 'pink',   hex: '#C026D3', hex2: '#DB2777' },
+];
+const PREFIX = '(?:text|bg|border|ring|from|via|to|fill|stroke|placeholder|divide|ring-offset)';
+const STATE = { idx: 1, primary: 'teal', secondary: 'sky' }; // authored base = Teal (idx 1)
+
+function swapTokens(root, fromColor, toColor) {
+  if (fromColor === toColor) return;
+  const re = new RegExp('\\b(' + PREFIX + ')-' + fromColor + '-(\\d{2,3})(/\\d{1,3})?\\b', 'g');
+  const walk = (el) => {
+    if (el.className && typeof el.className === 'string') {
+      const next = el.className.replace(re, (m, p, shade, alpha) => `${p}-${toColor}-${shade}${alpha || ''}`);
+      if (next !== el.className) el.className = next;
+    }
+    for (const c of el.children) walk(c);
+  };
+  walk(root);
+}
+
+// paint every accent button via inline !important styles (bulletproof past
+// Tailwind's button reset and CDN cascade timing); :hover reads an inline var
+function paintButtons(root) {
+  const p = PALETTES[STATE.idx];
+  root.querySelectorAll('.btn-accent').forEach((b) => {
+    b.style.setProperty('background-color', p.hex, 'important');
+    b.style.setProperty('box-shadow', `0 10px 26px -10px ${hexA(p.hex, .55)}`, 'important');
+    b.style.setProperty('--bhover', shade(p.hex, 0.82));
+    b.style.setProperty('--bhover-shadow', `0 14px 30px -10px ${hexA(p.hex, .6)}`);
+  });
+}
+
+function applyPalette(idx, scope) {
+  const p = PALETTES[idx];
+  const root = scope || document.body;
+  // when recoloring the whole page, swap from the CURRENT palette; for a freshly
+  // injected node (scope), swap from the base 'teal'/'sky' it was authored in.
+  const fromP = scope ? 'teal' : STATE.primary;
+  const fromS = scope ? 'sky'  : STATE.secondary;
+  swapTokens(root, fromP, p.primary);
+  swapTokens(root, fromS, p.secondary);
+  if (!scope) {
+    STATE.idx = idx; STATE.primary = p.primary; STATE.secondary = p.secondary;
+  }
+  paintButtons(root);
+}
+
+// darken a #rrggbb hex by factor f (<1)
+function shade(hex, f) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round(((n >> 16) & 255) * f);
+  const g = Math.round(((n >> 8) & 255) * f);
+  const b = Math.round((n & 255) * f);
+  return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+// #rrggbb → rgba(r,g,b,a) for accent-tinted shadows
+function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+function renderSwatches() { /* removed in production build (palette locked to Teal) */ }
+
+// init — default to the brand "Sage · Pontus" palette (or restore last choice)
+(function initPalette() {
+  applyPalette(3);            // production: locked to the Teal palette (#14B8A6)
+})();
+
+// Hero mockup locked to Draft A (EMR workspace)
+function setDraft(d) {
+  const host = document.getElementById('heroMock');
+  if (host) {
+    host.innerHTML = productMock(d);
+    applyPalette(STATE.idx, host);
+  }
+}
+setDraft('A');
+
+
+</script>
+</body>
+</html>

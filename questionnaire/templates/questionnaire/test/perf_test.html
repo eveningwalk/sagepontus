@@ -1,0 +1,535 @@
+{% extends "index.html" %}
+
+{% block nav_perf_test_active %}bg-primary/10 text-primary{% endblock %}
+
+{% block page_title %}성능 테스트 — Sage Pontus{% endblock %}
+
+{% block main %}
+<div class="max-w-6xl">
+
+  <!-- 헤더 + 샘플 -->
+  <div class="flex items-center gap-4 mb-3">
+    <h1 class="text-base font-semibold text-foreground whitespace-nowrap">A/B 성능 테스트</h1>
+    {% if not is_tester %}
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-muted-foreground">샘플:</span>
+      {% for s in samples %}
+      <form method="post" class="inline">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="load_sample">
+        <input type="hidden" name="sample_idx" value="{{ s.idx }}">
+        <button type="submit"
+                class="text-xs px-2.5 py-1 rounded-lg border border-border hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
+          {{ s.name }}
+        </button>
+      </form>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- 입력 폼 -->
+  <form id="perf-form">
+    {% csrf_token %}
+
+    <!-- 케이스 이름 + 실행 버튼 -->
+    <div class="flex items-center gap-3 mb-3">
+      <label class="text-xs text-muted-foreground whitespace-nowrap">케이스 이름</label>
+      <input type="text" name="case_name" value="{{ form_data.case_name }}"
+             placeholder="예: 뇌졸중 SOAP 노트"
+             class="flex-1 text-sm border border-border rounded-lg px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30">
+      <button type="button" id="run-btn" onclick="runPerfTest()"
+              class="inline-flex items-center gap-1.5 px-5 py-1.5 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        성능 비교 실행
+      </button>
+    </div>
+
+    <!-- A / B 나란히 -->
+    <div class="grid grid-cols-2 gap-3">
+
+      <!-- A -->
+      <div class="bg-card border border-border rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded bg-red-100 text-red-600 text-xs font-bold flex-shrink-0">A</span>
+          <span class="text-sm font-medium text-foreground">기존 방식</span>
+          <span class="text-xs text-muted-foreground">— 매 세션 전체 입력</span>
+        </div>
+        <textarea id="prompt_a" name="prompt_a"
+                  placeholder="저는 재활병원에서 근무하는 물리치료사예요..."
+                  class="w-full text-xs border border-border rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none overflow-hidden font-mono">{{ form_data.prompt_a }}</textarea>
+      </div>
+
+      <!-- B -->
+      <div class="bg-card border border-border rounded-xl p-4">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="inline-flex items-center justify-center w-5 h-5 rounded bg-primary/20 text-primary text-xs font-bold flex-shrink-0">B</span>
+          <span class="text-sm font-medium text-foreground">Sage Pontus</span>
+          <span class="text-xs text-muted-foreground">— 프로필 + 케이스 분리</span>
+        </div>
+        {% if user_trees %}
+        <div class="flex flex-wrap items-center gap-1.5 mb-3">
+          <span class="text-xs text-muted-foreground flex-shrink-0">내 트리:</span>
+          {% for t in user_trees %}
+          <button type="button"
+                  onclick="loadTreePrompt(this)"
+                  data-prompt="{{ t.prompt|escapejs }}"
+                  data-title="{{ t.title|escapejs }}"
+                  class="tree-chip inline-flex items-center gap-1 text-xs font-medium text-primary bg-primary/8 hover:bg-primary/15 border border-primary/20 px-2.5 py-1 rounded-full transition-colors truncate max-w-[160px]">
+            <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+            </svg>
+            {{ t.title }}
+          </button>
+          {% endfor %}
+        </div>
+        {% endif %}
+        <label class="block text-xs text-muted-foreground mb-1">b_system <span class="text-muted-foreground/60">(1회 저장·재사용)</span></label>
+        <textarea id="b_system" name="b_system"
+                  placeholder="# 역할과 상황&#10;재활병원 신경과 병동 소속 물리치료사..."
+                  class="w-full text-xs border border-border rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none overflow-hidden font-mono mb-2">{{ form_data.b_system }}</textarea>
+        <label class="block text-xs text-muted-foreground mb-1">
+          b_task <span class="text-red-500 font-semibold">*</span>
+          <span class="text-muted-foreground/60">(오늘 케이스 요청 — AI 비교에 사용됨)</span>
+        </label>
+        <textarea id="b_task" name="b_task"
+                  placeholder="65세 남성, MCA 뇌졸중 3개월, 우측 편마비. SOAP 작성."
+                  class="w-full text-xs border border-border rounded-lg px-3 py-2 bg-background focus:outline-none focus:ring-2 focus:ring-primary/30 resize-none overflow-hidden font-mono">{{ form_data.b_task }}</textarea>
+      </div>
+
+    </div>
+  </form>
+
+  <!-- 로딩 -->
+  <div id="loading-box" class="hidden mt-6 bg-card border border-border rounded-xl p-8 text-center">
+    <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
+      <svg class="w-6 h-6 text-primary animate-spin" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+      </svg>
+    </div>
+    <p class="text-sm font-medium text-foreground mb-1">A·B 방식으로 AI 호출 중...</p>
+    <p class="text-xs text-muted-foreground">같은 케이스를 두 프롬프트로 각각 실행합니다</p>
+  </div>
+
+  <!-- 에러 -->
+  <div id="error-box" class="hidden mt-4 rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive"></div>
+
+  <!-- 결과 -->
+  <div id="result-box" class="hidden mt-6 space-y-4">
+
+    <!-- 토큰 요약 (tester 제외) -->
+    <div id="token-summary" class="grid grid-cols-4 gap-3 {% if is_tester %}hidden{% endif %}">
+      <div class="bg-card border border-border rounded-xl px-4 py-3">
+        <p class="text-xs text-muted-foreground mb-1">A 입력 토큰</p>
+        <p class="text-xl font-bold text-foreground" id="r-tok-a">—</p>
+      </div>
+      <div class="bg-card border border-border rounded-xl px-4 py-3">
+        <p class="text-xs text-muted-foreground mb-1">B 매 세션 입력</p>
+        <p class="text-xl font-bold text-foreground" id="r-tok-b-task">—</p>
+        <p class="text-xs text-muted-foreground" id="r-tok-b-system-hint"></p>
+      </div>
+      <div class="bg-card border border-border rounded-xl px-4 py-3">
+        <p class="text-xs text-muted-foreground mb-1">토큰 절감</p>
+        <p class="text-xl font-bold text-green-600" id="r-reduction">—</p>
+      </div>
+      <div class="bg-primary/5 border border-primary/30 rounded-xl px-4 py-3">
+        <p class="text-xs text-muted-foreground mb-1">작성 부담 절감</p>
+        <p class="text-xl font-bold text-primary" id="r-writing">—</p>
+      </div>
+    </div>
+
+    <!-- AI 응답 비교 (블라인드) -->
+    <div class="bg-card border border-border rounded-xl overflow-hidden">
+      <div class="px-4 py-2.5 border-b border-border bg-muted/30 flex items-center gap-2">
+        <a id="share-link" href="#" target="_blank"
+           class="ml-auto inline-flex items-center gap-1.5 text-xs text-primary hover:underline hidden">
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+          </svg>
+          PT에게 공유
+        </a>
+        <svg class="w-4 h-4 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+        </svg>
+        <span class="text-sm font-semibold text-foreground">AI 응답 비교 — 어느 쪽이 더 좋나요?</span>
+        <span id="r-usage" class="ml-auto text-xs text-muted-foreground"></span>
+      </div>
+      <div class="grid grid-cols-2 divide-x divide-border">
+        <div class="p-4 bg-muted/10">
+          <div class="flex items-center gap-2 mb-3">
+            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">응답 1</p>
+            <span id="label-1" class="hidden text-xs font-bold px-2 py-0.5 rounded-full"></span>
+          </div>
+          <div id="r-result-1" class="text-sm text-foreground leading-relaxed whitespace-pre-wrap"></div>
+        </div>
+        <div class="p-4 bg-muted/10">
+          <div class="flex items-center gap-2 mb-3">
+            <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide">응답 2</p>
+            <span id="label-2" class="hidden text-xs font-bold px-2 py-0.5 rounded-full"></span>
+          </div>
+          <div id="r-result-2" class="text-sm text-foreground leading-relaxed whitespace-pre-wrap"></div>
+        </div>
+      </div>
+
+      <!-- 투표 -->
+      <div id="vote-section" class="px-4 py-4 border-t border-border bg-muted/20 flex items-center justify-center gap-4">
+        <button onclick="castVote('1')"
+                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border-2 border-border bg-white hover:border-primary hover:bg-primary/5 text-sm font-semibold text-foreground transition-all">
+          응답 1이 더 좋아요
+        </button>
+        <span class="text-xs text-muted-foreground">둘 중 하나를 선택해 주세요</span>
+        <button onclick="castVote('2')"
+                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-lg border-2 border-border bg-white hover:border-primary hover:bg-primary/5 text-sm font-semibold text-foreground transition-all">
+          응답 2가 더 좋아요
+        </button>
+      </div>
+
+      <!-- 투표 결과 공개 -->
+      <div id="vote-reveal" class="hidden px-4 py-4 border-t border-border text-center">
+        <p class="text-sm font-semibold text-foreground mb-1">선택하신 응답은 <span id="reveal-winner" class="text-primary"></span>이었습니다</p>
+        <p id="reveal-detail" class="text-xs text-muted-foreground"></p>
+      </div>
+    </div>
+
+    <!-- 비용 테이블 (tester 제외) -->
+    <div id="cost-table" class="bg-card border border-border rounded-xl overflow-hidden {% if is_tester %}hidden{% endif %}">
+      <div class="px-4 py-2 border-b border-border flex items-center justify-between">
+        <span class="text-xs font-semibold text-foreground">모델별 월간 비용</span>
+        <div class="flex items-center gap-2">
+          <span id="table-basis-label" class="text-xs text-amber-600 font-medium hidden">추정치 기준</span>
+          <span class="text-xs text-muted-foreground">월 {{ monthly_sessions }}세션 기준 (USD)</span>
+        </div>
+      </div>
+      <table class="w-full text-xs" id="pricing-table">
+        <thead>
+          <tr class="text-muted-foreground border-b border-border bg-muted/30">
+            <th class="px-4 py-2 text-left font-medium">모델</th>
+            <th class="px-4 py-2 text-left font-medium">등급</th>
+            <th class="px-4 py-2 text-right font-medium">A 비용</th>
+            <th class="px-4 py-2 text-right font-medium">B (캐시 적용)</th>
+            <th class="px-4 py-2 text-right font-medium">절감액</th>
+            <th class="px-4 py-2 text-right font-medium">절감율</th>
+          </tr>
+        </thead>
+        <tbody id="pricing-tbody"></tbody>
+      </table>
+      <div id="gpt-cache-note" class="hidden px-4 py-2.5 border-t border-amber-200 bg-amber-50 flex items-start gap-2">
+        <svg class="w-3.5 h-3.5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/>
+        </svg>
+        <p class="text-xs text-amber-700">
+          <span class="font-semibold">GPT 캐시 주의:</span>
+          OpenAI prompt caching은 자동 적용이며 최소 토큰 조건이 있습니다 (GPT-4o ≥ 1,024 tok / GPT-4o mini ≥ 512 tok).
+          b_system이 이 기준 미달이면 캐시 할인 없이 매 세션 full price가 청구되므로 실제 B 비용이 위 수치보다 높을 수 있습니다.
+        </p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 과거 테스트 목록 -->
+  {% if history %}
+  <div class="mt-6">
+    <p class="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">최근 테스트</p>
+    <div class="space-y-1.5">
+      {% for h in history %}
+      <div class="flex items-center gap-3 bg-card border border-border rounded-lg px-4 py-2.5 text-xs cursor-pointer hover:bg-muted/40 transition-colors"
+           onclick="loadHistory({{ h.id }})">
+        <span class="font-medium text-foreground truncate flex-1">{{ h.case_name|default:"(무제)" }}</span>
+        <span class="text-muted-foreground flex-shrink-0">{{ h.created_at|date:"m/d H:i" }}</span>
+        {% if not is_tester %}
+        <span class="text-primary flex-shrink-0">절감 {{ h.tokens.writing_reduction }}%</span>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // textarea 자동 높이 (내용 전체 표시)
+  ['prompt_a', 'b_system', 'b_task'].forEach(id => {
+    const ta = document.getElementById(id);
+    if (!ta) return;
+    const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
+    fit();
+    ta.addEventListener('input', fit);
+  });
+
+  const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+  function loadTreePrompt(btn) {
+    const prompt = btn.dataset.prompt;
+    const title  = btn.dataset.title;
+    const ta = document.getElementById('b_system');
+    ta.value = prompt;
+    ta.style.height = 'auto';
+    ta.style.height = ta.scrollHeight + 'px';
+    // 케이스 이름 자동 채우기 (비어있으면)
+    const caseInput = document.querySelector('[name=case_name]');
+    if (caseInput && !caseInput.value.trim()) caseInput.value = title;
+    // 선택된 트리 칩 강조
+    document.querySelectorAll('.tree-chip').forEach(c => {
+      c.classList.toggle('bg-primary/20', c === btn);
+      c.classList.toggle('border-primary/50', c === btn);
+      c.classList.toggle('bg-primary/8', c !== btn);
+      c.classList.toggle('border-primary/20', c !== btn);
+    });
+  }
+
+  function runPerfTest() {
+    const btn       = document.getElementById('run-btn');
+    const loading   = document.getElementById('loading-box');
+    const errorBox  = document.getElementById('error-box');
+    const resultBox = document.getElementById('result-box');
+
+    // 유효성
+    const form  = document.getElementById('perf-form');
+    const data  = new FormData(form);
+    const btask = form.querySelector('[name=b_task]');
+    if (!data.get('prompt_a')?.trim() || !data.get('b_system')?.trim()) {
+      errorBox.textContent = 'A 프롬프트와 b_system을 입력해 주세요.';
+      errorBox.classList.remove('hidden');
+      return;
+    }
+    if (!data.get('b_task')?.trim()) {
+      errorBox.textContent = '오늘 케이스 요청(b_task)을 입력해 주세요. AI 비교에 사용됩니다.';
+      errorBox.classList.remove('hidden');
+      btask?.focus();
+      btask?.classList.add('ring-2', 'ring-destructive/50', 'border-destructive');
+      btask?.addEventListener('input', () => {
+        btask.classList.remove('ring-2', 'ring-destructive/50', 'border-destructive');
+        errorBox.classList.add('hidden');
+      }, { once: true });
+      return;
+    }
+
+    btn.disabled = true;
+    errorBox.classList.add('hidden');
+    resultBox.classList.add('hidden');
+    loading.classList.remove('hidden');
+
+    fetch("{% url 'questionnaire:perf_test_run' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+      body: data,
+    })
+    .then(r => {
+      if (!r.ok) return r.text().then(t => { throw new Error(`서버 오류 (${r.status})`); });
+      return r.json();
+    })
+    .then(d => {
+      loading.classList.add('hidden');
+      if (d.error) {
+        errorBox.textContent = d.error;
+        errorBox.classList.remove('hidden');
+        return;
+      }
+      renderResult(d);
+      resultBox.classList.remove('hidden');
+      resultBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    })
+    .catch(e => {
+      loading.classList.add('hidden');
+      errorBox.textContent = '오류: ' + e.message;
+      errorBox.classList.remove('hidden');
+    })
+    .finally(() => { btn.disabled = false; });
+  }
+
+  function loadHistory(id) {
+    fetch(`/questionnaire/perf-test/${id}/`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) return;
+        document.querySelector('[name=case_name]').value = d.case_name || '';
+        document.querySelector('[name=prompt_a]').value  = d.prompt_a;
+        document.querySelector('[name=b_system]').value  = d.b_system;
+        document.querySelector('[name=b_task]').value    = d.b_task;
+        ['prompt_a', 'b_system', 'b_task'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+        });
+        renderResult(d);
+        // 이미 투표한 기록이면 결과 바로 공개
+        if (d.vote) {
+          document.getElementById('vote-section').classList.add('hidden');
+          const reveal = document.getElementById('vote-reveal');
+          reveal.classList.remove('hidden');
+          const winner = d.vote === 'B' ? 'Sage Pontus' : '기존 방식';
+          const chosenNum = (d.flipped ? d.vote === 'B' : d.vote === 'A') ? '1' : '2';
+          document.getElementById('reveal-winner').textContent = winner;
+          document.getElementById('reveal-detail').textContent =
+            `응답 ${chosenNum} = ${d.vote === 'B' ? 'Sage Pontus (b_system 적용)' : '기존 방식 (전체 입력)'}`;
+        }
+        document.getElementById('result-box').classList.remove('hidden');
+        document.getElementById('result-box').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+  }
+
+  let currentRecordId = null;
+  let currentFlipped = false;
+
+  function castVote(chosen) {
+    if (!currentRecordId) return;
+    const data = new FormData();
+    data.append('record_id', currentRecordId);
+    data.append('chosen', chosen);
+
+    fetch("{% url 'questionnaire:perf_test_vote' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+      body: data,
+    })
+    .then(r => r.json())
+    .then(d => {
+      if (d.error) return;
+      document.getElementById('vote-section').classList.add('hidden');
+      const reveal = document.getElementById('vote-reveal');
+      reveal.classList.remove('hidden');
+      document.getElementById('reveal-winner').textContent = d.winner;
+      document.getElementById('reveal-detail').textContent =
+        d.vote === 'B'
+          ? '응답 ' + chosen + ' = Sage Pontus (b_system 적용)'
+          : '응답 ' + chosen + ' = 기존 방식 (전체 입력)';
+    });
+  }
+
+  const IS_TESTER = {{ is_tester|yesno:"true,false" }};
+
+  function renderResult(d) {
+    const t = d.tokens;
+    currentRecordId = d.id;
+    currentFlipped  = d.flipped || false;
+    // A/B 라벨 즉시 표시
+    const is1B = currentFlipped;
+    const lbl1 = document.getElementById('label-1');
+    const lbl2 = document.getElementById('label-2');
+    lbl1.textContent = is1B ? 'Sage Pontus (B)' : '기존 방식 (A)';
+    lbl1.className   = is1B
+      ? 'text-xs font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30'
+      : 'text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200';
+    lbl2.textContent = is1B ? '기존 방식 (A)' : 'Sage Pontus (B)';
+    lbl2.className   = is1B
+      ? 'text-xs font-bold px-2 py-0.5 rounded-full bg-red-100 text-red-600 border border-red-200'
+      : 'text-xs font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary border border-primary/30';
+    lbl1.classList.remove('hidden');
+    lbl2.classList.remove('hidden');
+
+    if (!IS_TESTER) {
+      document.getElementById('r-tok-a').textContent      = t.tok_a + ' tok';
+      document.getElementById('r-tok-b-task').textContent = t.tok_b_task + ' tok';
+      document.getElementById('r-tok-b-system-hint').textContent = 'system ' + t.tok_b_system + ' tok 재사용';
+      document.getElementById('r-reduction').textContent  = t.reduction + '%';
+      document.getElementById('r-writing').textContent    = t.writing_reduction + '%';
+    }
+
+    document.getElementById('r-result-1').textContent = d.result_1;
+    document.getElementById('r-result-2').textContent = d.result_2;
+
+    const shareLink = document.getElementById('share-link');
+    if (d.id) {
+      shareLink.href = `/questionnaire/compare/${d.id}/`;
+      shareLink.classList.remove('hidden');
+    }
+
+    // 투표 초기화
+    document.getElementById('vote-section').classList.remove('hidden');
+    document.getElementById('vote-reveal').classList.add('hidden');
+
+    if (!IS_TESTER) {
+      const ua = d.usage_a, ub = d.usage_b, ac = d.actual_cost || {};
+      let bDetail = '';
+      if (ub.cache_supported) {
+        bDetail = `캐시 ${ub.cached_tokens}tok + 신규 ${ub.fresh_tokens}tok`;
+      } else {
+        bDetail = '캐시 미적용';
+      }
+      document.getElementById('r-usage').textContent =
+        `실측 — A: ${ua.input_tokens ?? '-'}in / ${ua.output_tokens ?? '-'}out  |  B: ${ub.input_tokens ?? '-'}in (${bDetail}) / ${ub.output_tokens ?? '-'}out`;
+
+      // 실측 비용 배너
+      if (ac.a_per_session !== undefined) {
+        const existing = document.getElementById('actual-cost-banner');
+        if (existing) existing.remove();
+        const banner = document.createElement('div');
+        banner.id = 'actual-cost-banner';
+        const cacheNote = ub.cache_supported
+          ? `<span class="text-emerald-600 font-semibold">캐시 실측 적용</span>`
+          : `<span class="text-amber-600" title="${(ub.cache_error||'').replace(/"/g,"'")}">캐시 미적용 — ${ub.cache_error || '원인 불명'}</span>`;
+        banner.className = 'mt-3 px-4 py-3 rounded-lg bg-primary/5 border border-primary/20 text-xs flex items-center gap-4 flex-wrap';
+        banner.innerHTML = `
+          <span class="font-semibold text-foreground">실측 세션 비용 (Gemini 2.5 Flash)</span>
+          <span class="text-muted-foreground">A: <strong>$${ac.a_per_session}</strong></span>
+          <span class="text-muted-foreground">B: <strong class="text-primary">$${ac.b_per_session}</strong></span>
+          <span class="${ac.saved_per_session > 0 ? 'text-emerald-600' : 'text-red-500'} font-semibold">
+            절감 ${ac.saved_pct}% ($${ac.saved_per_session})
+          </span>
+          <span class="ml-auto">${cacheNote}</span>
+        `;
+        document.getElementById('r-usage').parentElement.after(banner);
+      }
+
+      // 실측 토큰 기준으로 테이블 재계산
+      const MONTHLY = {{ monthly_sessions }};
+      const MODEL_PRICES = {
+        "Gemini 2.5 Flash":  { input: 0.05,  cache_write: 0.05,   cache_read: 0.0125, output: 0.60,  tier: "저가" },
+        "Claude Haiku 4.5":  { input: 0.80,  cache_write: 1.00,   cache_read: 0.08,   output: 4.00,  tier: "저가" },
+        "GPT-4o mini":       { input: 0.15,  cache_write: 0.15,   cache_read: 0.075,  output: 0.60,  tier: "저가" },
+        "Claude Sonnet 4.5": { input: 3.00,  cache_write: 3.75,   cache_read: 0.30,   output: 15.00, tier: "중가" },
+        "GPT-4o":            { input: 2.50,  cache_write: 2.50,   cache_read: 1.25,   output: 10.00, tier: "고가" },
+      };
+      const tokA_in  = ua.input_tokens  || 0;
+      const tokA_out = ua.output_tokens || 0;
+      const tokB_cached = ub.cached_tokens || 0;
+      const tokB_fresh  = ub.fresh_tokens  || ub.input_tokens || 0;
+      const tokB_out    = ub.output_tokens || 0;
+      const cacheOk     = ub.cache_supported === true;
+      const isActual    = tokA_in > 0;
+
+      document.getElementById('table-basis-label').classList.toggle('hidden', isActual);
+
+      const tbody = document.getElementById('pricing-tbody');
+      tbody.innerHTML = '';
+      const tierColor = { '저가': 'bg-green-100 text-green-700', '중가': 'bg-yellow-100 text-yellow-700', '고가': 'bg-red-100 text-red-700' };
+
+      Object.entries(MODEL_PRICES).forEach(([model, p]) => {
+        const ca = (tokA_in * p.input + tokA_out * p.output) / 1_000_000 * MONTHLY;
+        let cb;
+        if (cacheOk) {
+          cb = (
+            tokB_fresh  * p.input        / 1_000_000 * MONTHLY +
+            tokB_cached * p.cache_read   / 1_000_000 * MONTHLY +
+            tokB_out    * p.output       / 1_000_000 * MONTHLY +
+            tokB_cached * p.cache_write  / 1_000_000 * 1
+          );
+        } else {
+          cb = ((tokB_fresh + tokB_cached) * p.input + tokB_out * p.output) / 1_000_000 * MONTHLY;
+        }
+        const saved = ca - cb;
+        const pct   = ca ? (saved / ca * 100) : 0;
+        const savedColor = saved > 0 ? 'text-primary' : 'text-red-500';
+        const cacheTag = !cacheOk
+          ? `<span class="ml-1 text-[9px] text-amber-600 font-semibold">(캐시 미적용)</span>` : '';
+        tbody.insertAdjacentHTML('beforeend', `
+          <tr class="border-b border-border last:border-0 hover:bg-muted/40">
+            <td class="px-4 py-2 font-medium text-foreground">${model}${cacheTag}</td>
+            <td class="px-4 py-2"><span class="px-1.5 py-0.5 rounded-full text-xs ${tierColor[p.tier]??''}">${p.tier}</span></td>
+            <td class="px-4 py-2 text-right text-muted-foreground">$${ca.toFixed(4)}</td>
+            <td class="px-4 py-2 text-right font-medium text-secondary">$${cb.toFixed(4)}</td>
+            <td class="px-4 py-2 text-right ${savedColor}">$${saved.toFixed(4)}</td>
+            <td class="px-4 py-2 text-right font-semibold ${savedColor}">${pct.toFixed(1)}%</td>
+          </tr>`);
+      });
+      document.getElementById('gpt-cache-note').classList.add('hidden');
+    }
+  }
+</script>
+{% endblock %}

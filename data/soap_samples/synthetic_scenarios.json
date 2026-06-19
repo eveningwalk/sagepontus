@@ -1,0 +1,282 @@
+[
+  {
+    "id": "CES_01",
+    "description": "뇨저류 및 안장마비",
+    "soap_text": "S: 68 y.o. M c/o severe LBP x 2 days after gardening. States difficulty urinating, feeling incomplete emptying. Reports new onset numbness in \"private areas\" and buttocks. Denies specific injury but states pain is 9/10. O: Gait antalgic. Diminished sensation noted on light touch in S2-S5 dermatomes bilaterally. LE strength unable to fully assess due to pain.",
+    "expected_alarm": "RED",
+    "expected_condition": "cauda_equina"
+  },
+  {
+    "id": "CES_02",
+    "description": "장실금 및 양측 하지 무력",
+    "soap_text": "S: 32 y.o. F c/o worsening low back and leg pain for 1 week. Reports 2 episodes of accidental bowel leakage yesterday. States \"legs feel heavy and weak\" bilaterally, particularly when trying to stand from sitting. O: MMT reveals 3/5 strength in bilateral tibialis anterior and gastrocnemius. Perineal sensation decreased to pinprick.",
+    "expected_alarm": "RED",
+    "expected_condition": "cauda_equina"
+  },
+  {
+    "id": "CES_03",
+    "description": "낙상 후 하지 무력 및 감각 이상",
+    "soap_text": "S: 55 y.o. M presents after a fall down stairs. C/o severe LBP and inability to move his legs well. Reports \"tingling and numbness around his anus\" since the fall. Denies previous LBP. O: Bilateral LE active ROM limited due to weakness. MMT shows 2/5 in hip flexors and knee extensors bilaterally. Unable to stand without max assist.",
+    "expected_alarm": "RED",
+    "expected_condition": "cauda_equina"
+  },
+  {
+    "id": "CES_04",
+    "description": "요실금 및 만성 요통 악화",
+    "soap_text": "S: 75 y.o. F with chronic LBP now worsened over 3 days. Reports new onset urinary incontinence, \"can't feel when I need to go.\" Also notes a \"dull ache\" in her inner thighs and buttocks that feels different. O: Post-void residual scan pending. Sensation testing reveals decreased light touch in bilateral buttock and perineal region.",
+    "expected_alarm": "RED",
+    "expected_condition": "cauda_equina"
+  },
+  {
+    "id": "CES_05",
+    "description": "배뇨 곤란 및 발목 무력",
+    "soap_text": "S: 42 y.o. M c/o severe LBP after lifting heavy boxes 2 days ago. Reports difficulty initiating urination and feeling like his bladder is always full. Notes weakness in both feet, making it hard to walk on heels. O: Bilateral ankle dorsiflexion MMT 3/5. Perineal sensation diminished to pinprick. Denies fever or chills.",
+    "expected_alarm": "RED",
+    "expected_condition": "cauda_equina"
+  },
+  {
+    "id": "FX_01",
+    "description": "고령 낙상 후 고관절 통증",
+    "soap_text": "S: 80 y.o. F c/o severe R hip pain after falling from standing height yesterday. O: Pt unable to bear weight on R LE due to 10/10 pain. Significant pain with any passive hip ROM. Suspicious for fracture.",
+    "expected_alarm": "RED",
+    "expected_condition": "fracture"
+  },
+  {
+    "id": "FX_02",
+    "description": "골다공증 노인 낙상, 척추 통증",
+    "soap_text": "S: 72 y.o. M presents with acute LBP 2 days post minor slip-and-fall onto buttocks. PMH significant for osteoporosis. O: Severe localized pain in lumbar spine, 8/10, with marked tenderness to percussion over L3-L4. Pain inhibits movement.",
+    "expected_alarm": "RED",
+    "expected_condition": "fracture"
+  },
+  {
+    "id": "FX_03",
+    "description": "고령 낙상, 고관절 변형 통증",
+    "soap_text": "S: 91 y.o. F brought in after tripping over a rug at home. Complains of intense L groin pain, 9/10, unable to move L LE. O: LLE appears shortened and externally rotated. Any attempt at WB or movement causes excruciating pain.",
+    "expected_alarm": "RED",
+    "expected_condition": "fracture"
+  },
+  {
+    "id": "FX_04",
+    "description": "고령 갑작스런 흉추 통증",
+    "soap_text": "S: 85 y.o. M reports sudden onset sharp mid-back pain after reaching overhead. PMH of long-term corticosteroid use. O: Localized T8 tenderness to palpation, exacerbated by deep breathing. Pain 7/10 at rest, 9/10 with movement. No recent trauma reported, but high index of suspicion.",
+    "expected_alarm": "RED",
+    "expected_condition": "fracture"
+  },
+  {
+    "id": "FX_05",
+    "description": "고령 낙상, 골다공증 고관절 통증",
+    "soap_text": "S: 78 y.o. F c/o increasing R lateral hip pain over last week, following a minor sideways fall. PMH of osteoporosis for 10 yrs. O: Difficult to ambulate without severe pain (8/10) with each step. Tenderness to palpation over R greater trochanter.",
+    "expected_alarm": "RED",
+    "expected_condition": "fracture"
+  },
+  {
+    "id": "CA_01",
+    "description": "노인 남성, 허리 통증, 체중감소",
+    "soap_text": "S: 72 y.o. M c/o LBP x 3 mo. Constant dull ache, worse at night, wakes him from sleep. Denies trauma. Reports unintentional 10lb wt loss in last 2 mos.\nO: ROM WNL but painful at end range. Palpation no specific tender points. SLR neg. Neuro screen intact. Pain non-mechanical pattern.",
+    "expected_alarm": "RED",
+    "expected_condition": "malignancy"
+  },
+  {
+    "id": "CA_02",
+    "description": "유방암 기왕력 여성, 어깨 통증",
+    "soap_text": "S: 58 y.o. F c/o R shoulder/neck pain x 4 wks. Hx of breast CA s/p mastectomy 5 yrs ago. Pain is constant ache, worse at rest & night. No relief with ice/heat.\nO: Cervical ROM mildly restricted, painful. Shoulder AROM restricted in elevation/ER. MMT 4/5 R rotator cuff. Non-contractile pattern.",
+    "expected_alarm": "RED",
+    "expected_condition": "malignancy"
+  },
+  {
+    "id": "CA_03",
+    "description": "젊은 남성, 고관절 통증, 야간통",
+    "soap_text": "S: 44 y.o. M c/o deep R groin pain x 6 wks. Insidious onset. Worse at night, preventing sleep, and not relieved by rest or activity modification. Reports persistent fatigue.\nO: Hip AROM limited in IR/flexion, painful. MMT strong. Pain non-capsular pattern. Lumbar screen neg.",
+    "expected_alarm": "RED",
+    "expected_condition": "malignancy"
+  },
+  {
+    "id": "CA_04",
+    "description": "폐암 기왕력 여성, 흉통, 비기계적",
+    "soap_text": "S: 68 y.o. F c/o persistent midthoracic pain x 1 mo. Hx of lung CA s/p resection 2 yrs ago. Pain is constant, sharp, not affected by movement or position changes.\nO: T-spine ROM WNL but painful. Palpation diffuse tenderness. Respiration unimpeded. Neuro screen intact. Pain non-mechanical.",
+    "expected_alarm": "RED",
+    "expected_condition": "malignancy"
+  },
+  {
+    "id": "CA_05",
+    "description": "남성, 무릎 통증, 설명 불가 체중감소",
+    "soap_text": "S: 55 y.o. M c/o L knee pain x 2 mos. Denies injury. Pain deep ache, worsens significantly at night, keeps him awake. Reports feeling generally unwell & lost 15lbs w/o trying.\nO: Knee ROM WNL, painful at end-range flexion/extension. Palpation diffuse tenderness. Effusion absent. MMT 5/5.",
+    "expected_alarm": "RED",
+    "expected_condition": "malignancy"
+  },
+  {
+    "id": "INF_01",
+    "description": "요추수술 후 발열 및 안정시 통증",
+    "soap_text": "S: 68 y.o. M c/o LBP x 2 wks, worsening since recent L4-L5 fusion 3 wks ago. Pain now constant, 8/10 at rest, wakes him at night. Reports feeling \"off\" and had a low-grade fever (100.2F) this morning. Denies recent falls or trauma.",
+    "expected_alarm": "RED",
+    "expected_condition": "infection"
+  },
+  {
+    "id": "INF_02",
+    "description": "당뇨환자 흉추통증 및 발열",
+    "soap_text": "S: 55 y.o. F with h/o poorly controlled DM and long-term steroid use presents with T-spine pain x 1 wk. Pain is deep, aching, 7/10, constant, and not relieved by position changes; worse at night. Reports generalized fatigue and intermittent subjective fever.",
+    "expected_alarm": "RED",
+    "expected_condition": "infection"
+  },
+  {
+    "id": "INF_03",
+    "description": "IVDU 경추통, 야간통, 발열",
+    "soap_text": "S: 32 y.o. M c/o severe neck pain radiating to R shoulder x 5 days. Pain described as throbbing, 9/10, much worse at night, preventing sleep. Pt reports h/o IV drug use and had a documented temperature of 101.5F yesterday.",
+    "expected_alarm": "RED",
+    "expected_condition": "infection"
+  },
+  {
+    "id": "INF_04",
+    "description": "고령 환자 천골통 및 발열",
+    "soap_text": "S: 75 y.o. F presents with new onset sacral pain x 10 days, constant 6/10, not improving with rest or activity modification. Pain is deep and throbbing. Pt recently had hip replacement surgery 6 weeks ago. Reports feeling chills and had a temperature of 100.8F yesterday.",
+    "expected_alarm": "RED",
+    "expected_condition": "infection"
+  },
+  {
+    "id": "AAA_01",
+    "description": "복부 박동성 통증, 하지 냉감",
+    "soap_text": "70 y/o M c/o LBP x 2 wks. States new onset of constant, deep abdominal pain, pulsating sensation noted sometimes. R LE feels colder than L LE, esp distally. Pain is constant, even at rest. Denies trauma.",
+    "expected_alarm": "RED",
+    "expected_condition": "vascular"
+  },
+  {
+    "id": "AAA_02",
+    "description": "하지 창백/냉감, 안정시 통증",
+    "soap_text": "65 y/o F c/o R LE pain x 3 days. R foot appears pale & feels cold to touch compared to L. Pain wakes her at night, unrelieved by position change. Reports increasing pain at rest. Diminished pedal pulses palpated.",
+    "expected_alarm": "RED",
+    "expected_condition": "vascular"
+  },
+  {
+    "id": "AAA_03",
+    "description": "간헐적 파행 악화, 안정시 통증",
+    "soap_text": "58 y/o M c/o bilateral LE discomfort. States bilateral LE become pale and cool, esp. after walking short distances. Intermittent claudication now presenting as constant pain at rest in feet. R ankle-brachial index 0.7 (previous 0.9). Skin appears thin/shiny.",
+    "expected_alarm": "RED",
+    "expected_condition": "vascular"
+  },
+  {
+    "id": "YEL_01",
+    "description": "만성 요통, 우울감",
+    "soap_text": "S: 72 y/o F c/o persistent LBP x 6 mos. Reports feeling \"down\" and \"hopeless\" most days, difficulty engaging in usual social activities due to pain & low energy. States pain is \"always there\" and rated 7/10 even at rest, despite stable objective findings last visit.",
+    "expected_alarm": "YELLOW",
+    "expected_condition": "none"
+  },
+  {
+    "id": "YEL_02",
+    "description": "목 통증, 수면 부족",
+    "soap_text": "S: 45 y/o M with chronic neck pain. Reports averaging 4-5 hrs sleep/night due to pain, leading to significant fatigue and difficulty concentrating at work. States \"always tired\" & feels his pain is worse due to lack of rest.",
+    "expected_alarm": "YELLOW",
+    "expected_condition": "none"
+  },
+  {
+    "id": "YEL_03",
+    "description": "무릎 통증, 과장된 표현",
+    "soap_text": "S: 28 y/o F c/o severe R knee pain s/p twisting injury. Describes pain as \"excruciating\" 9/10, though able to ambulate w/ minimal limp. Reports pain flares dramatically with slightest movement, despite AROM/PROM within expected limits for this stage of recovery.",
+    "expected_alarm": "YELLOW",
+    "expected_condition": "none"
+  },
+  {
+    "id": "YEL_04",
+    "description": "어깨 통증, 회피 행동",
+    "soap_text": "S: 55 y/o M s/p R rotator cuff repair, 4 wks post-op. Expresses fear of re-injury, actively guarding shoulder during AROM exercises. Reports \"just can't do\" prescribed home exercises, missing 2 out of 3 scheduled PT appts due to \"feeling too sore.\"",
+    "expected_alarm": "YELLOW",
+    "expected_condition": "none"
+  },
+  {
+    "id": "YEL_05",
+    "description": "손목 통증, 직업 스트레스",
+    "soap_text": "S: 32 y/o F c/o chronic R wrist pain, desk job requiring extensive computer use. Reports high job demands, feeling overwhelmed by workload & tight deadlines, which she believes exacerbates her pain. States \"can't afford to take time off\" to rest.",
+    "expected_alarm": "YELLOW",
+    "expected_condition": "none"
+  },
+  {
+    "id": "YEL_06",
+    "description": "관절 통증, 불안감",
+    "soap_text": "S: 68 y/o M with generalized aches & pains. Expresses significant anxiety about future mobility and becoming a burden. Reports constantly checking symptoms and searching online, leading to increased worry and feeling \"on edge.\"",
+    "expected_alarm": "YELLOW",
+    "expected_condition": "none"
+  },
+  {
+    "id": "YEL_07",
+    "description": "두통, 압도감",
+    "soap_text": "S: 40 y/o F c/o persistent headaches x 3 mos. Reports feeling overwhelmed by family responsibilities and childcare, making it hard to manage her pain. States she often feels \"on the verge of tears\" and struggles to cope.",
+    "expected_alarm": "YELLOW",
+    "expected_condition": "none"
+  },
+  {
+    "id": "YEL_08",
+    "description": "발목 염좌, 재부상 두려움",
+    "soap_text": "S: 22 y/o M s/p R ankle sprain 3 wks ago. Reports constant ache 6/10 despite minimal swelling & full ROM. Expresses significant fear of re-injury, avoiding full weight-bearing and reluctant to attempt single leg balance. Believes his ankle is \"still too fragile.\"",
+    "expected_alarm": "YELLOW",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_01",
+    "description": "요통, 기계적 원인",
+    "soap_text": "S: 45 y.o. M c/o LBP s/p lifting heavy box 2 days ago. Pain 6/10, worse w/ fwd bending, better w/ rest. Denies night pain, bowel/bladder changes, fever, or unexplained wt loss. No hx of cancer. O: AROM WNL w/ mild pain end-range flexion.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_02",
+    "description": "어깨 통증, 오버헤드",
+    "soap_text": "S: 30 y.o. F c/o R shoulder pain x 3 wks, esp w/ overhead reaching. Pain 4/10, achy. No specific trauma, no fever or chills. Denies numbness/tingling into arm. O: AROM R shoulder flexion limited to 150 deg due to pain; empty can test mildly painful.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_03",
+    "description": "무릎 통증, 달리기 후",
+    "soap_text": "S: 25 y.o. M c/o ant L knee pain s/p inc running mileage 1 mo ago. Worse w/ stairs, prolonged sitting. No locking or giving way. Denies redness, warmth, recent falls, or fx hx. O: Patellar palpation mildly tender. No effusion noted.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_04",
+    "description": "발목 염좌 후 잔류통",
+    "soap_text": "S: 19 y.o. F c/o residual L ankle pain/stiffness 3 wks post inversion sprain. Pain 2/10, improving. Edema resolved. Full WB. No neuro sx. No new injury since initial sprain. O: Mild decrease in ankle dorsiflexion ROM compared to opp side.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_05",
+    "description": "경부통, 만성 뻣뻣함",
+    "soap_text": "S: 55 y.o. M c/o generalized neck stiffness and ache, worse in AM. No arm radicular sx. Denies dizziness, vision changes, or recent trauma. No constitutional sx. O: Cervical AROM full w/ minor end-range stiffness in rotation/side bending.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_06",
+    "description": "요통, 자세 불량",
+    "soap_text": "S: 38 y.o. F c/o diffuse LBP after prolonged desk sitting. Pain 3/10, relieved w/ standing/walking. No leg sx, no bowel/bladder changes. Denies constitutional sx, fever, or night pain. O: Lumbar posture shows mild increased kyphosis in sitting.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_07",
+    "description": "어깨 통증, 회전근개",
+    "soap_text": "S: 60 y.o. M c/o R shoulder ache, esp at night when lying on it. Pain 5/10 w/ reaching behind back. No trauma, no fever or unexplained wt loss. Denies severe weakness or sudden ROM loss. O: Pain w/ resisted shoulder external rotation.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_08",
+    "description": "무릎 통증, OA 악화",
+    "soap_text": "S: 70 y.o. F c/o L knee aching, worse w/ walking >30 min. Hx of OA. No new swelling or redness. No fever, no significant change in pain pattern. Denies DVT sx (redness, warmth, calf tenderness). O: Mild crepitus w/ knee flexion/extension.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_09",
+    "description": "발 통증, 족저근막염",
+    "soap_text": "S: 50 y.o. M c/o L heel pain, worse w/ 1st steps in AM and after rest. Pain 6/10. No hx of trauma. Denies redness, systemic sx, or nerve impingement sx. O: Pain w/ palpation of medial calcaneal tubercle. Limited ankle dorsiflexion.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  },
+  {
+    "id": "NONE_10",
+    "description": "경부 통증, 긴장성",
+    "soap_text": "S: 28 y.o. F c/o bilateral upper trap tension/soreness s/p increased computer work. Pain 4/10, dull ache. No headache, no visual changes. Denies paresthesias into arms or dizziness. O: Palpable tension and tenderness in bilateral upper trapezius muscles.",
+    "expected_alarm": "NONE",
+    "expected_condition": "none"
+  }
+]

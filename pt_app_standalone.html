@@ -1,0 +1,4883 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>PT Red Flag — Sage Pontus</title>
+  
+  
+<style>
+/* ===== app_shell.css ===== */
+/* 앱 공통: 사이드바 레이아웃(index.html) 및 단순 페이지(base 직접 확장) */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #1a1d21;
+  background: #e8eaef;
+}
+
+.page-root {
+  min-height: 100vh;
+}
+
+.flash-msgs {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: #fff3cd;
+  color: #664d03;
+  border-bottom: 1px solid #ffecb5;
+  font-size: 0.95rem;
+}
+
+.flash-msgs__line {
+  margin: 0;
+}
+
+/* ---- 사이드바 레이아웃 (index.html) ---- */
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+}
+
+.app-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, #1c2333 0%, #141a26 100%);
+  color: #e6e9ef;
+  padding: 1.25rem 0;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+  height: 100%;
+}
+
+.app-sidebar__brand {
+  padding: 0 1.25rem 1.25rem;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 0.75rem;
+}
+
+.app-sidebar__brand a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.app-sidebar__brand a:hover {
+  color: #fff;
+}
+
+.app-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0 0.75rem;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.app-sidebar__nav::-webkit-scrollbar { width: 4px; }
+.app-sidebar__nav::-webkit-scrollbar-track { background: transparent; }
+.app-sidebar__nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.15); border-radius: 4px; }
+
+.app-sidebar__link {
+  display: block;
+  padding: 0.55rem 0.85rem;
+  border-radius: 8px;
+  color: #b8c0d0;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.15s, color 0.15s;
+}
+
+.app-sidebar__link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.app-sidebar__link--active {
+  background: rgba(94, 129, 255, 0.25);
+  color: #fff;
+}
+
+.app-sidebar__section-label {
+  margin: 0.85rem 0.85rem 0.35rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6b778c;
+}
+
+.app-sidebar__footer {
+  padding: 1rem 1.25rem 0;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.8rem;
+  color: #7a8699;
+}
+
+.app-sidebar__footer-link {
+  color: #a8b4c8;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.app-sidebar__footer-link:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+.app-main {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  padding: 1.75rem 2rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 질문 단계: 뷰포트에 맞춰 메인 영역 세로·가로 중앙에 카드 배치 */
+.app-shell:has(.question-page) {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.app-main:has(.question-page) {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  align-self: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 데스크톱(사이드바 옆): 메인 열 높이를 뷰포트에 맞춰 세로 중앙이 확실히 보이도록 */
+@media (min-width: 769px) {
+  .app-main:has(.question-page) {
+    min-height: 100vh;
+  }
+}
+
+.app-main__inner {
+  max-width: 720px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.75rem 2rem;
+  box-shadow: 0 4px 24px rgba(20, 26, 38, 0.08);
+}
+
+/* 질문 카드만 강조: 바깥 흰 박스는 제거해 이중 테두리 방지 */
+.app-main__inner:has(.question-page) {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+  max-width: 640px;
+  width: 100%;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  min-height: 0;
+}
+
+/* ---- 단순 페이지(로그인 등): base만 쓸 때 ---- */
+.simple-page {
+  max-width: 480px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(20, 26, 38, 0.08);
+}
+
+/* ---- 질문 단계 (show_question_step) ---- */
+.question-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+}
+
+.question-card {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem 2.25rem;
+  border: 1px solid rgba(28, 35, 51, 0.1);
+  box-shadow:
+    0 1px 3px rgba(20, 26, 38, 0.06),
+    0 14px 44px rgba(20, 26, 38, 0.12);
+}
+
+.question-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #5e81ff 0%, #3a56d4 100%);
+  pointer-events: none;
+}
+
+/* 질문 본문(배지·제목·설명) — 카드 안에서 한 덩어리로 구분 */
+.question-card__prompt {
+  margin-bottom: 1.25rem;
+  padding: 1rem 1.15rem;
+  border-radius: 12px;
+  background: rgba(28, 35, 51, 0.035);
+  border: 1px solid rgba(28, 35, 51, 0.08);
+}
+
+.question-card__prompt .question-card__hint {
+  margin-bottom: 0;
+}
+
+.question-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.question-card__scope {
+  display: inline-block;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.question-card__scope--common {
+  color: #1e3a5f;
+  background: linear-gradient(180deg, #e3f0ff 0%, #d4e8fc 100%);
+  border-color: rgba(30, 58, 95, 0.15);
+}
+
+.question-card__scope--domain {
+  color: #1f3d2e;
+  background: linear-gradient(180deg, #e3f5e9 0%, #d4eadd 100%);
+  border-color: rgba(31, 61, 46, 0.15);
+}
+
+.question-card__badge {
+  display: inline-block;
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #3d4a63;
+  background: linear-gradient(180deg, #eef2f8 0%, #e4eaf4 100%);
+  border-radius: 999px;
+  border: 1px solid rgba(28, 35, 51, 0.08);
+}
+
+.question-card__title {
+  margin: 0 0 1rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #12161c;
+}
+
+.question-card__order {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  height: 1.75rem;
+  margin-right: 0.5rem;
+  padding: 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #3b5bdb 0%, #2f4bc9 100%);
+  border-radius: 8px;
+  vertical-align: middle;
+}
+
+.question-card__desc {
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: #3d4a63;
+  line-height: 1.6;
+}
+
+.question-card__hint {
+  margin: 0 0 1.75rem;
+  padding: 0.85rem 1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #4a5568;
+  background: #f7f9fc;
+  border-radius: 10px;
+  border-left: 4px solid #5e81ff;
+}
+
+.question-card__hint-label {
+  font-weight: 600;
+  color: #2d3a4d;
+  margin-right: 0.35rem;
+}
+
+.question-card__form {
+  margin-top: 0;
+}
+
+.question-card__label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3a4d;
+}
+
+.question-card__textarea {
+  display: block;
+  width: 100%;
+  min-height: 140px;
+  padding: 0.85rem 1rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: #1a1d21;
+  background: #fbfcfe;
+  border: 1px solid rgba(28, 35, 51, 0.12);
+  border-radius: 10px;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.question-card__textarea:hover {
+  border-color: rgba(59, 91, 219, 0.35);
+}
+
+.question-card__textarea:focus {
+  outline: none;
+  border-color: #3b5bdb;
+  box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.18);
+  background: #fff;
+}
+
+.question-card__actions {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* 앞으로 가기 숨김 시: 다음 질문만 오른쪽 정렬 */
+.question-card__actions--single {
+  justify-content: flex-end;
+}
+
+.question-card__btn {
+  padding: 0.65rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.question-card__btn--ghost {
+  color: #3d4a63;
+  background: #f0f2f6;
+  border: 1px solid rgba(28, 35, 51, 0.12);
+}
+
+.question-card__btn--ghost:hover {
+  background: #e4e8ef;
+  border-color: rgba(28, 35, 51, 0.18);
+}
+
+.question-card__btn--ghost:active {
+  background: #dde2ea;
+}
+
+.question-card__submit {
+  padding: 0.65rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: #fff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #3b5bdb 0%, #2f4bc9 100%);
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 4px 14px rgba(47, 75, 201, 0.35);
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.question-card__submit:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(47, 75, 201, 0.42);
+}
+
+.question-card__submit:active {
+  transform: translateY(0);
+}
+
+/* ---- 도메인 선택 (select_domain) ---- */
+.domain-card {
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem 2.25rem;
+  border: 1px solid rgba(28, 35, 51, 0.08);
+  box-shadow:
+    0 1px 2px rgba(20, 26, 38, 0.04),
+    0 12px 40px rgba(20, 26, 38, 0.1);
+}
+
+.domain-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.domain-card__title {
+  margin: 0 0 0.75rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: #12161c;
+}
+
+.domain-card__lead {
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #3d4a63;
+}
+
+.domain-card__tree {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.domain-card__demo {
+  margin-bottom: 1.75rem;
+  padding: 1.1rem 1.25rem;
+  background: linear-gradient(180deg, #e8f4fc 0%, #dceef9 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+}
+
+.domain-card__demo-title {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+  color: #1e40af;
+}
+
+.domain-card__demo-text {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.domain-card__demo-form {
+  margin: 0;
+}
+
+.domain-card__label {
+  margin: 0 0 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.domain-card__form {
+  margin: 0;
+}
+
+.domain-card__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 0.75rem;
+}
+
+.domain-card__btn {
+  min-height: 3rem;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: inherit;
+  line-height: 1.3;
+  color: #1a1d21;
+  text-align: center;
+  word-break: break-word;
+  background: #f8fafc;
+  border: 1px solid rgba(28, 35, 51, 0.12);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s,
+    box-shadow 0.15s;
+}
+
+.domain-card__btn:hover {
+  border-color: rgba(59, 91, 219, 0.45);
+  background: #f0f4ff;
+  color: #1e3a8a;
+  box-shadow: 0 2px 8px rgba(59, 91, 219, 0.12);
+}
+
+.domain-card__btn:active {
+  background: #e8edff;
+}
+
+.domain-card__btn--primary {
+  width: 100%;
+  min-height: 2.85rem;
+  color: #fff;
+  background: linear-gradient(135deg, #3b5bdb 0%, #2f4bc9 100%);
+  border: none;
+  box-shadow: 0 4px 14px rgba(47, 75, 201, 0.35);
+}
+
+.domain-card__btn--primary:hover {
+  color: #fff;
+  border: none;
+  background: linear-gradient(135deg, #4a6ae8 0%, #3a56d4 100%);
+  box-shadow: 0 6px 18px rgba(47, 75, 201, 0.42);
+}
+
+.domain-card__btn--disabled,
+.domain-card__btn:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+  box-shadow: none;
+  pointer-events: none;
+  color: #6b7280;
+  background: #eef1f6;
+  border-color: rgba(28, 35, 51, 0.08);
+}
+
+.domain-card__btn--disabled:hover,
+.domain-card__btn:disabled:hover {
+  border-color: rgba(28, 35, 51, 0.08);
+  background: #eef1f6;
+  color: #6b7280;
+  box-shadow: none;
+}
+
+@media (max-width: 768px) {
+  .domain-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  .domain-card__title {
+    font-size: 1.2rem;
+  }
+
+  .domain-card__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .question-card {
+    padding: 1.5rem 1.25rem;
+    border-radius: 14px;
+  }
+
+  .question-card__title {
+    font-size: 1.2rem;
+  }
+
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .app-sidebar {
+    width: 100%;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .app-sidebar__brand {
+    padding: 0;
+    margin: 0;
+    border: none;
+    flex: 1;
+  }
+
+  .app-sidebar__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+    padding: 0;
+  }
+
+  .app-sidebar__footer {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0.5rem 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .app-main {
+    padding: 1rem;
+  }
+
+  /* 세로 스택(헤더형 사이드바 위 + 본문): 본문이 남은 뷰포트를 채우고 카드 세로 중앙 */
+  .app-main:has(.question-page) {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .app-main:has(.flow-page) {
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+}
+
+/* ---- 질문 완료(도메인 마지막) 버튼 ---- */
+.question-card__submit--finish {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.35);
+}
+
+.question-card__submit--finish:hover {
+  box-shadow: 0 6px 18px rgba(15, 118, 110, 0.45);
+}
+
+/* ---- 답변 검토 → AI 결과 (prompt flow) ---- */
+.flow-page {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* PC: 맞춤 프롬프트 등 — 기준 640px 대비 약 40% 축소(384px) */
+@media (min-width: 769px) {
+  .flow-page--narrow {
+    max-width: 384px;
+  }
+
+  /* 답변 검토: 기본 플로우(640px) 대비 약 1/3 축소 */
+  .flow-page--answer-review {
+    max-width: 426px;
+  }
+}
+
+.flow-card {
+  width: 100%;
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem 2.25rem;
+  border: 1px solid rgba(28, 35, 51, 0.08);
+  box-shadow:
+    0 1px 2px rgba(20, 26, 38, 0.04),
+    0 12px 40px rgba(20, 26, 38, 0.1);
+}
+
+.flow-card__step {
+  display: inline-block;
+  margin: 0 0 0.75rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #5e81ff;
+  background: rgba(94, 129, 255, 0.12);
+  border-radius: 999px;
+}
+
+.flow-card__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #12161c;
+}
+
+.flow-card__lead {
+  margin: 0 0 1.75rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #3d4a63;
+}
+
+.flow-card__tree {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.flow-answer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 0 0 1.75rem;
+}
+
+.flow-answer-item {
+  padding: 1rem 1.1rem;
+  background: #f7f9fc;
+  border-radius: 12px;
+  border: 1px solid rgba(28, 35, 51, 0.06);
+}
+
+.flow-answer-item__q {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #2d3a4d;
+}
+
+.flow-answer-item__scope {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.15rem 0.45rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #4a5568;
+  background: #e8ecf4;
+  border-radius: 4px;
+  vertical-align: middle;
+}
+
+.flow-answer-item__textarea {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  margin-top: 0.5rem;
+  padding: 0.75rem 0.9rem;
+  font-size: 0.92rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: #1a1d21;
+  background: #fff;
+  border: 1px solid rgba(28, 35, 51, 0.12);
+  border-radius: 10px;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.flow-answer-item__textarea:focus {
+  outline: none;
+  border-color: #3b5bdb;
+  box-shadow: 0 0 0 3px rgba(59, 91, 219, 0.18);
+}
+
+.flow-answer-item__edit {
+  display: inline-block;
+  margin-top: 0.65rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #3b5bdb;
+  text-decoration: none;
+}
+
+.flow-answer-item__edit:hover {
+  text-decoration: underline;
+}
+
+.flow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.flow-actions--spaced {
+  margin-top: 1.25rem;
+}
+
+.flow-btn {
+  padding: 0.65rem 1.35rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  border-radius: 10px;
+  border: none;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+
+.flow-btn--primary {
+  color: #fff;
+  background: linear-gradient(135deg, #3b5bdb 0%, #2f4bc9 100%);
+  box-shadow: 0 4px 14px rgba(47, 75, 201, 0.35);
+}
+
+.flow-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(47, 75, 201, 0.42);
+}
+
+.flow-btn--ghost {
+  color: #3d4a63;
+  background: #f0f2f6;
+  border: 1px solid rgba(28, 35, 51, 0.12);
+}
+
+.flow-btn--ghost:hover {
+  background: #e4e8ef;
+}
+
+.flow-btn--loading,
+button.flow-btn--primary:disabled {
+  cursor: wait;
+  opacity: 0.92;
+  transform: none;
+  box-shadow: 0 4px 14px rgba(47, 75, 201, 0.28);
+}
+
+.flow-btn--loading:hover,
+button.flow-btn--primary:disabled:hover {
+  transform: none;
+}
+
+.flow-ai-block {
+  margin-top: 1.5rem;
+  padding: 1.25rem 1.35rem;
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid rgba(28, 35, 51, 0.08);
+}
+
+.flow-ai-block:first-of-type {
+  margin-top: 0;
+}
+
+.flow-ai-block__title {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.flow-ai-block__hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.flow-ai-block__body {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.flow-done-footer {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid rgba(28, 35, 51, 0.08);
+}
+
+.flow-done-footer a {
+  font-weight: 600;
+  text-decoration: none;
+}
+
+/* .flow-btn--primary/ghost 색은 여기서 덮어쓰지 않음(특이도로 파란 글자가 파란 배경에 겹치는 문제 방지) */
+.flow-done-footer a:not(.flow-btn) {
+  color: #3b5bdb;
+}
+
+.flow-done-footer a:not(.flow-btn):hover {
+  text-decoration: underline;
+}
+
+.flow-collapsible {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(28, 35, 51, 0.1);
+}
+
+.flow-collapsible__summary {
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  list-style: none;
+}
+
+.flow-collapsible__summary::-webkit-details-marker {
+  display: none;
+}
+
+.flow-collapsible__body {
+  margin-top: 1rem;
+}
+
+.flow-collapsible__answer {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: #334155;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+
+/* ===== pt_app.css ===== */
+    /* ── PT App 전용 추가 스타일 ── */
+    body { background: #f0f2f7; }
+
+    /* 사이드바 스크롤 fix */
+    .app-sidebar { overflow: hidden; height: 100%; }
+    .app-sidebar__nav { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; }
+    .app-sidebar__nav::-webkit-scrollbar { width: 4px; }
+    .app-sidebar__nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.2); border-radius: 4px; }
+
+    /* ── 슬라이드 패널 ── */
+    .slide-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.35);
+      z-index: 200; opacity: 0; pointer-events: none; transition: opacity .25s;
+    }
+    .slide-overlay.open { opacity: 1; pointer-events: all; }
+
+    .slide-panel {
+      position: fixed; top: 0; right: 0; height: 100dvh; width: 75vw; max-width: 1100px; min-width: 360px;
+      background: #fff; z-index: 201; display: flex; flex-direction: column;
+      box-shadow: -8px 0 40px rgba(0,0,0,.18);
+      transform: translateX(100%); transition: transform .28s cubic-bezier(.4,0,.2,1);
+    }
+    .slide-panel.open { transform: translateX(0); }
+
+    .slide-panel-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 20px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+    }
+    .slide-panel-body {
+      flex: 1; min-height: 0; padding: 20px;
+      display: flex; flex-direction: column; gap: 16px; overflow-y: auto;
+    }
+    .slide-panel-body::-webkit-scrollbar { width: 5px; }
+    .slide-panel-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+    /* 2컬럼 + 드래그 핸들 */
+    .slide-cols {
+      display: flex; gap: 0;
+      flex: 1; min-height: 0;
+    }
+    .slide-col { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+    .slide-col-title {
+      font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; flex-shrink: 0;
+    }
+    .slide-col pre {
+      flex: 1; min-height: 0; overflow-y: auto; margin: 0;
+      font-size: 12px; line-height: 1.7; border-radius: 8px; padding: 14px;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .slide-col pre::-webkit-scrollbar { width: 4px; }
+    .slide-col pre::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+    /* 드래그 핸들 */
+    .slide-divider {
+      width: 6px; flex-shrink: 0; cursor: col-resize;
+      background: transparent; position: relative; margin: 0 4px;
+    }
+    .slide-divider::after {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 2px; height: 100%; background: #e5e7eb; border-radius: 2px; transition: background .15s;
+    }
+    .slide-divider:hover::after,
+    .slide-divider.dragging::after { background: #6366f1; }
+
+    /* letter 포맷 */
+    .letter-sep  { color: #94a3b8; }
+    .letter-head { font-weight: 700; color: #1e293b; }
+    .letter-key  { font-weight: 700; color: #374151; }
+
+    @media (max-width: 700px) {
+      .slide-panel { width: 92vw; }
+      .slide-cols { flex-direction: column; }
+      .slide-divider { display: none; }
+    }
+
+    /* 사이드바 환자 아이템 */
+    .pt-patient-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 10px; border-radius: 8px; cursor: pointer;
+      transition: background .15s; margin-bottom: 2px;
+    }
+    .pt-patient-item:hover { background: rgba(255,255,255,.1); }
+    .pt-patient-item.active { background: rgba(94,129,255,.3); }
+
+    .pt-alarm-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .pt-alarm-dot.RED    { background: #ef4444; box-shadow: 0 0 6px #ef4444; }
+    .pt-alarm-dot.YELLOW { background: #f59e0b; }
+    .pt-alarm-dot.NONE   { background: #22c55e; }
+
+    .pt-patient-info { flex: 1; min-width: 0; }
+    .pt-patient-name { font-size: 13px; font-weight: 600; color: #e2e8f0;
+                       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pt-patient-meta { font-size: 11px; color: #94a3b8; }
+
+    .pt-new-btn {
+      display: flex; align-items: center; gap: 6px;
+      margin: 0 12px 12px; padding: 8px 12px;
+      background: rgba(94,129,255,.2); border: 1px solid rgba(94,129,255,.4);
+      border-radius: 8px; color: #a5b4fc; font-size: 13px; font-weight: 600;
+      cursor: pointer; transition: background .15s;
+    }
+    .pt-new-btn:hover { background: rgba(94,129,255,.35); color: #c7d2fe; }
+
+    /* ── 메인 패널 ── */
+    .pt-main { max-width: 1100px; margin: 0 auto; }
+
+    .pt-panels {
+      display: grid; gap: 20px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 900px) { .pt-panels { grid-template-columns: 1fr; } }
+
+    .pt-card {
+      background: #fff; border-radius: 12px;
+      border: 1px solid #e5e7eb; overflow: hidden;
+    }
+    .pt-card-header {
+      padding: 14px 18px; border-bottom: 1px solid #f1f5f9;
+      font-size: 13px; font-weight: 700; color: #374151;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pt-card-body { padding: 18px; }
+
+    /* 폼 요소 */
+    .pt-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .pt-row > * { flex: 1; }
+    .pt-label {
+      display: block; font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px;
+    }
+    .pt-input {
+      width: 100%; padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 7px;
+      font-size: 13px; font-family: inherit; outline: none; transition: border-color .15s;
+      box-sizing: border-box;
+    }
+    .pt-input:focus { border-color: #6366f1; }
+    .pt-textarea {
+      width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 7px;
+      font-size: 12px; font-family: monospace; line-height: 1.6; resize: vertical;
+      outline: none; transition: border-color .15s; box-sizing: border-box;
+    }
+    .pt-textarea:focus { border-color: #6366f1; }
+
+    .pt-analyze-btn {
+      width: 100%; padding: 11px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
+      background: linear-gradient(135deg,#dc2626,#b91c1c);
+      color: #fff; transition: opacity .15s, transform .1s;
+      margin-top: 12px;
+    }
+    .pt-analyze-btn:hover { opacity: .9; transform: translateY(-1px); }
+    .pt-analyze-btn:disabled { opacity: .6; cursor: wait; transform: none; }
+
+    /* ── 결과 패널 ── */
+    .pt-alarm-banner {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 10px; margin-bottom: 14px; border: 2px solid;
+    }
+    .pt-alarm-banner.RED    { background: #fef2f2; border-color: #dc2626; }
+    .pt-alarm-banner.YELLOW { background: #fffbeb; border-color: #d97706; }
+    .pt-alarm-banner.NONE   { background: #f0fdf4; border-color: #16a34a; }
+
+    .pt-alarm-icon  { font-size: 32px; line-height: 1; }
+    .pt-alarm-level { font-size: 15px; font-weight: 900; }
+    .RED  .pt-alarm-level { color: #dc2626; }
+    .YELLOW .pt-alarm-level { color: #d97706; }
+    .NONE .pt-alarm-level { color: #16a34a; }
+    .pt-alarm-cond { font-size: 12px; color: #6b7280; margin-top: 2px; }
+
+    .pt-section-title {
+      font-size: 10px; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: .6px; margin-bottom: 6px;
+    }
+    .pt-hit-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 14px; }
+    .pt-hit-item {
+      padding: 6px 10px; border-radius: 6px; font-size: 12px;
+      display: flex; align-items: center; gap: 6px;
+      background: #f8fafc; border: 1px solid #e2e8f0;
+    }
+    .pt-hit-item.RED    { background: #fef2f2; border-color: #fca5a5; }
+    .pt-hit-item.YELLOW { background: #fffbeb; border-color: #fcd34d; }
+
+    .pt-score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+    .pt-score-label { font-size: 11px; color: #9ca3af; white-space: nowrap; }
+    .pt-score-bar   { flex: 1; height: 6px; background: #e5e7eb; border-radius: 99px; overflow: hidden; }
+    .pt-score-fill  { height: 100%; border-radius: 99px; transition: width .5s ease; }
+    .pt-score-val   { font-size: 12px; font-weight: 700; color: #374151; min-width: 36px; text-align: right; }
+
+    .pt-referral {
+      background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 10px 12px; font-family: monospace; font-size: 11px; line-height: 1.6;
+      white-space: pre-wrap; max-height: 200px; overflow-y: auto; color: #1f2937;
+      margin-bottom: 8px;
+    }
+    .pt-copy-btn {
+      padding: 6px 12px; border: 1px solid #d1d5db; border-radius: 6px;
+      background: #f9fafb; font-size: 12px; cursor: pointer;
+    }
+    .pt-copy-btn:hover { background: #f3f4f6; }
+
+    /* ── 환자 히스토리 패널 ── */
+    .pt-history-title {
+      font-size: 16px; font-weight: 800; color: #1a1a2e;
+    }
+
+    /* 히스토리 2단 레이아웃 */
+    .pt-history-layout {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .pt-history-layout { grid-template-columns: 1fr; }
+    }
+
+    /* 좌: 세션 목록 */
+    .pt-session-list {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;
+    }
+    .pt-session-list-header {
+      padding: 12px 14px; border-bottom: 1px solid #f1f5f9;
+      font-size: 11px; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: .5px;
+    }
+    .pt-session-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-bottom: 1px solid #f8fafc;
+      cursor: pointer; transition: background .12s;
+    }
+    .pt-session-row:last-child { border-bottom: none; }
+    .pt-session-row:hover { background: #f8fafc; }
+    .pt-session-row.active { background: #eef2ff; }
+
+    .pt-session-row-info { flex: 1; min-width: 0; }
+    .pt-session-row-date { font-size: 13px; font-weight: 700; color: #374151; }
+    .pt-session-row-meta { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+
+    .pt-session-badge {
+      padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 700; white-space: nowrap;
+    }
+    .badge-RED    { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+    .badge-YELLOW { background: #fffbeb; color: #d97706; border: 1px solid #fcd34d; }
+    .badge-NONE   { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+
+    /* 우: 상세 패널 */
+    .pt-detail-panel { display: flex; flex-direction: column; gap: 16px; }
+
+    /* SOAP 카드 */
+    .pt-soap-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;
+    }
+    .pt-soap-card-header {
+      padding: 13px 18px; border-bottom: 1px solid #f1f5f9;
+      font-size: 13px; font-weight: 700; color: #374151;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pt-soap-body {
+      padding: 0;
+    }
+    /* 비교 뷰 — 원본 / 섹션 제목 */
+    .soap-compare {
+      display: grid; grid-template-columns: 1fr 1fr;
+      border-top: 1px solid #f1f5f9;
+    }
+    .soap-compare-col {
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    .soap-compare-col + .soap-compare-col {
+      border-left: 2px solid #e2e8f0;
+    }
+    .soap-compare-label {
+      padding: 6px 14px; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: .7px;
+      background: #f1f5f9; color: #64748b; border-bottom: 1px solid #e2e8f0;
+    }
+    .soap-compare-label.formatted { color: #4f46e5; background: #eef2ff; }
+    .soap-compare-col .soap-display {
+      border-radius: 0; border: none; flex: 1;
+      max-height: 420px; overflow-y: auto;
+    }
+    /* Level 2: 섹션 picker — 모든 줄 hover 시 표시 */
+    .soap-line { display: block; }
+    .soap-pick-btn {
+      display: inline-block; margin-right: 5px; vertical-align: middle;
+      padding: 1px 5px; border-radius: 4px; border: 1px dashed #94a3b8;
+      background: #f8fafc; color: #94a3b8; font-size: 9px; font-weight: 700;
+      font-family: -apple-system, sans-serif; cursor: pointer; line-height: 1.6;
+      opacity: 0; transition: opacity .15s;
+    }
+    .soap-line:hover .soap-pick-btn { opacity: 1; }
+    .soap-pick-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+    .soap-pick-btn.overridden { border-color: #6366f1; color: #6366f1; background: #eef2ff; opacity: 1; }
+    .soap-picker-popup {
+      display: inline-flex; gap: 3px; vertical-align: middle;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 6px;
+      padding: 3px 5px; box-shadow: 0 2px 8px rgba(0,0,0,.12); margin-left: 4px;
+    }
+    .soap-pick-opt {
+      padding: 2px 8px; border-radius: 4px; border: 1px solid #e2e8f0;
+      background: #f8fafc; color: #475569; font-size: 11px;
+      font-weight: 700; cursor: pointer;
+    }
+    .soap-pick-opt:hover { background: #eef2ff; color: #4f46e5; border-color: #c7d2fe; }
+    .soap-pick-opt.active { background: #4f46e5; color: #fff; border-color: #4f46e5; }
+    /* 공통 SOAP 표시 박스 — 세 뷰 모두 사용 */
+    .soap-display {
+      background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px;
+      padding: 16px 20px; font-family: 'Courier New', monospace;
+      font-size: 12.5px; line-height: 1.85; color: #1e293b;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .soap-section-title {
+      display: block; margin-top: 18px; margin-bottom: 5px;
+      padding-bottom: 4px; border-bottom: 1.5px solid #cbd5e1;
+      font-family: -apple-system, sans-serif; font-size: 10.5px;
+      font-weight: 800; text-transform: uppercase; letter-spacing: .8px;
+      color: #475569;
+    }
+    .soap-section-title:first-child { margin-top: 0; }
+
+    /* Indicators 카드 */
+    .pt-indicators-card {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden;
+    }
+
+    /* Referral Letter 카드 */
+    .pt-letter-card {
+      background: #fff; border: 2px solid #dc2626; border-radius: 12px; overflow: hidden;
+    }
+    .pt-letter-card.yellow { border-color: #d97706; }
+    .pt-letter-card-header {
+      padding: 14px 20px; border-bottom: 1px solid #fee2e2;
+      display: flex; align-items: center; justify-content: space-between;
+      background: #fef2f2;
+    }
+    .pt-letter-card.yellow .pt-letter-card-header {
+      background: #fffbeb; border-bottom-color: #fef3c7;
+    }
+    .pt-letter-card-title {
+      font-size: 14px; font-weight: 800; color: #dc2626;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pt-letter-card.yellow .pt-letter-card-title { color: #d97706; }
+    .pt-letter-actions { display: flex; gap: 8px; }
+    .pt-letter-btn {
+      padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600;
+      cursor: pointer; border: 1px solid #d1d5db; background: #fff; transition: background .12s;
+    }
+    .pt-letter-btn:hover { background: #f3f4f6; }
+    .pt-letter-btn-primary {
+      background: #dc2626; color: #fff; border-color: #dc2626;
+    }
+    .pt-letter-btn-primary:hover { background: #b91c1c; }
+    .pt-letter-card.yellow .pt-letter-btn-primary { background: #d97706; border-color: #d97706; }
+    .pt-letter-card.yellow .pt-letter-btn-primary:hover { background: #b45309; }
+    .pt-letter-body {
+      padding: 28px 32px; font-family: 'Courier New', Courier, monospace;
+      font-size: 13.5px; line-height: 1.9; color: #111827;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* 빈 상세 */
+    .pt-detail-empty {
+      background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+      padding: 64px 24px; text-align: center; color: #9ca3af;
+    }
+
+    /* ── 히스토리 상세 탭 ── */
+    .detail-tab-bar {
+      display: flex; border-bottom: 2px solid #f1f5f9;
+      margin-bottom: 16px; flex-shrink: 0;
+    }
+    .detail-tab-btn {
+      padding: 9px 18px; border: none; background: transparent;
+      font-size: 13px; font-weight: 600; color: #6b7280; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: color .15s, border-color .15s;
+    }
+    .detail-tab-btn.active { color: #6366f1; border-bottom-color: #6366f1; }
+    .detail-tab-btn:hover:not(.active) { color: #374151; }
+
+    /* ── 문서 카드 그리드 ── */
+    .doc-cards-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    }
+    @media (max-width: 860px) { .doc-cards-grid { grid-template-columns: 1fr; } }
+
+    .doc-card {
+      border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px;
+      background: #fff; transition: box-shadow .15s, border-color .15s;
+    }
+    .doc-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,.08); border-color: #d1d5db; }
+    .doc-card-icon  { font-size: 22px; margin-bottom: 8px; }
+    .doc-card-title { font-size: 13px; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+    .doc-card-desc  { font-size: 11px; color: #6b7280; margin-bottom: 12px; line-height: 1.5; }
+
+    .doc-generate-btn {
+      width: 100%; padding: 7px 0; border: 1px solid #6366f1; border-radius: 6px;
+      background: transparent; color: #6366f1; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: all .15s; display: flex; align-items: center;
+      justify-content: center; gap: 4px;
+    }
+    .doc-generate-btn:hover:not(:disabled) { background: #6366f1; color: #fff; }
+    .doc-generate-btn:disabled { opacity: .6; cursor: wait; }
+
+    /* ── 문서 미리보기 모달 ── */
+    .doc-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 300; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .doc-modal-overlay.open { opacity: 1; pointer-events: all; }
+
+    .doc-modal {
+      background: #fff; border-radius: 14px;
+      width: 90vw; max-width: 820px; min-height: 65vh; max-height: 90vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,.22);
+      transform: translateY(16px); transition: transform .2s;
+    }
+    .doc-modal-overlay.open .doc-modal { transform: translateY(0); }
+
+    .doc-modal-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+    }
+    .doc-modal-title { font-size: 14px; font-weight: 700; color: #1e293b; flex: 1; min-width: 0; }
+    .doc-modal-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+    .doc-modal-body {
+      flex: 1; min-height: 0; overflow-y: auto;
+      padding: 24px 28px; color: #1f2937;
+    }
+    .doc-modal-body.text-mode {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 13px; line-height: 1.9;
+      white-space: pre-wrap; word-break: break-word;
+    }
+    .doc-modal-body::-webkit-scrollbar { width: 5px; }
+    .doc-modal-body::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 4px; }
+
+    /* ── Email 발송 모달 ── */
+    .email-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.55);
+      z-index: 400; display: flex; align-items: center; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity .2s;
+    }
+    .email-modal-overlay.open { opacity: 1; pointer-events: all; }
+    .email-modal {
+      background: #fff; border-radius: 14px;
+      width: 90vw; max-width: 560px; max-height: 90vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 24px 64px rgba(0,0,0,.22);
+    }
+    .email-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid #f1f5f9; flex-shrink: 0;
+    }
+    .email-modal-title { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .email-modal-body  { flex: 1; min-height: 0; overflow-y: auto; padding: 20px; }
+    .email-modal-footer {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px 20px; border-top: 1px solid #f1f5f9; flex-shrink: 0;
+    }
+    .email-section-label {
+      font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 10px;
+    }
+    .email-contact-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0;
+      margin-bottom: 8px; background: #f8fafc;
+    }
+    .email-contact-item input[type=checkbox] { flex-shrink: 0; width: 16px; height: 16px; cursor: pointer; }
+    .email-contact-role {
+      font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 10px;
+      text-transform: uppercase; flex-shrink: 0;
+    }
+    .email-contact-role.physician { background: #dbeafe; color: #1d4ed8; }
+    .email-contact-role.lawyer    { background: #fef9c3; color: #854d0e; }
+    .email-contact-role.insurance { background: #dcfce7; color: #166534; }
+    .email-contact-role.other     { background: #f3f4f6; color: #374151; }
+    .email-contact-info { flex: 1; min-width: 0; }
+    .email-contact-name  { font-size: 13px; font-weight: 600; color: #1e293b; }
+    .email-contact-email { font-size: 11px; color: #64748b; }
+    .email-contact-del   { color: #ef4444; background: none; border: none; cursor: pointer; font-size: 14px; flex-shrink: 0; }
+
+    /* ── alarm modal 내부 섹션 ── */
+    .alarm-section { margin-bottom: 20px; }
+    .alarm-section-label {
+      font-size: 11px; font-weight: 700; color: #6b7280;
+      text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px;
+    }
+    .alarm-soap-box { } /* → soap-display 통합 */
+    .alarm-letter-box {
+      border-radius: 8px; padding: 20px 24px;
+      font-family: 'Courier New', monospace;
+      font-size: 12.5px; line-height: 1.9; color: #1f2937;
+      white-space: pre-wrap; word-break: break-word;
+    }
+
+    /* ── Pilot Feedback 챗봇 ── */
+    #feedback-btn {
+      position: fixed; bottom: 28px; right: 28px; z-index: 500;
+      width: 56px; height: 56px; border-radius: 50%; border: none;
+      background: #6366f1;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,.5);
+      transition: transform .2s, box-shadow .2s;
+    }
+    #feedback-btn:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(99,102,241,.6); }
+    #feedback-panel {
+      position: fixed; bottom: 96px; right: 28px; z-index: 500;
+      width: 320px; height: 480px; background: #f4f6fb; border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.18);
+      display: none; flex-direction: column; overflow: hidden;
+      transform: translateY(12px); opacity: 0;
+      transition: transform .22s ease, opacity .22s ease;
+    }
+    #feedback-panel.open { display: flex; transform: translateY(0); opacity: 1; }
+    #feedback-panel-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px; background: #fff;
+      border-bottom: 1px solid #e8eaf0; flex-shrink: 0;
+    }
+    #fp-avatar {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: #6366f1; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 800;
+    }
+    #fp-header-text { flex: 1; }
+    #fp-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; }
+    #fp-name  { font-size: 15px; font-weight: 800; color: #1e293b; }
+    #fp-close { background: none; border: none; font-size: 18px; color: #9ca3af; cursor: pointer; }
+    #fp-close:hover { color: #374151; }
+    #feedback-messages {
+      flex: 1; min-height: 0; overflow-y: auto;
+      padding: 16px 14px; display: flex; flex-direction: column; gap: 10px;
+    }
+    #feedback-messages::-webkit-scrollbar { width: 4px; }
+    #feedback-messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+    .fb-msg-bot { display: flex; align-items: flex-start; gap: 8px; }
+    .fb-msg-bot-avatar {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      background: #6366f1; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 800;
+    }
+    .fb-msg-bot-bubble {
+      background: #fff; border-radius: 0 12px 12px 12px;
+      padding: 10px 13px; font-size: 13px; line-height: 1.6; color: #1e293b;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08); max-width: 220px;
+    }
+    .fb-msg-user { display: flex; justify-content: flex-end; }
+    .fb-msg-user-bubble {
+      background: #6366f1; color: #fff; border-radius: 12px 12px 0 12px;
+      padding: 10px 13px; font-size: 13px; line-height: 1.6; max-width: 220px;
+    }
+    #feedback-quick-replies {
+      padding: 0 14px 10px; display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0;
+    }
+    .fb-quick-btn {
+      font-size: 12px; padding: 6px 13px; border-radius: 20px;
+      border: 1.5px solid #6366f1; background: #fff; color: #4f46e5;
+      cursor: pointer; font-weight: 600; transition: background .15s;
+    }
+    .fb-quick-btn:hover { background: #eef2ff; }
+    #feedback-input-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 14px 14px; background: #fff;
+      border-top: 1px solid #e8eaf0; flex-shrink: 0;
+    }
+    #feedback-text {
+      flex: 1; border: 1px solid #e2e8f0; border-radius: 20px;
+      padding: 8px 14px; font-size: 13px; resize: none; box-sizing: border-box;
+      font-family: inherit; outline: none; line-height: 1.4; max-height: 80px; overflow-y: auto;
+    }
+    #feedback-text:focus { border-color: #6366f1; }
+    #feedback-send-btn {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      background: #f1f5f9; border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    #feedback-send-btn:hover { background: #eef2ff; }
+
+    /* ── 로그인 카드 ── */
+    .pt-login-wrap { max-width: 420px; margin: 48px auto; }
+    .pt-login-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 28px; }
+    .pt-login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+    .pt-login-logo-icon { font-size: 32px; }
+    .pt-login-logo-title { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+    .pt-login-logo-sub   { font-size: 12px; color: #6b7280; }
+    .pt-error { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+                border-radius: 6px; padding: 8px 12px; font-size: 12px; margin-bottom: 12px; }
+
+    /* ── 빈 상태 ── */
+    .pt-empty { text-align: center; padding: 48px 24px; color: #9ca3af; }
+    .pt-empty-icon { font-size: 40px; margin-bottom: 12px; }
+    .pt-empty-text { font-size: 14px; }
+
+    /* ── 로딩 스피너 ── */
+    .pt-spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.4); border-top-color: #fff;
+      border-radius: 50%; animation: spin .6s linear infinite; margin-right: 6px;
+    }
+    @keyframes spin  { to { transform: rotate(360deg); } }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* 사이드바 검색 */
+    .pt-search-wrap {
+      position: relative; margin: 0 10px 8px;
+    }
+    .pt-search-icon {
+      position: absolute; left: 9px; top: 50%; transform: translateY(-50%);
+      color: #64748b; pointer-events: none; display: flex; align-items: center;
+    }
+    .pt-search {
+      padding: 7px 10px 7px 30px;
+      border: 1px solid rgba(255,255,255,.1); border-radius: 8px;
+      background: rgba(0,0,0,.2); color: #e2e8f0;
+      font-size: 12px; outline: none; width: 100%; box-sizing: border-box;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .pt-search::placeholder { color: #4b5563; }
+    .pt-search:focus {
+      border-color: rgba(99,102,241,.6);
+      box-shadow: 0 0 0 2px rgba(99,102,241,.15);
+      background: rgba(0,0,0,.3);
+    }
+    .pt-patient-alarm-badge {
+      font-size: 10px; font-weight: 700; padding: 1px 5px;
+      border-radius: 4px; flex-shrink: 0; margin-left: auto;
+    }
+    .pt-patient-alarm-badge.RED    { background:#fee2e2; color:#dc2626; }
+    .pt-patient-alarm-badge.YELLOW { background:#fef3c7; color:#b45309; }
+    .pt-patient-alarm-badge.NONE   { display:none; }
+
+    /* ── S/O/A/P 탭 + Red Flag 칩 ── */
+    .soap-tab-bar {
+      display: flex; gap: 0; margin-top: 4px; margin-bottom: 0;
+      border-bottom: 2px solid #f1f5f9;
+    }
+    .soap-tab-btn {
+      padding: 7px 13px; border: none; background: transparent;
+      font-size: 11.5px; font-weight: 700; color: #9ca3af; cursor: pointer;
+      border-bottom: 2px solid transparent; margin-bottom: -2px;
+      transition: color .15s, border-color .15s; letter-spacing: .2px;
+    }
+    .soap-tab-btn.active { color: #6366f1; border-bottom-color: #6366f1; background: #f5f5ff; }
+    .soap-tab-btn:hover:not(.active) { color: #374151; }
+    .rf-chip-label {
+      display: block; font-size: 10px; font-weight: 700; color: #9ca3af;
+      text-transform: uppercase; letter-spacing: .5px; margin: 8px 0 5px;
+    }
+    .rf-chip-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 2px; }
+    .rf-chip {
+      display: inline-flex; align-items: center;
+      padding: 3px 9px; border-radius: 99px; font-size: 11px; font-weight: 600;
+      cursor: pointer; border: 1.5px solid #e5e7eb; background: #f8fafc; color: #6b7280;
+      transition: all .12s; user-select: none; white-space: nowrap;
+    }
+    .rf-chip:hover { border-color: #94a3b8; color: #374151; background: #f1f5f9; }
+    .rf-chip.confirmed-RED    { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
+    .rf-chip.confirmed-YELLOW { background: #fffbeb; border-color: #d97706; color: #b45309; }
+
+</style>
+</head>
+<body>
+
+
+<!-- ── 로그인: 사이드바 앱 ── -->
+<div class="app-shell">
+
+  <!-- 사이드바 -->
+  <aside class="app-sidebar">
+
+    <!-- 브랜드 -->
+    <div class="app-sidebar__brand">
+      🛡️ PT Red Flag
+    </div>
+
+    <!-- 계정 정보 -->
+    <div style="padding:10px 14px 12px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:8px;">
+      <div style="display:flex;align-items:center;gap:9px;">
+        <div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#4f46e5);
+                    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;">
+          M
+        </div>
+        <div style="min-width:0;flex:1;">
+          <div style="font-size:13px;font-weight:600;color:#e2e8f0;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+            Maya Lee, DPT
+          </div>
+          <div style="font-size:11px;color:#64748b;">
+            Physical Therapist · Ortho Clinic
+          </div>
+        </div>
+        <a href="#"
+           title="Sign out"
+           style="flex-shrink:0;width:28px;height:28px;border-radius:6px;display:flex;align-items:center;
+                  justify-content:center;color:#64748b;text-decoration:none;transition:background .15s,color .15s;"
+           onmouseover="this.style.background='rgba(255,255,255,.1)';this.style.color='#f87171'"
+           onmouseout="this.style.background='transparent';this.style.color='#64748b'">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+               fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <button class="pt-new-btn" onclick="showNewSession()">
+      <span style="font-size:16px;line-height:1">＋</span> New Session
+    </button>
+
+    <!-- 메뉴 -->
+    <div style="padding:0 10px;margin-bottom:4px;">
+      <button id="menu-alarms" onclick="showAlarms()"
+        style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;
+               border-radius:8px;border:none;background:transparent;color:#94a3b8;
+               font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:background .15s,color .15s;">
+        <span>🔔</span>
+        <span>Alarm 현황</span>
+        <span id="alarm-badge" style="margin-left:auto;background:#dc2626;color:#fff;
+              font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;display:none;">0</span>
+      </button>
+      <button id="menu-compliance" onclick="showCompliance()"
+        style="width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;
+               border-radius:8px;border:none;background:transparent;color:#94a3b8;
+               font-size:13px;font-weight:500;cursor:pointer;text-align:left;transition:background .15s,color .15s;">
+        <span>📋</span>
+        <span>Compliance</span>
+        <span id="compliance-badge" style="margin-left:auto;background:#f59e0b;color:#fff;
+              font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;display:none;">0</span>
+      </button>
+    </div>
+
+    <div class="pt-search-wrap">
+      <span class="pt-search-icon">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </span>
+      <input class="pt-search" type="text" placeholder="환자 검색..." id="patient-search"
+             oninput="filterPatients(this.value)" />
+    </div>
+
+    <div class="app-sidebar__section-label" style="display:flex;align-items:center;justify-content:space-between;">
+      <span>Patients</span>
+      <span id="patient-count" style="font-size:10px;font-weight:700;padding:1px 6px;
+            border-radius:99px;background:rgba(255,255,255,.1);color:#94a3b8;"></span>
+    </div>
+    <nav class="app-sidebar__nav" id="patient-list" style="padding:0 6px;gap:0;">
+      <div style="padding:12px;font-size:12px;color:#64748b;">불러오는 중...</div>
+    </nav>
+
+    <!-- 임시 Dev Tools -->
+    <div style="padding:8px 10px;border-top:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;gap:5px;">
+      <div style="font-size:9px;font-weight:700;color:rgba(255,255,255,.35);letter-spacing:.6px;text-transform:uppercase;padding:2px 0;">Dev Tools</div>
+      <button id="reseed-btn" onclick="runReseed()"
+        style="width:100%;padding:7px;border:1px solid rgba(255,255,255,.25);border-radius:7px;
+               background:transparent;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;transition:background .15s;"
+        onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
+        🌱 Clear &amp; Reseed All
+      </button>
+      <button id="rescore-btn" onclick="runBackfill()"
+        style="width:100%;padding:7px;border:1px solid rgba(255,255,255,.25);border-radius:7px;
+               background:transparent;color:rgba(255,255,255,.7);font-size:11px;cursor:pointer;transition:background .15s;"
+        onmouseover="this.style.background='rgba(255,255,255,.1)'" onmouseout="this.style.background='transparent'">
+        🔄 Re-score All
+      </button>
+    </div>
+
+    <div class="app-sidebar__footer">
+      <a href="#" class="app-sidebar__footer-link">Sign out</a>
+    </div>
+  </aside>
+
+  <!-- 메인 영역 -->
+  <main class="app-main">
+    <div class="pt-main">
+
+      <!-- 뷰 1: 새 세션 (기본) -->
+      <div id="view-new">
+        <div class="pt-panels">
+
+          <!-- 입력 패널 -->
+          <div class="pt-card">
+            <div class="pt-card-header">🩺 SOAP Note 입력</div>
+            <div class="pt-card-body">
+              <div class="pt-row">
+                <div>
+                  <label class="pt-label">Patient Name</label>
+                  <input class="pt-input" id="inp-name" placeholder="e.g. 홍길동" />
+                </div>
+                <div>
+                  <label class="pt-label">Patient ID</label>
+                  <div style="display:flex;gap:6px;">
+                    <input class="pt-input" id="inp-id" placeholder="e.g. PT-260518-001"
+                           style="flex:1;" oninput="this.value=this.value.toUpperCase()" />
+                    <button type="button" onclick="generatePatientId()"
+                            style="padding:0 10px;border:1px solid #d1d5db;border-radius:7px;
+                                   background:#f8fafc;font-size:11px;font-weight:600;
+                                   color:#374151;cursor:pointer;white-space:nowrap;flex-shrink:0;"
+                            title="날짜 기반 ID 자동 생성">
+                      ⚡ Generate
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div style="margin-bottom:12px">
+                <label class="pt-label">Session Date</label>
+                <input class="pt-input" id="inp-date" type="date" />
+              </div>
+              <div>
+                <label class="pt-label">SOAP Note</label>
+                <div class="soap-tab-bar" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+                  <button class="soap-tab-btn active" id="stab-S" onclick="switchSoapTab('S')">S — Subjective</button>
+                  <button class="soap-tab-btn" id="stab-O" onclick="switchSoapTab('O')">O — Objective</button>
+                  <button class="soap-tab-btn" id="stab-A" onclick="switchSoapTab('A')">A — Assessment</button>
+                  <button class="soap-tab-btn" id="stab-P" onclick="switchSoapTab('P')">P — Plan</button>
+                  <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+                    <span id="rec-status" style="display:none;font-size:11px;color:#e53e3e;font-weight:600;animation:blink 1s step-end infinite">● REC</span>
+                    <button id="mic-btn" onclick="toggleRecording()"
+                      style="background:#2d3748;border:1px solid #4a5568;color:#e2e8f0;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer;white-space:nowrap"
+                      title="Record session audio — auto-fills S and O">
+                      🎙 Record
+                    </button>
+                  </div>
+                </div>
+                <div id="scribe-status" style="display:none;font-size:11px;color:#90cdf4;margin:4px 0 2px;text-align:right"></div>
+                <div id="soap-pane-S">
+                  <textarea class="pt-textarea" id="inp-S" rows="6"
+                    placeholder="Patient-reported symptoms, pain level, onset, prior history..."></textarea>
+                  <span class="rf-chip-label">⚑ Red Flag Quick-Check — S (click to confirm)</span>
+                  <div class="rf-chip-row" id="chips-S"></div>
+                </div>
+                <div id="soap-pane-O" style="display:none">
+                  <textarea class="pt-textarea" id="inp-O" rows="6"
+                    placeholder="ROM, MMT, neurological screen, special tests, vitals..."></textarea>
+                  <span class="rf-chip-label">⚑ Red Flag Quick-Check — O (click to confirm)</span>
+                  <div class="rf-chip-row" id="chips-O"></div>
+                </div>
+                <div id="soap-pane-A" style="display:none">
+                  <textarea class="pt-textarea" id="inp-A" rows="5"
+                    placeholder="Clinical impression, working diagnosis, interpretation..."></textarea>
+                </div>
+                <div id="soap-pane-P" style="display:none">
+                  <textarea class="pt-textarea" id="inp-P" rows="5"
+                    placeholder="Treatment plan, short/long-term goals, HEP, referral plan..."></textarea>
+                </div>
+              </div>
+              <button class="pt-analyze-btn" id="analyze-btn" onclick="analyzeAndSave()">
+                🚨 Analyze Red Flags &amp; Save
+              </button>
+            </div>
+          </div>
+
+          <!-- 결과 패널 -->
+          <div class="pt-card" id="result-panel">
+            <div class="pt-card-header">📊 분석 결과</div>
+            <div class="pt-card-body">
+              <div class="pt-empty" id="result-empty">
+                <div class="pt-empty-icon">🔍</div>
+                <div class="pt-empty-text">SOAP note를 입력하고<br>분석을 실행하세요</div>
+              </div>
+              <div id="result-content" style="display:none"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- 뷰 2: 환자 히스토리 -->
+      <div id="view-history" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap;">
+          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;flex-shrink:0;">← Back</button>
+          <div class="pt-history-title" id="history-title">Patient History</div>
+          <button onclick="addSessionForPatient()" style="margin-left:auto;padding:7px 16px;background:#6366f1;color:#fff;border:none;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;flex-shrink:0;">+ New Session</button>
+        </div>
+        <div class="pt-history-layout">
+          <!-- 좌: 세션 목록 -->
+          <div class="pt-session-list" id="session-list-panel">
+            <div class="pt-session-list-header">Sessions</div>
+            <div id="session-list-items"></div>
+          </div>
+          <!-- 우: 상세 패널 -->
+          <div class="pt-detail-panel" id="detail-panel">
+            <div class="pt-detail-empty">
+              <div style="font-size:36px;margin-bottom:12px;">📋</div>
+              <div style="font-size:14px;">세션을 선택하세요</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 뷰 3: Alarm 현황 -->
+      <div id="view-alarms" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;">← Back</button>
+          <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0;">🔔 Alarm 현황</h2>
+        </div>
+
+        <!-- 요약 카드 -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;" id="alarm-summary-cards"></div>
+
+        <!-- 필터 탭 -->
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button onclick="filterAlarmView('ALL')" id="tab-ALL"
+            style="padding:6px 16px;border-radius:7px;border:1px solid #6366f1;background:#6366f1;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">전체</button>
+          <button onclick="filterAlarmView('RED')" id="tab-RED"
+            style="padding:6px 16px;border-radius:7px;border:1px solid #d1d5db;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">🚨 RED</button>
+          <button onclick="filterAlarmView('YELLOW')" id="tab-YELLOW"
+            style="padding:6px 16px;border-radius:7px;border:1px solid #d1d5db;background:#fff;color:#374151;font-size:13px;font-weight:600;cursor:pointer;">⚠️ YELLOW</button>
+        </div>
+
+        <!-- 알람 목록 -->
+        <div id="alarm-list"></div>
+      </div>
+
+      <!-- 뷰 3: Compliance Dashboard -->
+      <div id="view-compliance" style="display:none">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+          <button onclick="showNewSession()" style="padding:7px 14px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:13px;cursor:pointer;">← Back</button>
+          <h2 style="font-size:18px;font-weight:700;color:#1e293b;margin:0;">📋 Compliance Dashboard</h2>
+          <span id="compliance-last-updated" style="font-size:11px;color:#94a3b8;margin-left:auto;"></span>
+          <button onclick="loadComplianceData()" style="padding:6px 12px;border:1px solid #d1d5db;border-radius:7px;background:#fff;font-size:12px;cursor:pointer;">↻ 새로고침</button>
+        </div>
+
+        <!-- KPI 카드 -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px;" id="compliance-kpi-row">
+          <div class="compliance-kpi urgent" id="kpi-urgent">
+            <div class="compliance-kpi-num">—</div>
+            <div class="compliance-kpi-label">기한 임박 (D-3)</div>
+          </div>
+          <div class="compliance-kpi danger" id="kpi-overdue">
+            <div class="compliance-kpi-num">—</div>
+            <div class="compliance-kpi-label">기한 초과</div>
+          </div>
+          <div class="compliance-kpi warn" id="kpi-open-alerts">
+            <div class="compliance-kpi-num">—</div>
+            <div class="compliance-kpi-label">미완료 Red Flag</div>
+          </div>
+          <div class="compliance-kpi score" id="kpi-exposure">
+            <div class="compliance-kpi-num">—</div>
+            <div class="compliance-kpi-label">Liability Score</div>
+          </div>
+        </div>
+
+        <!-- Section 탭 -->
+        <div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap;" id="compliance-tabs">
+          <button onclick="showComplianceSection('direct_access')" class="ctab ctab-active" id="ctab-direct_access">Direct Access</button>
+          <button onclick="showComplianceSection('insurance')" class="ctab" id="ctab-insurance">Insurance Billing</button>
+          <button onclick="showComplianceSection('red_flags')" class="ctab" id="ctab-red_flags">Red Flags</button>
+          <button onclick="showComplianceSection('documents')" class="ctab" id="ctab-documents">Documents</button>
+          <button onclick="showComplianceSection('exposure')" class="ctab" id="ctab-exposure">Exposure Summary</button>
+        </div>
+
+        <!-- Section 콘텐츠 -->
+        <div id="compliance-section-content">
+          <div style="color:#94a3b8;font-size:13px;padding:32px;text-align:center;">불러오는 중...</div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ── 슬라이드 패널 (알람 세션 상세) ── -->
+<div class="slide-overlay" id="slide-overlay" onclick="closeSlidePanel()"></div>
+<div class="slide-panel" id="slide-panel">
+  <div class="slide-panel-header">
+    <button onclick="closeSlidePanel()"
+      style="width:32px;height:32px;border:none;background:#f1f5f9;border-radius:8px;
+             font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">✕</button>
+    <div id="slide-panel-title" style="font-size:15px;font-weight:700;color:#1e293b;flex:1;min-width:0;
+         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+    <div id="slide-panel-badge" style="font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;flex-shrink:0;"></div>
+  </div>
+  <div class="slide-panel-body" id="slide-panel-body"></div>
+</div>
+
+<!-- ── 문서 생성 모달 ── -->
+
+<div class="doc-modal-overlay" id="doc-modal-overlay">
+  <div class="doc-modal">
+    <div class="doc-modal-header">
+      <div class="doc-modal-title" id="doc-modal-title">Document</div>
+      <div class="doc-modal-actions">
+        <button class="pt-letter-btn" onclick="printDocModal()">🖨️ Print</button>
+        <button class="pt-letter-btn" id="doc-modal-edit-btn" onclick="toggleDocEdit(this)" style="display:none;">✏ 수정</button>
+        
+        <button class="pt-letter-btn pt-letter-btn-primary" id="doc-modal-copy-btn"
+                onclick="copyDocModal(this)">📋 Copy</button>
+        <button class="pt-letter-btn" onclick="closeDocModal()">✕</button>
+      </div>
+    </div>
+    <div class="doc-modal-body" id="doc-modal-body"></div>
+  </div>
+</div>
+
+
+
+
+
+<!-- ── Pilot Feedback 챗봇 ───────────────────────────────────────────── -->
+<button id="feedback-btn" onclick="toggleFeedback()" aria-label="피드백">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="white"/>
+  </svg>
+</button>
+
+<div id="feedback-panel">
+  <div id="feedback-panel-header">
+    <div id="fp-avatar">SP</div>
+    <div id="fp-header-text">
+      <div id="fp-label">feedback bot</div>
+      <div id="fp-name">Sage Pontus</div>
+    </div>
+    <button id="fp-close" onclick="toggleFeedback()">✕</button>
+  </div>
+
+  <div id="feedback-messages"></div>
+
+  <div id="feedback-quick-replies"></div>
+
+  <div id="feedback-input-row">
+    <textarea id="feedback-text" placeholder="여기에 입력하세요." rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitFeedback();}"></textarea>
+    <button id="feedback-send-btn" onclick="submitFeedback()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- ── Compliance Dashboard CSS ─────────────────────────────────────── -->
+<style>
+/* KPI 카드 */
+.compliance-kpi {
+  padding: 16px 18px; border-radius: 10px; border: 1px solid #e2e8f0;
+  background: #fff;
+}
+.compliance-kpi-num { font-size: 28px; font-weight: 800; color: #1e293b; line-height: 1; }
+.compliance-kpi-label { font-size: 11px; color: #64748b; margin-top: 4px; font-weight: 500; }
+.compliance-kpi.urgent { border-color: #fbbf24; background: #fffbeb; }
+.compliance-kpi.urgent .compliance-kpi-num { color: #d97706; }
+.compliance-kpi.danger { border-color: #fca5a5; background: #fff5f5; }
+.compliance-kpi.danger .compliance-kpi-num { color: #dc2626; }
+.compliance-kpi.warn { border-color: #fcd34d; background: #fefce8; }
+.compliance-kpi.warn .compliance-kpi-num { color: #b45309; }
+.compliance-kpi.score { border-color: #c4b5fd; background: #f5f3ff; }
+.compliance-kpi.score .compliance-kpi-num { color: #7c3aed; }
+
+/* Section 탭 */
+.ctab {
+  padding: 6px 16px; border-radius: 7px; border: 1px solid #d1d5db;
+  background: #fff; color: #374151; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all .15s;
+}
+.ctab.ctab-active { background: #6366f1; border-color: #6366f1; color: #fff; }
+.ctab:hover:not(.ctab-active) { background: #f1f5f9; }
+
+/* 테이블 */
+.ctable { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ctable th { text-align: left; padding: 8px 10px; font-size: 11px; font-weight: 700;
+             color: #64748b; text-transform: uppercase; letter-spacing: .4px;
+             border-bottom: 1px solid #e2e8f0; }
+.ctable td { padding: 10px 10px; border-bottom: 1px solid #f1f5f9; color: #374151; vertical-align: middle; }
+.ctable tr:hover td { background: #f8fafc; }
+
+/* 상태 뱃지 */
+.cbadge {
+  display: inline-block; padding: 2px 8px; border-radius: 99px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+}
+.cbadge.ok      { background: #dcfce7; color: #166534; }
+.cbadge.urgent  { background: #fef3c7; color: #92400e; }
+.cbadge.overdue { background: #fee2e2; color: #991b1b; }
+.cbadge.done    { background: #f0fdf4; color: #15803d; }
+.cbadge.na      { background: #f1f5f9; color: #94a3b8; }
+.cbadge.pending { background: #fef9c3; color: #854d0e; }
+
+/* 섹션 헤더 */
+.csection-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 12px;
+}
+.csection-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+.csection-sub   { font-size: 12px; color: #64748b; }
+
+/* Exposure 게이지 */
+.exposure-bar { height: 8px; border-radius: 99px; background: #e2e8f0; overflow: hidden; }
+.exposure-fill { height: 100%; border-radius: 99px; transition: width .5s; }
+
+/* 인라인 버튼 */
+.caction { padding: 3px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+           background: #fff; font-size: 11px; cursor: pointer; color: #374151;
+           transition: background .15s; }
+.caction:hover { background: #f1f5f9; }
+.caction.primary { background: #6366f1; border-color: #6366f1; color: #fff; }
+.caction.primary:hover { background: #4f46e5; }
+</style>
+
+<!-- ── Compliance Dashboard JS ─────────────────────────────────────── -->
+<script>
+(function() {
+  let _complianceData = null;
+  let _activeSection  = 'direct_access';
+
+  window.showCompliance = function() {
+    document.querySelectorAll('[id^="view-"]').forEach(v => v.style.display = 'none');
+    document.getElementById('view-compliance').style.display = 'block';
+    _setMenuActive('menu-compliance');
+    loadComplianceData();
+  };
+
+  window.loadComplianceData = async function() {
+    const content = document.getElementById('compliance-section-content');
+    content.innerHTML = '<div style="color:#94a3b8;font-size:13px;padding:32px;text-align:center;">불러오는 중...</div>';
+    try {
+      const res  = await fetch(URLS.compliance, {headers: {'X-CSRFToken': CSRF}});
+      const data = await res.json();
+      _complianceData = data;
+      _renderKPIs(data);
+      _renderSection(_activeSection);
+      const badge = document.getElementById('compliance-badge');
+      const total = (data.urgent_count || 0) + (data.overdue_count || 0);
+      if (total > 0) { badge.textContent = total; badge.style.display = 'inline'; }
+      else badge.style.display = 'none';
+      document.getElementById('compliance-last-updated').textContent =
+        '업데이트: ' + new Date().toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+    } catch(e) {
+      content.innerHTML = '<div style="color:#dc2626;padding:24px;">데이터 로드 실패: ' + e.message + '</div>';
+    }
+  };
+
+  window.showComplianceSection = function(section) {
+    _activeSection = section;
+    document.querySelectorAll('.ctab').forEach(b => b.classList.remove('ctab-active'));
+    const tab = document.getElementById('ctab-' + section);
+    if (tab) tab.classList.add('ctab-active');
+    if (_complianceData) _renderSection(section);
+  };
+
+  function _renderKPIs(data) {
+    _kpi('kpi-urgent',      data.urgent_count  || 0, 'urgent');
+    _kpi('kpi-overdue',     data.overdue_count || 0, 'danger');
+    _kpi('kpi-open-alerts', (data.sections.red_flags || {}).open_alerts || 0, 'warn');
+    const score = ((data.sections.exposure || {}).liability_score || 0);
+    document.getElementById('kpi-exposure').querySelector('.compliance-kpi-num').textContent = score;
+    const kpiEl = document.getElementById('kpi-exposure');
+    kpiEl.querySelector('.compliance-kpi-num').style.color =
+      score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#16a34a';
+  }
+
+  function _kpi(id, val, cls) {
+    const el = document.getElementById(id);
+    el.querySelector('.compliance-kpi-num').textContent = val;
+  }
+
+  function _badge(status) {
+    const map = {ok:'ok', urgent:'urgent', overdue:'overdue', done:'done', 'n/a':'na', pending:'pending'};
+    const cls = map[status] || 'na';
+    const label = {ok:'OK', urgent:'D-3 임박', overdue:'기한초과', done:'완료', 'n/a':'해당없음', pending:'미제출'}[status] || status;
+    return `<span class="cbadge ${cls}">${label}</span>`;
+  }
+
+  function _daysLabel(n) {
+    if (n == null) return '—';
+    if (n < 0)  return `<span style="color:#dc2626;font-weight:700">D+${Math.abs(n)} 초과</span>`;
+    if (n === 0) return `<span style="color:#dc2626;font-weight:700">오늘 마감</span>`;
+    if (n <= 3)  return `<span style="color:#d97706;font-weight:700">D-${n}</span>`;
+    return `D-${n}`;
+  }
+
+  function _renderSection(section) {
+    const d = _complianceData;
+    const content = document.getElementById('compliance-section-content');
+    if (!d) return;
+
+    if (section === 'direct_access')  content.innerHTML = _renderDirectAccess(d.sections.direct_access);
+    else if (section === 'insurance') content.innerHTML = _renderInsurance(d.sections.insurance);
+    else if (section === 'red_flags') content.innerHTML = _renderRedFlags(d.sections.red_flags);
+    else if (section === 'documents') content.innerHTML = _renderDocuments(d.sections.documents);
+    else if (section === 'exposure')  content.innerHTML = _renderExposure(d.sections.exposure);
+  }
+
+  /* ── Direct Access ─────────────────────────────────── */
+  function _renderDirectAccess(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const all = sec.all || [];
+    const rows = all.map(r => `
+      <tr>
+        <td><code style="font-size:12px;">${r.patient_id}</code></td>
+        <td>${r.state || '—'}</td>
+        <td>${r.treatment_start_date || '—'}</td>
+        <td>${r.da_deadline_date || '무제한'}</td>
+        <td>${_daysLabel(r.da_days_left)}</td>
+        <td>${_badge(r.status)}</td>
+        <td>${r.physician_notified_at ? `<span style="color:#16a34a;">✓ ${r.physician_notified_at}</span>` : '<span style="color:#94a3b8;">미완료</span>'}</td>
+        <td>${r.plan_of_care_sent_at ? `<span style="color:#16a34a;">✓ ${r.plan_of_care_sent_at}</span>` : '<span style="color:#94a3b8;">미발송</span>'}</td>
+        <td>
+          <button class="caction" onclick="openComplianceModal('${r.patient_id}')">⚙ 수정</button>
+        </td>
+      </tr>`).join('');
+
+    const noRows = all.length === 0 ? `
+      <tr><td colspan="9" style="text-align:center;color:#94a3b8;padding:24px;">
+        등록된 Direct Access 케이스 없음 — 환자 세션에서 ⚙ 를 눌러 추가하세요.
+      </td></tr>` : '';
+
+    return `
+      <div class="csection-header">
+        <div>
+          <div class="csection-title">Direct Access 추적</div>
+          <div class="csection-sub">총 ${sec.total}명 · 기한임박 ${(sec.urgent||[]).length}건 · 기한초과 ${(sec.overdue||[]).length}건</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span style="font-size:12px;color:#64748b;">의사 통보 대기: <strong>${sec.physician_pending||0}</strong>명</span>
+          <span style="font-size:12px;color:#64748b;">Plan of Care 미발송: <strong>${sec.plan_of_care_pending||0}</strong>명</span>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="ctable">
+          <thead><tr>
+            <th>Patient ID</th><th>State</th><th>치료 시작일</th><th>마감일</th>
+            <th>남은 기간</th><th>상태</th><th>의사 통보</th><th>PoC 발송</th><th></th>
+          </tr></thead>
+          <tbody>${rows}${noRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  /* ── Insurance ──────────────────────────────────────── */
+  function _renderInsurance(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const all = sec.all || [];
+    const rows = all.map(r => `
+      <tr>
+        <td><code style="font-size:12px;">${r.patient_id}</code></td>
+        <td>${r.insurer_name || r.insurer_type || '—'}</td>
+        <td>${r.kind === 'filing' ? '📄 청구 제출' : '⚖️ 항소'}</td>
+        <td>${r.deadline_date || '—'}</td>
+        <td>${_daysLabel(r.days_left)}</td>
+        <td>${_badge(r.status)}</td>
+        <td><button class="caction" onclick="openComplianceModal('${r.patient_id}')">⚙ 수정</button></td>
+      </tr>`).join('');
+
+    const noRows = all.length === 0 ? `
+      <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:24px;">
+        미처리 보험 청구 없음
+      </td></tr>` : '';
+
+    return `
+      <div class="csection-header">
+        <div>
+          <div class="csection-title">보험 청구 Deadline 추적</div>
+          <div class="csection-sub">청구 대기: ${sec.claim_pending||0}건 · 항소 대기: ${sec.appeal_pending||0}건</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="ctable">
+          <thead><tr>
+            <th>Patient ID</th><th>보험사</th><th>종류</th><th>마감일</th>
+            <th>남은 기간</th><th>상태</th><th></th>
+          </tr></thead>
+          <tbody>${rows}${noRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  /* ── Red Flags ──────────────────────────────────────── */
+  function _renderRedFlags(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const alerts = sec.alerts || [];
+    const rows = alerts.map(a => {
+      const lvlColor = a.alarm_level === 'RED' ? '#dc2626' : '#d97706';
+      return `<tr>
+        <td><span style="color:${lvlColor};font-weight:700;">${a.alarm_level}</span></td>
+        <td><code style="font-size:12px;">${a.patient_id}</code></td>
+        <td>${a.condition || '—'}</td>
+        <td>${a.session_date}</td>
+        <td>${a.referral_sent_at
+          ? `<span style="color:#16a34a;">✓ ${a.referral_sent_at}</span>`
+          : `<span style="color:#dc2626;">미발송</span>`}</td>
+        <td>${a.followup_checked
+          ? `<span style="color:#16a34a;">✓ 완료</span>`
+          : `<span style="color:#94a3b8;">미확인</span>`}</td>
+      </tr>`;
+    }).join('');
+
+    const noRows = alerts.length === 0 ? `
+      <tr><td colspan="6" style="text-align:center;color:#16a34a;padding:24px;">
+        ✓ 미완료 Red Flag 없음
+      </td></tr>` : '';
+
+    return `
+      <div class="csection-header">
+        <div>
+          <div class="csection-title">Red Flag 현황</div>
+          <div class="csection-sub">미완료 알람: ${sec.open_alerts}건 · 리퍼럴 미발송: ${sec.referral_not_sent}건 · Follow-up 미완료: ${sec.followup_incomplete}건</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="ctable">
+          <thead><tr>
+            <th>Level</th><th>Patient ID</th><th>Condition</th><th>세션 날짜</th>
+            <th>Referral 발송</th><th>Follow-up</th>
+          </tr></thead>
+          <tbody>${rows}${noRows}</tbody>
+        </table>
+      </div>`;
+  }
+
+  /* ── Documents ──────────────────────────────────────── */
+  function _renderDocuments(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const byType = sec.by_type || {};
+    const rows = Object.entries(byType).map(([dt, info]) => {
+      const pct = info.generated > 0 ? Math.round(info.chosen / info.generated * 100) : 0;
+      return `<tr>
+        <td>${info.title}</td>
+        <td style="text-align:center;">${info.generated}</td>
+        <td style="text-align:center;">${info.chosen}</td>
+        <td style="text-align:center;color:${info.not_generated > 0 ? '#d97706' : '#16a34a'};">${info.not_generated}</td>
+        <td>
+          <div class="exposure-bar" style="width:80px;">
+            <div class="exposure-fill" style="width:${pct}%;background:${pct>=80?'#16a34a':pct>=40?'#f59e0b':'#dc2626'};"></div>
+          </div>
+          <span style="font-size:11px;color:#64748b;margin-left:6px;">${pct}%</span>
+        </td>
+      </tr>`;
+    }).join('');
+
+    const incomplete = sec.incomplete || [];
+    const incList = incomplete.length > 0
+      ? `<div style="margin-top:16px;"><div class="csection-sub" style="margin-bottom:8px;">⚠️ Referral 문서 미생성 환자 (${incomplete.length}명)</div>
+         <div style="display:flex;flex-wrap:wrap;gap:6px;">
+           ${incomplete.map(pid => `<code style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:6px;font-size:12px;">${pid}</code>`).join('')}
+         </div></div>`
+      : '';
+
+    return `
+      <div class="csection-header">
+        <div class="csection-title">문서 생성 현황</div>
+      </div>
+      <div style="overflow-x:auto;">
+        <table class="ctable">
+          <thead><tr>
+            <th>문서 종류</th><th style="text-align:center;">생성</th>
+            <th style="text-align:center;">채택</th><th style="text-align:center;">미생성 환자</th>
+            <th>채택률</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      ${incList}`;
+  }
+
+  /* ── Exposure Summary ───────────────────────────────── */
+  function _renderExposure(sec) {
+    if (!sec) return '<div style="color:#94a3b8;padding:24px;">데이터 없음</div>';
+    const score = sec.liability_score || 0;
+    const color = score >= 70 ? '#dc2626' : score >= 40 ? '#d97706' : '#16a34a';
+    const bd = sec.breakdown || {};
+
+    const factors = [
+      {label: 'RED 알람 미완료',       val: bd.open_red_alerts    || 0, unit: '건', weight: 20},
+      {label: 'YELLOW 알람 미완료',     val: bd.open_yellow_alerts || 0, unit: '건', weight: 10},
+      {label: 'Referral 미발송',        val: bd.referral_not_sent  || 0, unit: '건', weight: 15},
+      {label: 'Direct Access 기한 초과',val: bd.da_overdue         || 0, unit: '건', weight: 20},
+      {label: '보험 청구 기한 초과',     val: bd.insurance_overdue  || 0, unit: '건', weight: 15},
+    ];
+
+    const factorRows = factors.map(f => `
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;">
+        <div style="flex:1;font-size:13px;color:#374151;">${f.label}</div>
+        <div style="width:40px;text-align:right;font-weight:700;color:${f.val>0?'#dc2626':'#16a34a'};">${f.val}</div>
+        <div style="width:40px;font-size:11px;color:#94a3b8;">${f.unit}</div>
+        <div style="font-size:11px;color:#94a3b8;">× ${f.weight}점</div>
+        <div style="width:48px;text-align:right;font-size:12px;font-weight:700;color:${f.val>0?'#dc2626':'#94a3b8'};">
+          ${Math.min(f.val * f.weight, f.weight * 3)} pts
+        </div>
+      </div>`).join('');
+
+    const riskLabel = score >= 70 ? 'High Risk' : score >= 40 ? 'Moderate Risk' : 'Low Risk';
+
+    return `
+      <div class="csection-header">
+        <div class="csection-title">전체 Liability Exposure Summary</div>
+      </div>
+      <div style="display:grid;grid-template-columns:200px 1fr;gap:24px;align-items:start;">
+        <div style="text-align:center;padding:24px;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;">
+          <div style="font-size:52px;font-weight:900;color:${color};line-height:1;">${score}</div>
+          <div style="font-size:13px;font-weight:700;color:${color};margin:4px 0;">${riskLabel}</div>
+          <div style="font-size:11px;color:#94a3b8;">/ 100점</div>
+          <div class="exposure-bar" style="margin-top:12px;">
+            <div class="exposure-fill" style="width:${score}%;background:${color};"></div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:600;color:#64748b;margin-bottom:8px;">위험 요소별 점수</div>
+          ${factorRows}
+          <div style="margin-top:12px;font-size:11px;color:#94a3b8;">
+            * 점수가 높을수록 소송·감사 위험이 높음. 각 항목 해결 시 점수 자동 감소.
+          </div>
+        </div>
+      </div>`;
+  }
+
+  /* ── Compliance Case 수정 모달 ──────────────────────── */
+  window.openComplianceModal = async function(patientId) {
+    let caseData = {};
+    try {
+      const res = await fetch(URLS.compliance_case(patientId), {headers: {'X-CSRFToken': CSRF}});
+      const d   = await res.json();
+      caseData  = d.case || {};
+    } catch(e) {}
+
+    const html = `
+      <div style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;
+                  display:flex;align-items:center;justify-content:center;"
+           id="compliance-modal-overlay" onclick="if(event.target===this)closeComplianceModal()">
+        <div style="background:#fff;border-radius:14px;width:540px;max-width:95vw;max-height:90vh;
+                    overflow-y:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+            <div style="font-size:16px;font-weight:700;color:#1e293b;">⚙ Compliance 설정 — ${patientId}</div>
+            <button onclick="closeComplianceModal()" style="border:none;background:none;font-size:18px;cursor:pointer;color:#64748b;">✕</button>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">Direct Access</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">치료 시작일</label>
+              <input id="cm-start" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.treatment_start_date || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">주(State)</label>
+              <input id="cm-state" class="pt-input" style="margin-top:4px;text-transform:uppercase;"
+                     placeholder="e.g. CA" maxlength="2" value="${caseData.state || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">DA Deadline (일수, 비워두면 State 기본값)</label>
+              <input id="cm-da-days" type="number" class="pt-input" style="margin-top:4px;"
+                     placeholder="예: 30" value="${caseData.da_deadline_days != null ? caseData.da_deadline_days : ''}">
+            </div>
+            <div></div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">의사 통보일</label>
+              <input id="cm-physician" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.physician_notified_at || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">Plan of Care 발송일</label>
+              <input id="cm-poc" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.plan_of_care_sent_at || ''}">
+            </div>
+          </div>
+
+          <div style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;">보험 청구</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">보험 종류</label>
+              <select id="cm-insurer" class="pt-input" style="margin-top:4px;">
+                <option value="">선택...</option>
+                <option value="medicare" ${caseData.insurer_type==='medicare'?'selected':''}>Medicare</option>
+                <option value="medicaid" ${caseData.insurer_type==='medicaid'?'selected':''}>Medicaid</option>
+                <option value="aetna"    ${caseData.insurer_type==='aetna'?'selected':''}>Aetna</option>
+                <option value="cigna"    ${caseData.insurer_type==='cigna'?'selected':''}>Cigna</option>
+                <option value="united"   ${caseData.insurer_type==='united'?'selected':''}>United Healthcare</option>
+                <option value="bcbs"     ${caseData.insurer_type==='bcbs'?'selected':''}>BCBS</option>
+                <option value="humana"   ${caseData.insurer_type==='humana'?'selected':''}>Humana</option>
+                <option value="tricare"  ${caseData.insurer_type==='tricare'?'selected':''}>TRICARE</option>
+                <option value="workers_comp" ${caseData.insurer_type==='workers_comp'?'selected':''}>Workers' Comp</option>
+                <option value="other_commercial" ${caseData.insurer_type==='other_commercial'?'selected':''}>Other Commercial</option>
+                <option value="self_pay" ${caseData.insurer_type==='self_pay'?'selected':''}>Self Pay</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">보험사 명칭 (선택)</label>
+              <input id="cm-insurer-name" class="pt-input" style="margin-top:4px;"
+                     placeholder="예: Aetna PPO" value="${caseData.insurer_name || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">청구 제출일</label>
+              <input id="cm-claim" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.claim_submitted_at || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">청구 거절일</label>
+              <input id="cm-rejected" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.claim_rejected_at || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">항소 제출일</label>
+              <input id="cm-appeal" type="date" class="pt-input" style="margin-top:4px;"
+                     value="${caseData.appeal_submitted_at || ''}">
+            </div>
+            <div>
+              <label style="font-size:12px;color:#374151;font-weight:600;">항소 기한 (일수, 비워두면 기본값)</label>
+              <input id="cm-appeal-days" type="number" class="pt-input" style="margin-top:4px;"
+                     placeholder="예: 60" value="${caseData.appeal_deadline_days != null ? caseData.appeal_deadline_days : ''}">
+            </div>
+          </div>
+
+          <div style="margin-bottom:20px;">
+            <label style="font-size:12px;color:#374151;font-weight:600;">메모</label>
+            <textarea id="cm-notes" class="pt-input" rows="2" style="margin-top:4px;resize:vertical;"
+                      placeholder="추가 메모...">${caseData.notes || ''}</textarea>
+          </div>
+
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="closeComplianceModal()" class="caction">취소</button>
+            <button onclick="saveComplianceCase('${patientId}')" class="caction primary">저장</button>
+          </div>
+        </div>
+      </div>`;
+
+    document.body.insertAdjacentHTML('beforeend', html);
+  };
+
+  window.closeComplianceModal = function() {
+    const el = document.getElementById('compliance-modal-overlay');
+    if (el) el.remove();
+  };
+
+  window.saveComplianceCase = async function(patientId) {
+    const payload = {
+      treatment_start_date:  document.getElementById('cm-start').value     || null,
+      state:                 document.getElementById('cm-state').value.toUpperCase() || null,
+      da_deadline_days:      document.getElementById('cm-da-days').value    || null,
+      physician_notified_at: document.getElementById('cm-physician').value  || null,
+      plan_of_care_sent_at:  document.getElementById('cm-poc').value        || null,
+      insurer_type:          document.getElementById('cm-insurer').value    || null,
+      insurer_name:          document.getElementById('cm-insurer-name').value || null,
+      claim_submitted_at:    document.getElementById('cm-claim').value      || null,
+      claim_rejected_at:     document.getElementById('cm-rejected').value   || null,
+      appeal_submitted_at:   document.getElementById('cm-appeal').value     || null,
+      appeal_deadline_days:  document.getElementById('cm-appeal-days').value || null,
+      notes:                 document.getElementById('cm-notes').value      || null,
+    };
+
+    try {
+      const res = await fetch(URLS.compliance_case(patientId), {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF},
+        body: JSON.stringify(payload),
+      });
+      const d = await res.json();
+      if (!res.ok) { alert('저장 실패: ' + (d.error || '')); return; }
+      closeComplianceModal();
+      loadComplianceData();
+    } catch(e) {
+      alert('저장 실패: ' + e.message);
+    }
+  };
+
+  function _setMenuActive(id) {
+    ['menu-alarms', 'menu-compliance'].forEach(mid => {
+      const el = document.getElementById(mid);
+      if (!el) return;
+      if (mid === id) {
+        el.style.background = 'rgba(99,102,241,.15)';
+        el.style.color = '#818cf8';
+      } else {
+        el.style.background = 'transparent';
+        el.style.color = '#94a3b8';
+      }
+    });
+  }
+})();
+</script>
+
+<!-- Django 컨텍스트 → JS 전달 -->
+<script>
+  const CSRF = 'demo_csrf_token';
+  const URLS = {
+    transcribe:  "/pt/api/transcribe/",
+    compliance:  "/pt/api/compliance/",
+    compliance_case: (pid) => `/pt/api/compliance/${pid}/`,
+  };
+  const APP_CONTEXT = {
+    isAuthenticated: true,
+  };
+  const FEATURES = {
+    ab_comparison:     false,
+    email_send:        false,
+    schedule_tracking: false,
+  };
+</script>
+
+
+<script>
+/* ── Demo data override: API 호출 없이 샘플 데이터 렌더링 ── */
+const _DEMO_PATIENTS = [
+  { patient_id: 'FC-260518-001', patient_name: 'Jordan Miller',
+    latest_alarm: 'RED',    session_count: 3, last_session: '2026-05-23' },
+  { patient_id: 'FC-260515-042', patient_name: 'Avery Chen',
+    latest_alarm: 'YELLOW', session_count: 2, last_session: '2026-05-20' },
+  { patient_id: 'FC-260510-011', patient_name: 'Morgan Davis',
+    latest_alarm: 'NONE',   session_count: 4, last_session: '2026-05-18' },
+];
+
+// Override API calls with demo stubs
+window._origLoadPatients    = window.loadPatients;
+window._origLoadAlarmBadge  = window.loadAlarmBadge;
+
+window.loadPatients = function() {
+  allPatients = _DEMO_PATIENTS;
+  renderPatientList(allPatients);
+};
+
+window.loadAlarmBadge = function() {
+  const badge = document.getElementById('alarm-badge');
+  if (badge) { badge.textContent = '1'; badge.style.display = 'inline-block'; }
+};
+
+// Set today's date
+document.addEventListener('DOMContentLoaded', () => {
+  const dateEl = document.getElementById('inp-date');
+  if (dateEl) dateEl.value = '2026-06-09';
+  loadPatients();
+  loadAlarmBadge();
+  if (typeof _renderChipSection === 'function') {
+    _renderChipSection('S');
+    _renderChipSection('O');
+  }
+});
+</script>
+<script>
+let allPatients = [];
+let activePatientId = null;
+let currentPatientId = null;
+
+// ── 리퍼럴 추적 Phase 1 ──────────────────────────────
+function buildReferralTracker(s) {
+  if (!s.alert_id) return '';
+  const sent      = !!s.referral_sent_at;
+  const followup  = s.referral_followup_checked;
+
+  if (followup) {
+    return `<span style="font-size:11px;color:#22c55e;font-weight:600;align-self:center;">✓ Follow-up Confirmed</span>`;
+  }
+  if (sent) {
+    return `
+      <span style="font-size:11px;color:#60a5fa;align-self:center;">
+        Sent ${s.referral_sent_at}${s.referral_sent_to_email ? ' → ' + s.referral_sent_to_email : ''}
+      </span>
+      <button class="pt-letter-btn" onclick="markFollowup(${s.alert_id}, this)"
+        style="background:#166534;border-color:#166534;">✓ Follow-up Done</button>`;
+  }
+  return `
+    <button class="pt-letter-btn" onclick="openSendModal(${s.alert_id}, this)"
+      style="background:#2563eb;border-color:#2563eb;color:#fff;padding:6px 16px;font-size:12px;">📧 Send to Doctor</button>`;
+}
+
+function printReferralLetter(alertId) {
+  if (!alertId) return;
+  window.open(`/pt/api/alerts/${alertId}/print/`, '_blank');
+}
+
+function openSendModal(alertId, btn) {
+  const email = prompt('Physician email address (leave blank to mark as sent without email):');
+  if (email === null) return;  // cancelled
+  sendReferral(alertId, email.trim(), btn);
+}
+
+async function sendReferral(alertId, toEmail, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const resp = await fetch(`/pt/api/alerts/${alertId}/send/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ to_email: toEmail }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || resp.statusText);
+
+    const msg = data.email_sent
+      ? (data.delivered ? `✓ Email delivered to ${toEmail}` : `⚠ Send failed — marked as sent manually`)
+      : '✓ Marked as sent (no email)';
+    alert(msg);
+    loadPatientSessions(activePatientId);  // 화면 갱신
+  } catch (e) {
+    alert('Error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '📧 Send to Doctor'; }
+  }
+}
+
+async function markFollowup(alertId, btn) {
+  if (!confirm('Confirm that the patient followed up with the physician?')) return;
+  if (btn) { btn.disabled = true; btn.textContent = '…'; }
+  try {
+    const resp = await fetch(`/pt/api/alerts/${alertId}/followup/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error || resp.statusText);
+    loadPatientSessions(activePatientId);
+  } catch (e) {
+    alert('Error: ' + e.message);
+    if (btn) { btn.disabled = false; btn.textContent = '✓ Follow-up Done'; }
+  }
+}
+
+// ── 오디오 녹음 + Scribe 전송 ─────────────────────────
+let _mediaRecorder = null;
+let _audioChunks   = [];
+
+async function toggleRecording() {
+  const btn = document.getElementById('mic-btn');
+  const recStatus  = document.getElementById('rec-status');
+  const scribeStatus = document.getElementById('scribe-status');
+
+  if (_mediaRecorder && _mediaRecorder.state === 'recording') {
+    // ── 녹음 중지 ──
+    _mediaRecorder.stop();
+    btn.textContent = '🎙 Record';
+    btn.style.background = '#2d3748';
+    recStatus.style.display = 'none';
+    return;
+  }
+
+  // ── 녹음 시작 ──
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    alert('마이크 권한이 필요합니다: ' + e.message);
+    return;
+  }
+
+  _audioChunks = [];
+  _mediaRecorder = new MediaRecorder(stream);
+
+  _mediaRecorder.ondataavailable = e => { if (e.data.size > 0) _audioChunks.push(e.data); };
+
+  _mediaRecorder.onstop = async () => {
+    stream.getTracks().forEach(t => t.stop());
+    const blob = new Blob(_audioChunks, { type: 'audio/webm' });
+    scribeStatus.style.display = 'block';
+    scribeStatus.textContent = '⏳ Transcribing...';
+
+    const form = new FormData();
+    form.append('audio', blob, 'session.webm');
+
+    try {
+      const resp = await fetch(URLS.transcribe, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+        body: form,
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || resp.statusText);
+
+      // S / O 탭에 자동 채우기 (기존 텍스트가 있으면 뒤에 추가)
+      const sEl = document.getElementById('inp-S');
+      const oEl = document.getElementById('inp-O');
+      if (data.S) sEl.value = (sEl.value ? sEl.value + '\n' : '') + data.S;
+      if (data.O) oEl.value = (oEl.value ? oEl.value + '\n' : '') + data.O;
+
+      scribeStatus.textContent = `✓ Transcribed (${data.provider}) — S/O panes filled`;
+      setTimeout(() => { scribeStatus.style.display = 'none'; }, 4000);
+    } catch (e) {
+      scribeStatus.textContent = '✗ ' + e.message;
+      setTimeout(() => { scribeStatus.style.display = 'none'; }, 6000);
+    }
+  };
+
+  _mediaRecorder.start();
+  btn.textContent = '⏹ Stop';
+  btn.style.background = '#742a2a';
+  recStatus.style.display = 'inline';
+}
+
+// ── S/O/A/P 구조화 입력 + Red Flag 칩 ─────────────────
+let _confirmedChips = new Set();
+let _activeSoapTab  = 'S';
+
+const _soapChipDefs = {
+  S: [
+    { id:'RF_011', label:'Night Pain',         alarm:'RED'    },
+    { id:'RF_009', label:'Cancer Hx',          alarm:'RED'    },
+    { id:'RF_010', label:'Weight Loss',        alarm:'RED'    },
+    { id:'RF_013', label:'Fever',              alarm:'RED'    },
+    { id:'RF_002', label:'Bladder Dysfx',      alarm:'RED'    },
+    { id:'RF_003', label:'Bowel Dysfx',        alarm:'RED'    },
+    { id:'RF_001', label:'Saddle Anesthesia',  alarm:'RED'    },
+    { id:'RF_018', label:'Sudden Onset',       alarm:'RED'    },
+    { id:'RF_022', label:'Night Sweats',       alarm:'YELLOW' },
+    { id:'RF_019', label:'Morning Stiffness',  alarm:'YELLOW' },
+    { id:'RF_020', label:'Better w/ Exercise', alarm:'YELLOW' },
+    { id:'RF_012', label:'No Improvement 6wk', alarm:'YELLOW' },
+    { id:'RF_024', label:'Fatigue',            alarm:'YELLOW' },
+    { id:'RF_025', label:'Age >50 1st LBP',    alarm:'YELLOW' },
+  ],
+  O: [
+    { id:'RF_004', label:'Bilateral LE Sx',    alarm:'RED'    },
+    { id:'RF_005', label:'Progressive Neuro',  alarm:'RED'    },
+    { id:'RF_006', label:'Major Trauma',       alarm:'RED'    },
+    { id:'RF_008', label:'Point Tender Spine', alarm:'RED'    },
+    { id:'RF_016', label:'Pulsating Mass',     alarm:'RED'    },
+    { id:'RF_017', label:'Pain @ Rest',        alarm:'RED'    },
+    { id:'RF_014', label:'Recent Infection',   alarm:'RED'    },
+    { id:'RF_021', label:'Alt. Buttock Pain',  alarm:'YELLOW' },
+    { id:'RF_007', label:'Osteoporosis Hx',    alarm:'YELLOW' },
+    { id:'RF_015', label:'Immunocompromised',  alarm:'YELLOW' },
+    { id:'RF_023', label:'Steroid Use',        alarm:'YELLOW' },
+  ],
+};
+
+function switchSoapTab(tab) {
+  _activeSoapTab = tab;
+  ['S','O','A','P'].forEach(t => {
+    document.getElementById(`stab-${t}`).classList.toggle('active', t === tab);
+    document.getElementById(`soap-pane-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+function toggleChip(rfId, alarmLevel) {
+  if (_confirmedChips.has(rfId)) {
+    _confirmedChips.delete(rfId);
+  } else {
+    _confirmedChips.add(rfId);
+  }
+  // re-render only the section that owns this chip
+  ['S','O'].forEach(sec => {
+    if (_soapChipDefs[sec].some(c => c.id === rfId)) _renderChipSection(sec);
+  });
+}
+
+function _renderChipSection(sec) {
+  const el = document.getElementById(`chips-${sec}`);
+  if (!el) return;
+  el.innerHTML = _soapChipDefs[sec].map(c => {
+    const on  = _confirmedChips.has(c.id);
+    const cls = on ? `rf-chip confirmed-${c.alarm}` : 'rf-chip';
+    return `<button id="chip-${c.id}" class="${cls}"
+              onclick="toggleChip('${c.id}','${c.alarm}')"
+            >${on ? '✓ ' : ''}${c.label}</button>`;
+  }).join('');
+}
+
+// ── 초기화 ──────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  if (APP_CONTEXT.isAuthenticated) {
+  document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+  loadPatients();
+  loadAlarmBadge();
+  _renderChipSection('S');
+  _renderChipSection('O');
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeSlidePanel(); closeDocModal(); }
+});
+
+document.addEventListener('click', e => {
+  if (e.target === document.getElementById('doc-modal-overlay')) closeDocModal();
+});
+
+// ── 환자 목록 로드 ───────────────────────────────────
+async function loadAlarmBadge() {
+  try {
+    const r = await fetch('/pt/api/alarms/');
+    const d = await r.json();
+    const redCount = d.counts.red || 0;
+    const badge = document.getElementById('alarm-badge');
+    if (redCount > 0) {
+      badge.textContent = redCount;
+      badge.style.display = 'inline-block';
+    }
+  } catch(e) {}
+}
+
+async function loadPatients() {
+  try {
+    const r = await fetch('/pt/api/patients/', {headers: {'X-Requested-With': 'XMLHttpRequest'}});
+    const d = await r.json();
+    allPatients = d.patients || [];
+    renderPatientList(allPatients);
+  } catch(e) {
+    document.getElementById('patient-list').innerHTML =
+      '<div style="padding:12px;font-size:12px;color:#94a3b8;">불러오기 실패</div>';
+  }
+}
+
+function renderPatientList(patients) {
+  const el = document.getElementById('patient-list');
+  const countEl = document.getElementById('patient-count');
+  if (countEl) countEl.textContent = patients.length || '';
+
+  if (!patients.length) {
+    el.innerHTML = '<div style="padding:12px;font-size:12px;color:#64748b;">환자 없음</div>';
+    return;
+  }
+  el.innerHTML = patients.map(p => `
+    <div class="pt-patient-item${p.patient_id===activePatientId?' active':''}"
+         onclick="selectPatient('${esc(p.patient_id)}','${esc(p.patient_name||p.patient_id)}')">
+      <span class="pt-alarm-dot ${p.latest_alarm}"></span>
+      <div class="pt-patient-info">
+        <div class="pt-patient-name">${esc(p.patient_name||p.patient_id)}</div>
+        <div class="pt-patient-meta">
+          <span style="color:#6366f1;font-weight:600;">${esc(p.patient_id)}</span>
+          · ${p.session_count}세션 · ${p.last_session}
+        </div>
+      </div>
+      <span class="pt-patient-alarm-badge ${p.latest_alarm}">${p.latest_alarm === 'NONE' ? '' : p.latest_alarm}</span>
+    </div>
+  `).join('');
+}
+
+function filterPatients(q) {
+  const filtered = q
+    ? allPatients.filter(p => (p.patient_name+p.patient_id).toLowerCase().includes(q.toLowerCase()))
+    : allPatients;
+  renderPatientList(filtered);
+}
+
+// ── 환자 선택 → 히스토리 ─────────────────────────────
+function _showView(name) {
+  ['view-new', 'view-history', 'view-alarms'].forEach(id => {
+    document.getElementById(id).style.display = id === name ? 'block' : 'none';
+  });
+  const btn = document.getElementById('menu-alarms');
+  btn.style.background = name === 'view-alarms' ? 'rgba(99,102,241,.2)' : 'transparent';
+  btn.style.color      = name === 'view-alarms' ? '#a5b4fc' : '#94a3b8';
+}
+
+async function selectPatient(pid, pname) {
+  activePatientId = pid;
+  currentPatientId = pid;
+  renderPatientList(allPatients);
+  _showView('view-history');
+  document.getElementById('history-title').textContent = pname || pid;
+  document.getElementById('session-list-items').innerHTML =
+    '<div style="padding:24px;text-align:center;font-size:13px;color:#9ca3af;">불러오는 중...</div>';
+  document.getElementById('detail-panel').innerHTML =
+    '<div class="pt-detail-empty"><div style="font-size:36px;margin-bottom:12px;">⏳</div><div style="font-size:14px;">불러오는 중...</div></div>';
+
+  try {
+    const r = await fetch(`/pt/api/patients/${encodeURIComponent(pid)}/sessions/`);
+    const d = await r.json();
+    renderHistory(d);
+  } catch(e) {
+    document.getElementById('session-list-items').innerHTML =
+      '<div style="color:#dc2626;padding:16px;font-size:13px;">불러오기 실패</div>';
+  }
+}
+
+let _sessions = [];
+
+function renderHistory(d) {
+  _sessions = d.sessions || [];
+  _sessions.forEach(s => { if (s.clinical_context) _sessionCtxCache[s.id] = s.clinical_context; });
+  _loadSessionOverrides(_sessions);   // 저장된 섹션 오버라이드 복원
+  const listEl = document.getElementById('session-list-items');
+
+  if (!_sessions.length) {
+    listEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:13px;color:#9ca3af;">세션 없음</div>';
+    document.getElementById('detail-panel').innerHTML =
+      '<div class="pt-detail-empty"><div style="font-size:36px;margin-bottom:12px;">📋</div><div style="font-size:14px;">세션이 없습니다</div></div>';
+    return;
+  }
+
+  listEl.innerHTML = _sessions.map((s, i) => `
+    <div class="pt-session-row${i===0?' active':''}" id="srow-${s.id}" onclick="showSessionDetail(${i})">
+      <div class="pt-session-row-info">
+        <div class="pt-session-row-date">${s.session_date}</div>
+        <div class="pt-session-row-meta">Risk ${s.critical_score}%${s.triggered_condition ? ' · '+s.triggered_condition : ''}</div>
+      </div>
+      <span class="pt-session-badge badge-${s.alarm_level}">${alarmLabel(s.alarm_level)}</span>
+    </div>
+  `).join('');
+
+  // 탭 구조 초기화
+  const panel = document.getElementById('detail-panel');
+  panel.innerHTML = `
+    <div class="detail-tab-bar">
+      <button class="detail-tab-btn active" id="dtab-session" onclick="switchDetailTab('session')">📋 Session Detail</button>
+      <button class="detail-tab-btn" id="dtab-docs" onclick="switchDetailTab('docs')">📄 Documents</button>
+    </div>
+    <div id="detail-session-content" style="display:flex;flex-direction:column;gap:16px;"></div>
+    <div id="detail-docs-content" style="display:none;"></div>
+  `;
+
+  showSessionDetail(0);
+  renderDocumentsTab(d.patient_id, d.patient_name);
+}
+
+function showSessionDetail(idx) {
+  const s = _sessions[idx];
+  if (!s) return;
+
+  // 좌측 리스트 active 표시
+  _sessions.forEach((_, i) => {
+    const row = document.getElementById(`srow-${_sessions[i].id}`);
+    if (row) row.classList.toggle('active', i === idx);
+  });
+
+  const panel = document.getElementById('detail-session-content') || document.getElementById('detail-panel');
+  const alarmColors = {RED:'#dc2626', YELLOW:'#d97706', NONE:'#16a34a'};
+  const alarmIcons  = {RED:'🚨', YELLOW:'⚠️', NONE:'✅'};
+  let html = '';
+
+  // ── SOAP 카드 ──
+  html += `
+    <div class="pt-soap-card">
+      <div class="pt-soap-card-header">
+        <span>${alarmIcons[s.alarm_level]}</span>
+        <span>${s.session_date}</span>
+        <span class="pt-session-badge badge-${s.alarm_level}" style="margin-left:4px;">${alarmLabel(s.alarm_level)}</span>
+        ${s.triggered_condition ? `<span style="font-size:12px;color:#6b7280;margin-left:4px;">${esc(s.triggered_condition)}</span>` : ''}
+        <span style="margin-left:auto;font-size:12px;color:#9ca3af;">Risk ${s.critical_score}%</span>
+        <button id="soap-compare-btn" onclick="toggleSoapCompare()"
+          style="margin-left:8px;padding:3px 9px;border:1px solid #c7d2fe;border-radius:5px;
+                 background:transparent;color:#6366f1;font-size:11px;cursor:pointer;
+                 transition:background .15s;"
+          onmouseover="this.style.background='#eef2ff'"
+          onmouseout="this.style.background='transparent'"
+          title="원본 / 섹션 제목 비교">⇄ 비교</button>
+        <button id="soap-copy-btn" onclick="copySessionSoap(this, ${s.id})"
+          style="margin-left:4px;padding:3px 9px;border:1px solid #d1d5db;border-radius:5px;
+                 background:transparent;color:#6b7280;font-size:11px;cursor:pointer;
+                 transition:background .15s;"
+          onmouseover="this.style.background='#f9fafb'"
+          onmouseout="this.style.background='transparent'"
+          title="SOAP 복사">⎘ 복사</button>
+        <button onclick="deleteSession(${s.id}, '${currentPatientId}')"
+          style="margin-left:4px;padding:3px 8px;border:1px solid #fca5a5;border-radius:5px;
+                 background:transparent;color:#ef4444;font-size:11px;cursor:pointer;
+                 transition:background .15s;"
+          onmouseover="this.style.background='#fef2f2'"
+          onmouseout="this.style.background='transparent'"
+          title="이 세션 삭제">🗑 삭제</button>
+        <button onclick="openSoapEditor(${s.id})"
+          style="margin-left:4px;padding:3px 8px;border:1px solid #c7d2fe;border-radius:5px;
+                 background:transparent;color:#6366f1;font-size:11px;cursor:pointer;
+                 transition:background .15s;"
+          onmouseover="this.style.background='#eef2ff'"
+          onmouseout="this.style.background='transparent'"
+          title="SOAP 수정 저장">✏ 수정</button>
+      </div>
+      <div id="soap-body-single" class="pt-soap-body"><div class="soap-display">${formatSoap(s.soap_text, s.id, s.clinical_context)}</div></div>
+      <div id="soap-body-compare" class="soap-compare" style="display:none;">
+        <div class="soap-compare-col">
+          <div class="soap-compare-label">원본 (Raw)</div>
+          <div class="soap-display">${esc(s.soap_text)}</div>
+        </div>
+        <div class="soap-compare-col">
+          <div class="soap-compare-label formatted">섹션 제목 추가 (Formatted)</div>
+          <div class="soap-display">${formatSoap(s.soap_text, s.id, s.clinical_context)}</div>
+        </div>
+      </div>
+      <div id="soap-editor-${s.id}" style="display:none;padding:12px 14px;border-top:1px solid #f1f5f9;">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:6px;">✏ SOAP 수정 — 원본과 수정본이 paired data로 저장됩니다</div>
+        <textarea id="soap-edit-ta-${s.id}"
+          style="width:100%;height:180px;padding:10px;border:1.5px solid #a5b4fc;border-radius:8px;
+                 font-size:12px;font-family:'Courier New',monospace;resize:vertical;box-sizing:border-box;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;">
+          <button onclick="closeSoapEditor(${s.id})"
+            style="padding:5px 14px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;
+                   background:#fff;cursor:pointer;">취소</button>
+          <button onclick="saveSoapEdit(${s.id})"
+            style="padding:5px 14px;background:#6366f1;color:#fff;border:none;border-radius:6px;
+                   font-size:12px;font-weight:600;cursor:pointer;">저장</button>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Detected Indicators 카드 (알람 있을 때만) ──
+  if (s.alarm_level !== 'NONE' && s.matched_indicators && s.matched_indicators.length) {
+    html += `
+      <div class="pt-indicators-card">
+        <div class="pt-card-header" style="padding:13px 18px;border-bottom:1px solid #f1f5f9;font-size:13px;font-weight:700;color:#374151;">
+          ⚑ Detected Red Flag Indicators
+        </div>
+        <div style="padding:14px 18px;display:flex;flex-wrap:wrap;gap:8px;">
+          ${s.matched_indicators.map(m => `
+            <span style="padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;
+              background:${s.alarm_level==='RED'?'#fef2f2':'#fffbeb'};
+              color:${s.alarm_level==='RED'?'#dc2626':'#d97706'};
+              border:1px solid ${s.alarm_level==='RED'?'#fca5a5':'#fcd34d'};">⚑ ${esc(m)}</span>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  panel.innerHTML = html;
+}
+
+// ── 슬라이드 패널 ────────────────────────────────────────────
+function openSlidePanel(s) {
+  const alarmColor = {RED:'#dc2626', YELLOW:'#d97706', NONE:'#16a34a'};
+  const alarmBg    = {RED:'#fef2f2', YELLOW:'#fffbeb', NONE:'#f0fdf4'};
+  const alarmIcon  = {RED:'🚨', YELLOW:'⚠️', NONE:'✅'};
+
+  // 헤더
+  document.getElementById('slide-panel-title').textContent =
+    `${s.patient_name || s.patient_id}  ·  ${s.session_date}`;
+  const badge = document.getElementById('slide-panel-badge');
+  badge.textContent = `${alarmIcon[s.alarm_level]} ${s.alarm_level}`;
+  badge.style.cssText += `;background:${alarmBg[s.alarm_level]};color:${alarmColor[s.alarm_level]};border:1px solid ${alarmColor[s.alarm_level]}40;`;
+
+  let html = '';
+
+  // 스코어 바
+  html += `
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;
+                background:${alarmBg[s.alarm_level]};border-radius:10px;border:1px solid ${alarmColor[s.alarm_level]}30;">
+      <div style="flex:1;">
+        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">Risk Score</div>
+        <div style="height:8px;background:#e5e7eb;border-radius:4px;overflow:hidden;">
+          <div style="width:${s.critical_score}%;height:100%;background:${alarmColor[s.alarm_level]};border-radius:4px;"></div>
+        </div>
+      </div>
+      <div style="font-size:22px;font-weight:800;color:${alarmColor[s.alarm_level]};min-width:48px;text-align:right;">${s.critical_score}%</div>
+    </div>`;
+
+  // 감지 지표
+  if (s.matched_indicators && s.matched_indicators.length) {
+    html += `
+      <div>
+        <div style="font-size:12px;font-weight:700;color:#374151;text-transform:uppercase;
+                    letter-spacing:.5px;margin-bottom:8px;">⚑ Detected Indicators</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${s.matched_indicators.map(m => `
+            <span style="font-size:12px;padding:4px 10px;border-radius:99px;font-weight:600;
+              background:${alarmBg[s.alarm_level]};color:${alarmColor[s.alarm_level]};
+              border:1px solid ${alarmColor[s.alarm_level]}50;">${esc(m)}</span>
+          `).join('')}
+        </div>
+      </div>`;
+  }
+
+  // SOAP + Letter 2컬럼
+  const borderColor = s.alarm_level === 'RED' ? '#dc2626' : '#d97706';
+  html += `<div class="slide-cols" id="slide-cols">`;
+
+  // 좌: SOAP Note
+  html += `
+    <div class="slide-col" id="slide-left-col" style="flex:1;">
+      <div class="slide-col-title">🩺 SOAP Note</div>
+      <div class="soap-display" style="flex:1;min-height:0;overflow-y:auto;">${s.soap_text ? formatSoap(s.soap_text, s.id, s.clinical_context) : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
+    </div>`;
+
+  // 드래그 핸들
+  html += `<div class="slide-divider" id="slide-divider"></div>`;
+
+  // 우: Referral Letter
+  html += `
+    <div class="slide-col" style="flex:1;">
+      <div class="slide-col-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>📄 Referral Letter</span>
+        <div style="display:flex;gap:6px;">
+          <button onclick="slidePrintLetter()" style="padding:3px 9px;border:1px solid #d1d5db;border-radius:6px;
+                  background:#fff;font-size:11px;cursor:pointer;font-weight:400;">🖨️ Print</button>
+          <button id="slide-copy-btn" onclick="slideCopyLetter(this)"
+                  style="padding:3px 9px;border:1px solid #6366f1;border-radius:6px;
+                  background:#6366f1;color:#fff;font-size:11px;cursor:pointer;">📋 Copy</button>
+        </div>
+      </div>
+      <div id="slide-letter-text" style="background:#fff;border:2px solid ${borderColor};
+           color:#1e293b;font-family:'Courier New',monospace;font-size:11.5px;border-radius:8px;
+           padding:14px;flex:1;min-height:0;overflow-y:auto;white-space:pre-wrap;
+           word-break:break-word;line-height:1.7;">${s.referral_letter ? formatLetter(s.referral_letter) : '<span style="color:#9ca3af;">Letter 없음</span>'}</div>
+    </div>`;
+
+  html += `</div>`;
+
+  document.getElementById('slide-panel-body').innerHTML = html;
+  setupSlideDivider();
+  document.getElementById('slide-panel').classList.add('open');
+  document.getElementById('slide-overlay').classList.add('open');
+}
+
+// ── Alarm 세션 상세 모달 (doc-modal 재사용) ───────────────────────
+let _currentAlertId  = null;
+let _pendingDecision = null;
+
+function openAlarmModal(s) {
+  _currentAlertId = s.alert_id || null;
+  const color  = {RED:'#dc2626', YELLOW:'#d97706'}[s.alarm_level] || '#16a34a';
+  const bg     = {RED:'#fef2f2', YELLOW:'#fffbeb'}[s.alarm_level] || '#f0fdf4';
+  const icon   = {RED:'🚨', YELLOW:'⚠️'}[s.alarm_level] || '✅';
+  const label  = {RED:'RED ALERT', YELLOW:'YELLOW FLAG'}[s.alarm_level] || 'CLEAR';
+
+  // 헤더
+  document.getElementById('doc-modal-title').textContent =
+    `${s.patient_name || s.patient_id}  ·  ${s.session_date}`;
+
+  // Copy / Print → referral letter 대상
+  _docModalCopyText = s.referral_letter || '';
+  const copyBtn = document.getElementById('doc-modal-copy-btn');
+  if (s.referral_letter) {
+    copyBtn.textContent = '📋 Copy Letter';
+    copyBtn.style.display = '';
+  } else {
+    copyBtn.style.display = 'none';
+  }
+
+  // 바디 — text-mode 해제 (rich HTML 모드)
+  const body = document.getElementById('doc-modal-body');
+  body.classList.remove('text-mode');
+
+  let html = '';
+
+  // ── Alarm 배너 ──
+  html += `
+    <div class="alarm-section" style="display:flex;align-items:center;gap:14px;
+              padding:14px 18px;border-radius:10px;
+              background:${bg};border:2px solid ${color};">
+      <span style="font-size:32px;line-height:1;">${icon}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:16px;font-weight:900;color:${color};">${label}</div>
+        ${s.triggered_condition
+          ? `<div style="font-size:12px;color:#6b7280;margin-top:2px;">
+               ${esc(s.triggered_condition.replace(/_/g,' '))}
+             </div>` : ''}
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:5px;">Risk Score</div>
+        <div style="width:100px;height:7px;background:#e5e7eb;border-radius:4px;
+                    overflow:hidden;margin-bottom:4px;">
+          <div style="width:${s.critical_score}%;height:100%;
+                      background:${color};border-radius:4px;"></div>
+        </div>
+        <div style="font-size:20px;font-weight:800;color:${color};">${s.critical_score}%</div>
+      </div>
+    </div>`;
+
+  // ── 임상 결정 패널 ──
+  if (_currentAlertId) {
+    html += `
+      <div class="alarm-section" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;">
+        <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:10px;">📋 임상 결정</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;" id="alarm-decision-btns">
+          <button onclick="submitAlarmDecision('ADOPTED')"
+            style="padding:6px 14px;background:#dcfce7;color:#16a34a;border:1.5px solid #86efac;
+                   border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">✅ 채택</button>
+          <button onclick="submitAlarmDecision('MODIFIED')"
+            style="padding:6px 14px;background:#eff6ff;color:#2563eb;border:1.5px solid #93c5fd;
+                   border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">✏ 수정 후 채택</button>
+          <button onclick="submitAlarmDecision('REJECTED')"
+            style="padding:6px 14px;background:#fff1f2;color:#e11d48;border:1.5px solid #fda4af;
+                   border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">❌ 기각</button>
+        </div>
+        <div id="alarm-decision-reason" style="display:none;margin-top:10px;">
+          <textarea id="alarm-decision-text" placeholder="사유 입력 (선택사항)"
+            style="width:100%;height:60px;padding:8px;border:1px solid #d1d5db;border-radius:6px;
+                   font-size:12px;resize:none;box-sizing:border-box;"></textarea>
+          <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+            <button onclick="confirmAlarmDecision()"
+              style="padding:5px 14px;background:#6366f1;color:#fff;border:none;border-radius:6px;
+                     font-size:12px;font-weight:600;cursor:pointer;">확인</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // ── Detected Indicators ──
+  if (s.matched_indicators && s.matched_indicators.length) {
+    html += `
+      <div class="alarm-section">
+        <div class="alarm-section-label">⚑ Detected Red Flag Indicators</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${s.matched_indicators.map(m => `
+            <span style="padding:5px 12px;border-radius:99px;font-size:12px;font-weight:600;
+                         background:${bg};color:${color};border:1px solid ${color}50;">
+              ⚑ ${esc(m)}
+            </span>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  // ── SOAP Note ──
+  html += `
+    <div class="alarm-section">
+      <div class="alarm-section-label">🩺 SOAP Note</div>
+      <div class="soap-display">${s.soap_text ? formatSoap(s.soap_text, s.id, s.clinical_context)
+        : '<span style="color:#9ca3af;">내용 없음</span>'}</div>
+    </div>`;
+
+  // ── Referral Letter ──
+  if (s.alarm_level === 'RED') {
+    html += `<div class="alarm-section" id="referral-section-${s.id}">
+      <div class="alarm-section-label">📄 Physician Referral Letter</div>`;
+    if (s.referral_letter) {
+      html += `<div class="alarm-letter-box" style="border:2px solid ${color};">
+          ${formatLetter(s.referral_letter)}
+        </div>`;
+    } else {
+      html += `<button class="btn-generate-referral" onclick="generateReferralFromWeb(${s.alert_id}, ${s.id})"
+        style="margin-top:6px;padding:8px 16px;background:#fff;color:#dc2626;
+               border:1.5px solid #dc2626;border-radius:6px;font-size:13px;
+               font-weight:600;cursor:pointer;">
+        📄 Generate Referral Letter
+      </button>
+      <div id="referral-letter-${s.id}" style="margin-top:8px;"></div>`;
+    }
+    html += `</div>`;
+  }
+
+  body.innerHTML = html;
+  document.getElementById('doc-modal-overlay').classList.add('open');
+}
+
+async function generateReferralFromWeb(alertId, sessionId) {
+  const btn = document.querySelector(`#referral-section-${sessionId} button`);
+  if (btn) { btn.textContent = 'Generating…'; btn.disabled = true; }
+  try {
+    const res = await fetch(`/pt/api/alerts/${alertId}/generate/`, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+    });
+    const data = await res.json();
+    if (data.template) {
+      // _sessions 캐시 업데이트
+      const s = _sessions.find(s => s.id === sessionId);
+      if (s) s.referral_letter = data.referral_letter;
+
+      if (data.ai && FEATURES.ab_comparison) {
+        // A/B 비교 모달
+        openDocModalAB(data.template, data.ai, '📄 Physician Referral Letter', 'referral', activePatientId);
+      } else {
+        // AI 실패 fallback — 기존 박스 렌더링
+        const box = document.getElementById(`referral-letter-${sessionId}`);
+        if (box) {
+          if (btn) btn.style.display = 'none';
+          box.innerHTML = `<div class="alarm-letter-box" style="border:2px solid #dc2626;">${formatLetter(data.referral_letter)}</div>`;
+        }
+      }
+    }
+  } catch(e) {
+    if (btn) { btn.textContent = '📄 Generate Referral Letter'; btn.disabled = false; }
+  }
+}
+
+function closeSlidePanel() {
+  document.getElementById('slide-panel').classList.remove('open');
+  document.getElementById('slide-overlay').classList.remove('open');
+}
+
+function slideCopyLetter(btn) {
+  const text = document.getElementById('slide-letter-text')?.innerText || '';
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '📋 Copy'; }, 2000);
+  });
+}
+
+function slidePrintLetter() {
+  const text = document.getElementById('slide-letter-text')?.innerText || '';
+  const w = window.open('', '_blank');
+  w.document.write(`<pre style="font-family:monospace;font-size:13px;padding:40px;">${text}</pre>`);
+  w.document.close(); w.print();
+}
+
+// ── 탭 전환 ──────────────────────────────────────────────────────
+function switchDetailTab(tab) {
+  const s = document.getElementById('detail-session-content');
+  const d = document.getElementById('detail-docs-content');
+  const ts = document.getElementById('dtab-session');
+  const td = document.getElementById('dtab-docs');
+  if (!s || !d) return;
+  s.style.display  = tab === 'session' ? 'flex' : 'none';
+  d.style.display  = tab === 'docs'    ? 'block' : 'none';
+  ts.classList.toggle('active', tab === 'session');
+  td.classList.toggle('active', tab === 'docs');
+}
+
+// ── 문서 탭 렌더 ─────────────────────────────────────────────────
+function renderDocumentsTab(patientId, patientName) {
+  const el = document.getElementById('detail-docs-content');
+  if (!el) return;
+
+  const redCount    = _sessions.filter(s => s.alarm_level === 'RED').length;
+  const yellowCount = _sessions.filter(s => s.alarm_level === 'YELLOW').length;
+  const scores      = _sessions.map(s => s.critical_score);
+  const trend       = _computeClientTrend(scores);
+  // _sessions은 최신순이므로 oldest = 마지막, newest = 첫 번째
+  const oldest      = _sessions[_sessions.length - 1];
+  const newest      = _sessions[0];
+  const alertParts  = [];
+  if (redCount)    alertParts.push(`${redCount} RED`);
+  if (yellowCount) alertParts.push(`${yellowCount} YELLOW`);
+
+  // ── 간략 컨텍스트 바 ──
+  const ctxHtml = `
+    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;
+                padding:10px 16px;margin-bottom:16px;
+                display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;">
+      <span style="font-size:12px;color:#374151;">
+        <strong>${_sessions.length}</strong> session${_sessions.length>1?'s':''}
+      </span>
+      <span style="color:#d1d5db;font-size:12px;">·</span>
+      <span style="font-size:12px;color:#6b7280;">${oldest?.session_date} – ${newest?.session_date}</span>
+      <span style="color:#d1d5db;font-size:12px;">·</span>
+      <span style="font-size:12px;font-weight:600;
+                   color:${trend.includes('↑')?'#dc2626':trend.includes('↓')?'#16a34a':'#374151'};">
+        ${esc(trend)}
+      </span>
+      ${alertParts.length ? `
+        <span style="color:#d1d5db;font-size:12px;">·</span>
+        <span style="font-size:12px;color:#6b7280;">${alertParts.join(' · ')}</span>` : ''}
+    </div>`;
+
+  // ── Physician Referral Letter (최신 것) ──
+  const letterSessions = _sessions.filter(s => s.referral_letter);
+  const alarmSessions  = _sessions.filter(s => s.alarm_level !== 'NONE' && s.alert_id);
+  let referralHtml = '';
+  if (letterSessions.length > 0) {
+    const latest     = letterSessions[0];
+    const latestIdx  = _sessions.indexOf(latest);
+    const isRed      = latest.alarm_level === 'RED';
+    const borderClr  = isRed ? '#dc2626' : '#d97706';
+    const bgClr      = isRed ? '#fef2f2' : '#fffbeb';
+    referralHtml = `
+      <div style="border:2px solid ${borderClr};border-radius:10px;
+                  overflow:hidden;margin-bottom:16px;">
+        <div style="background:${bgClr};padding:12px 16px;
+                    display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <span style="font-size:20px;flex-shrink:0;">📄</span>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:${borderClr};">
+                Physician Referral Letter
+              </div>
+              <div style="font-size:11px;color:#6b7280;">
+                Latest: ${latest.session_date}${letterSessions.length > 1
+                  ? ' &nbsp;·&nbsp; ' + letterSessions.length + ' letters total' : ''}
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap;">
+            <button class="pt-letter-btn"
+                    onclick="printReferralLetter(${latest.alert_id})">🖨️ Print / PDF</button>
+            <button class="pt-letter-btn pt-letter-btn-primary"
+                    style="${!isRed?'background:#d97706;border-color:#d97706;':''}"
+                    onclick="viewReferralInModal(${latestIdx})">📋 View & Copy</button>
+            ${latest.alert_id ? buildReferralTracker(latest) : ''}
+          </div>
+        </div>
+      </div>`;
+  } else if (alarmSessions.length > 0) {
+    const latest    = alarmSessions[0];
+    const latestIdx = _sessions.indexOf(latest);
+    const isRed     = latest.alarm_level === 'RED';
+    const borderClr = isRed ? '#dc2626' : '#d97706';
+    const bgClr     = isRed ? '#fef2f2' : '#fffbeb';
+    referralHtml = `
+      <div style="border:2px dashed ${borderClr};border-radius:10px;
+                  overflow:hidden;margin-bottom:16px;">
+        <div style="background:${bgClr};padding:12px 16px;
+                    display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <div style="display:flex;align-items:center;gap:10px;min-width:0;">
+            <span style="font-size:20px;flex-shrink:0;">📄</span>
+            <div style="min-width:0;">
+              <div style="font-size:13px;font-weight:700;color:${borderClr};">
+                Physician Referral Letter
+              </div>
+              <div style="font-size:11px;color:#6b7280;">
+                ${latest.session_date} · Not yet generated
+              </div>
+            </div>
+          </div>
+          <button class="pt-letter-btn pt-letter-btn-primary"
+                  style="${!isRed?'background:#d97706;border-color:#d97706;':''}"
+                  id="doc-referral-gen-btn"
+                  onclick="generateReferralFromWeb(${latest.alert_id}, ${latest.id})">
+            📄 Generate Referral Letter
+          </button>
+        </div>
+      </div>`;
+  }
+
+  // ── 5개 문서 카드 ──
+  const docTypes = [
+    { type:'medical_necessity',   icon:'🏥', title:'Medical Necessity',        desc:'Prior authorization & medical necessity letter for insurance',  desc_ko:'보험사 선승인 / 의학적 필요성 증빙 레터' },
+    { type:'legal_defense',       icon:'⚖️', title:'Standard of Care Defense', desc:'Audit trail documenting screening performed per clinical guidelines', desc_ko:'소송 방어용 스크리닝 수행 감사 트레일' },
+    { type:'clinical_chronology', icon:'📅', title:'Clinical Chronology',      desc:'Full session timeline record for legal reference',               desc_ko:'전체 세션 시계열 기록 (법적 참고문서)' },
+    { type:'insurance_appeal',    icon:'📩', title:'Insurance Appeal',         desc:'Appeal letter for denied insurance claims',                       desc_ko:'보험 청구 거절 이의신청 레터' },
+    { type:'functional_report',   icon:'📊', title:'Functional Report',        desc:'Functional limitation report for Medicare / insurance',           desc_ko:'Medicare/보험용 기능제한 보고서' },
+  ];
+
+  const cardsHtml = `<div class="doc-cards-grid">` + docTypes.map(dt => `
+    <div class="doc-card">
+      <div class="doc-card-icon">${dt.icon}</div>
+      <div class="doc-card-title">${dt.title}</div>
+      <div class="doc-card-desc">${dt.desc}</div>
+      <button class="doc-generate-btn" id="doc-btn-${dt.type}"
+              onclick="generateDoc('${esc(patientId)}','${dt.type}',this)">
+        Generate
+      </button>
+    </div>`).join('') + `</div>`;
+
+  el.innerHTML = ctxHtml + referralHtml + cardsHtml;
+}
+
+async function viewReferralInModal(idx) {
+  const s = _sessions[idx];
+  if (!s || !s.referral_letter) return;
+
+  if (s.alert_id) {
+    try {
+      const res = await fetch(`/pt/api/alerts/${s.alert_id}/generate/`, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': CSRF },
+      });
+      const data = await res.json();
+      if (data.ai && FEATURES.ab_comparison) {
+        openDocModalAB(data.template, data.ai, '📄 Physician Referral Letter', 'referral', activePatientId);
+        return;
+      }
+    } catch(e) {
+      // AI 실패 시 단일 모달 fallback
+    }
+  }
+  openDocModal(s.referral_letter, '📄 Physician Referral Letter', 'referral', activePatientId);
+}
+
+function _computeClientTrend(scores) {
+  if (scores.length < 2) return 'New patient';
+  const recent = scores.slice(-3);
+  const delta  = recent[recent.length-1] - recent[0];
+  if (delta > 15)  return 'Escalating ↑';
+  if (delta < -15) return 'Improving ↓';
+  return 'Stable →';
+}
+
+async function generateDoc(patientId, docType, btnEl) {
+  const orig = btnEl.innerHTML;
+  btnEl.disabled = true;
+  btnEl.innerHTML = '<span class="pt-spinner" style="border-color:rgba(99,102,241,.3);border-top-color:#6366f1;"></span>Generating...';
+
+  try {
+    const r = await fetch(`/pt/api/patients/${encodeURIComponent(patientId)}/generate-doc/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body:    JSON.stringify({ doc_type: docType }),
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Server error');
+
+    if (d.ai && FEATURES.ab_comparison) {
+      openDocModalAB(d.template, d.ai, d.title, docType, patientId);
+    } else {
+      openDocModal((d.template || d).content || d.template?.content, d.title, docType, patientId);
+    }
+  } catch(e) {
+    alert('문서 생성 실패: ' + e.message);
+  } finally {
+    btnEl.disabled = false;
+    btnEl.innerHTML = orig;
+  }
+}
+
+let _docModalCopyText   = '';
+let _currentDocType     = '';
+let _currentDocPatientId = '';
+
+function openDocModal(docText, title, docType, patientId) {
+  _docModalCopyText    = docText;
+  _currentDocType      = docType || '';
+  _currentDocPatientId = patientId || '';
+  document.getElementById('doc-modal-title').textContent = title || 'Document';
+  const body = document.getElementById('doc-modal-body');
+  body.style.padding = '';
+  body.style.overflow = '';
+  body.style.display = '';
+  body.style.flexDirection = '';
+  const modal = body.closest('.doc-modal');
+  if (modal) modal.style.maxWidth = '';
+  body.classList.add('text-mode');
+  body.innerHTML = formatLetter(docText);
+  const copyBtn = document.getElementById('doc-modal-copy-btn');
+  copyBtn.textContent = '📋 Copy';
+  copyBtn.style.display = '';
+  const editBtn = document.getElementById('doc-modal-edit-btn');
+  if (editBtn) {
+    editBtn.style.display   = _currentDocType ? '' : 'none';
+    editBtn.textContent     = '✏ 수정';
+    editBtn.dataset.editing = '0';
+  }
+  const sendBtn = document.getElementById('doc-modal-send-btn');
+  if (sendBtn) sendBtn.style.display = _currentDocPatientId ? '' : 'none';
+  document.getElementById('doc-modal-overlay').classList.add('open');
+}
+
+function openDocModalAB(tmpl, ai, title, docType, patientId) {
+  _docModalCopyText    = tmpl.content;
+  _currentDocType      = docType || '';
+  _currentDocPatientId = patientId || '';
+  document.getElementById('doc-modal-title').textContent = (title || 'Document') + ' — 버전 비교';
+  const copyBtn = document.getElementById('doc-modal-copy-btn');
+  copyBtn.style.display = 'none';
+  const editBtn = document.getElementById('doc-modal-edit-btn');
+  if (editBtn) editBtn.style.display = 'none';
+  const sendBtn2 = document.getElementById('doc-modal-send-btn');
+  if (sendBtn2) sendBtn2.style.display = 'none';
+
+  const body = document.getElementById('doc-modal-body');
+  body.classList.remove('text-mode');
+  body.style.padding = '0';
+  body.style.overflow = 'hidden';
+  body.style.display = 'flex';
+  body.style.flexDirection = 'column';
+  // A/B 비교는 더 넓은 모달이 필요
+  const modal = body.closest('.doc-modal');
+  if (modal) modal.style.maxWidth = '1100px';
+  body.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;flex:1;min-height:0;">
+      <div style="border-right:1px solid #e2e8f0;display:flex;flex-direction:column;min-height:0;">
+        <div style="padding:8px 14px;background:#f1f5f9;border-bottom:1px solid #e2e8f0;
+                    display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <span style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;">
+            Template
+          </span>
+          <button id="choose-tmpl-btn" onclick="chooseDocVersion(${tmpl.id},'template',this)"
+            style="padding:4px 12px;font-size:11px;font-weight:600;border:none;border-radius:5px;
+                   cursor:pointer;background:#e0e7ff;color:#4338ca;">
+            Use this
+          </button>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:14px;font-family:'Courier New',monospace;
+                    font-size:11.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;">
+          ${esc(tmpl.content)}
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;min-height:0;">
+        <div style="padding:8px 14px;background:#f0fdf4;border-bottom:1px solid #e2e8f0;
+                    display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+          <span style="font-size:11px;font-weight:700;color:#16a34a;text-transform:uppercase;letter-spacing:.05em;">
+            ✨ AI
+          </span>
+          <button id="choose-ai-btn" onclick="chooseDocVersion(${ai.id},'ai',this)"
+            style="padding:4px 12px;font-size:11px;font-weight:600;border:none;border-radius:5px;
+                   cursor:pointer;background:#dcfce7;color:#15803d;">
+            Use this
+          </button>
+        </div>
+        <div style="flex:1;min-height:0;overflow-y:auto;padding:14px;font-family:'Courier New',monospace;
+                    font-size:11.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;">
+          ${esc(ai.content)}
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('doc-modal-overlay').classList.add('open');
+}
+
+async function chooseDocVersion(docId, version, btn) {
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+
+  // 선택된 컬럼의 content div 텍스트 미리 확보
+  const contentDiv = btn.closest('[style*="flex-direction:column"]').querySelector('[style*="overflow-y:auto"]');
+  const chosenText = contentDiv ? contentDiv.textContent.trim() : '';
+
+  try {
+    const r = await fetch(`/pt/api/docs/${docId}/choose/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+    });
+    const d = await r.json();
+    if (!d.ok) throw new Error('Failed');
+
+    // 선택 완료 → 단일 문서 편집 모달로 전환 (기존 수정 플로우 재사용)
+    const title = document.getElementById('doc-modal-title').textContent.replace(' — 버전 비교', '');
+    openDocModal(chosenText, title, _currentDocType, _currentDocPatientId);
+  } catch(e) {
+    btn.textContent = 'Use this';
+    btn.disabled = false;
+    alert('선택 저장 실패: ' + e.message);
+  }
+}
+
+function closeDocModal() {
+  document.getElementById('doc-modal-overlay').classList.remove('open');
+}
+
+function copyDocModal(btn) {
+  navigator.clipboard.writeText(_docModalCopyText).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = orig; }, 2000);
+  });
+}
+
+function printDocModal() {
+  const title = document.getElementById('doc-modal-title')?.textContent || 'Document';
+  const w = window.open('', '_blank');
+  w.document.write(
+    `<!DOCTYPE html><html><head><title>${esc(title)}</title>`
+    + `<style>body{font-family:'Courier New',monospace;font-size:13px;line-height:1.9;`
+    + `padding:48px;color:#111;white-space:pre-wrap;}@media print{body{padding:24px;}}</style>`
+    + `</head><body>${esc(_docModalCopyText)}</body></html>`
+  );
+  w.document.close();
+  w.focus();
+  setTimeout(() => w.print(), 300);
+}
+
+// ── Alarm 현황 ───────────────────────────────────────────────
+let alarmData = null;
+
+async function showAlarms() {
+  _showView('view-alarms');
+
+  document.getElementById('alarm-list').innerHTML =
+    '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:14px;">불러오는 중...</div>';
+
+  try {
+    const r = await fetch('/pt/api/alarms/');
+    alarmData = await r.json();
+    renderAlarmDashboard(alarmData);
+  } catch(e) {
+    document.getElementById('alarm-list').innerHTML =
+      '<div style="padding:40px;text-align:center;color:#ef4444;">불러오기 실패</div>';
+  }
+}
+
+function renderAlarmDashboard(d) {
+  const total = (d.counts.red || 0) + (d.counts.yellow || 0);
+
+  // 요약 카드
+  const cards = [
+    { label:'RED Alert', count: d.counts.red,    bg:'#fef2f2', border:'#fca5a5', color:'#dc2626', icon:'🚨' },
+    { label:'YELLOW Flag', count: d.counts.yellow, bg:'#fffbeb', border:'#fcd34d', color:'#d97706', icon:'⚠️' },
+    { label:'전체 알람', count: total,             bg:'#f8fafc', border:'#e2e8f0', color:'#475569', icon:'📊' },
+  ];
+  document.getElementById('alarm-summary-cards').innerHTML = cards.map(c => `
+    <div style="background:${c.bg};border:1px solid ${c.border};border-radius:12px;padding:18px 20px;">
+      <div style="font-size:24px;margin-bottom:6px;">${c.icon}</div>
+      <div style="font-size:28px;font-weight:800;color:${c.color};line-height:1;">${c.count}</div>
+      <div style="font-size:12px;color:#64748b;margin-top:4px;">${c.label}</div>
+    </div>`).join('');
+
+  filterAlarmView('ALL');
+}
+
+function filterAlarmView(level) {
+  // 탭 스타일
+  ['ALL','RED','YELLOW'].forEach(l => {
+    const t = document.getElementById(`tab-${l}`);
+    if (l === level) {
+      t.style.background = '#6366f1'; t.style.color = '#fff'; t.style.borderColor = '#6366f1';
+    } else {
+      t.style.background = '#fff'; t.style.color = '#374151'; t.style.borderColor = '#d1d5db';
+    }
+  });
+
+  if (!alarmData) return;
+  const rows = level === 'RED' ? alarmData.red
+             : level === 'YELLOW' ? alarmData.yellow
+             : [...alarmData.red, ...alarmData.yellow];
+
+  if (!rows.length) {
+    document.getElementById('alarm-list').innerHTML =
+      `<div style="padding:48px;text-align:center;color:#9ca3af;font-size:14px;">해당 알람이 없습니다</div>`;
+    return;
+  }
+
+  // 데이터를 전역 배열에 저장 후 인덱스로 참조
+  window._alarmRows = rows;
+
+  const html = rows.map((s, i) => {
+    const bg     = s.alarm_level === 'RED' ? '#fef2f2' : '#fffbeb';
+    const border = s.alarm_level === 'RED' ? '#fca5a5' : '#fcd34d';
+    const color  = s.alarm_level === 'RED' ? '#dc2626' : '#d97706';
+    const icon   = s.alarm_level === 'RED' ? '🚨' : '⚠️';
+    const indicators = (s.matched_indicators || []).map(m =>
+      `<span style="font-size:11px;background:#fff;border:1px solid #e5e7eb;border-radius:4px;
+                    padding:2px 7px;color:#374151;">${esc(m)}</span>`
+    ).join('');
+
+    return `
+      <div data-alarm-idx="${i}"
+           style="background:${bg};border:1px solid ${border};border-radius:12px;
+                  padding:16px 20px;margin-bottom:12px;cursor:pointer;transition:box-shadow .15s;"
+           onmouseover="this.style.boxShadow='0 4px 16px rgba(0,0,0,.1)'"
+           onmouseout="this.style.boxShadow='none'">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+          <span style="font-size:18px;">${icon}</span>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#1e293b;">
+              ${esc(s.patient_name||s.patient_id)}
+              <span style="font-size:12px;font-weight:400;color:#64748b;margin-left:6px;">${esc(s.patient_id)}</span>
+            </div>
+            <div style="font-size:12px;color:#64748b;">${s.session_date}</div>
+          </div>
+          <div style="margin-left:auto;text-align:right;">
+            <div style="font-size:13px;font-weight:700;color:${color};">${s.alarm_level}</div>
+            <div style="font-size:12px;color:#94a3b8;">${esc(s.triggered_condition||'')}</div>
+          </div>
+          <div style="text-align:right;min-width:52px;">
+            <div style="font-size:20px;font-weight:800;color:${color};">${s.critical_score}%</div>
+            <div style="font-size:10px;color:#94a3b8;">risk score</div>
+          </div>
+        </div>
+        ${indicators ? `<div style="display:flex;flex-wrap:wrap;gap:5px;">${indicators}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  document.getElementById('alarm-list').innerHTML = html;
+
+  // 이벤트 위임으로 클릭 처리
+  document.getElementById('alarm-list').onclick = e => {
+    const card = e.target.closest('[data-alarm-idx]');
+    if (card) openAlarmModal(window._alarmRows[+card.dataset.alarmIdx]);
+  };
+}
+
+async function deleteSession(sessionId, patientId) {
+  if (!confirm('이 세션을 삭제하시겠습니까?')) return;
+
+  const r = await fetch(`/pt/api/sessions/${sessionId}/delete/`, {
+    method: 'DELETE',
+    headers: { 'X-CSRFToken': CSRF },
+  });
+  const d = await r.json();
+  if (!r.ok) { alert('삭제 실패: ' + (d.error || r.status)); return; }
+
+  if (d.remaining === 0) {
+    // 환자 세션이 모두 삭제됨 → 사이드바에서 제거 후 새 세션 뷰로
+    allPatients = allPatients.filter(p => p.patient_id !== patientId);
+    renderPatientList(allPatients);
+    showNewSession();
+  } else {
+    // 나머지 세션 다시 로드
+    await selectPatient(patientId, document.getElementById('history-title').textContent);
+  }
+}
+
+
+// ── 새 세션 폼 ───────────────────────────────────────
+async function generatePatientId() {
+  const btn = document.querySelector('button[onclick="generatePatientId()"]');
+  const orig = btn.textContent;
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    const r = await fetch('/pt/api/generate-patient-id/');
+    const d = await r.json();
+    document.getElementById('inp-id').value = d.patient_id;
+  } catch(e) {
+    alert('ID 생성 실패');
+  } finally {
+    btn.textContent = orig; btn.disabled = false;
+  }
+}
+
+function showNewSession() {
+  activePatientId = null;
+  renderPatientList(allPatients);
+  _showView('view-new');
+  document.getElementById('inp-name').value = '';
+  document.getElementById('inp-id').value = '';
+  document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+  ['S','O','A','P'].forEach(t => { const el = document.getElementById(`inp-${t}`); if (el) el.value = ''; });
+  _confirmedChips.clear();
+  _renderChipSection('S');
+  _renderChipSection('O');
+  switchSoapTab('S');
+  resetResult();
+}
+
+function addSessionForPatient() {
+  const pname = document.getElementById('history-title').textContent;
+  _showView('view-new');
+  document.getElementById('inp-name').value = pname !== activePatientId ? pname : '';
+  document.getElementById('inp-id').value = activePatientId || '';
+  document.getElementById('inp-date').value = new Date().toISOString().split('T')[0];
+  ['S','O','A','P'].forEach(t => { const el = document.getElementById(`inp-${t}`); if (el) el.value = ''; });
+  _confirmedChips.clear();
+  _renderChipSection('S');
+  _renderChipSection('O');
+  switchSoapTab('S');
+  resetResult();
+}
+
+// ── SOAP 분석 & 저장 ─────────────────────────────────
+async function analyzeAndSave() {
+  const sText = (document.getElementById('inp-S')?.value || '').trim();
+  const oText = (document.getElementById('inp-O')?.value || '').trim();
+  const aText = (document.getElementById('inp-A')?.value || '').trim();
+  const pText = (document.getElementById('inp-P')?.value || '').trim();
+  const confirmedIds = [..._confirmedChips];
+
+  const parts = [];
+  if (sText) parts.push('S: ' + sText);
+  if (oText) parts.push('O: ' + oText);
+  if (aText) parts.push('A: ' + aText);
+  if (pText) parts.push('P: ' + pText);
+  const soap = parts.join('\n');
+
+  if (!soap && confirmedIds.length === 0) {
+    alert('SOAP note를 입력하거나 Red Flag 항목을 선택하세요.');
+    return;
+  }
+
+  const name = document.getElementById('inp-name').value.trim();
+  const pid  = document.getElementById('inp-id').value.trim() || (name ? name.replace(/\s+/g,'_') : 'ANON');
+  const date = document.getElementById('inp-date').value;
+
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="pt-spinner"></span>분석 중...';
+
+  try {
+    const r = await fetch('/pt/api/save/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({soap_text:soap, patient_id:pid, patient_name:name, session_date:date, confirmed_rf_ids:confirmedIds})
+    });
+    const d = await r.json();
+    if (!r.ok || d.error) throw new Error(d.error || 'Server error');
+    renderResult(d);
+    await loadPatients();
+    // 저장 후 사이드바에서 해당 환자 활성화
+    activePatientId = pid;
+    renderPatientList(allPatients);
+  } catch(e) {
+    document.getElementById('result-content').innerHTML =
+      `<div style="color:#dc2626;font-size:13px;">오류: ${esc(e.message)}</div>`;
+    document.getElementById('result-content').style.display = 'block';
+    document.getElementById('result-empty').style.display = 'none';
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '🚨 Analyze Red Flags &amp; Save';
+    _confirmedChips.clear();
+    _renderChipSection('S');
+    _renderChipSection('O');
+  }
+}
+
+function renderResult(d) {
+  const colors = {RED:'#dc2626',YELLOW:'#d97706',NONE:'#16a34a'};
+  const icons  = {RED:'🚨',YELLOW:'⚠️',NONE:'✅'};
+  const labels = {RED:'RED ALERT — 즉시 조치 필요',YELLOW:'YELLOW FLAG — 주의 관찰',NONE:'Red Flag 없음'};
+  let html = '';
+
+  // 알람 배너
+  html += `<div class="pt-alarm-banner ${d.alarm}">
+    <div class="pt-alarm-icon">${icons[d.alarm]}</div>
+    <div>
+      <div class="pt-alarm-level">${labels[d.alarm]}</div>
+      ${d.condition ? `<div class="pt-alarm-cond">${d.condition.replace(/_/g,' ')}</div>` : ''}
+    </div>
+  </div>`;
+
+  // 스코어 바
+  const fillColor = colors[d.alarm] || '#6b7280';
+  html += `<div class="pt-score-row">
+    <span class="pt-score-label">Risk score</span>
+    <div class="pt-score-bar"><div class="pt-score-fill" style="width:${d.score}%;background:${fillColor};"></div></div>
+    <span class="pt-score-val">${d.score}%</span>
+  </div>`;
+
+  // 멀티 컨디션 목록
+  const active = (d.conditions || []).filter(c => c.alarm !== 'NONE');
+  if (active.length) {
+    html += `<div class="pt-section-title">감지된 Red Flag 조건 (${active.length}개)</div>`;
+    active.forEach(c => {
+      const bg  = c.alarm === 'RED' ? '#fef2f2' : '#fffbeb';
+      const bdr = c.alarm === 'RED' ? '#fca5a5' : '#fcd34d';
+      html += `<div style="border:1px solid ${bdr};border-radius:8px;padding:10px 12px;margin-bottom:8px;background:${bg};">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:4px;background:${colors[c.alarm]};color:#fff;">${c.alarm}</span>
+          <strong style="font-size:13px;color:#1e293b;">${esc(c.condition.replace(/_/g,' '))}</strong>
+          <span style="margin-left:auto;font-size:11px;color:#6b7280;">${(c.score*100).toFixed(0)}%</span>
+        </div>
+        ${c.trigger ? `<div style="font-size:11px;color:#dc2626;margin-bottom:4px;">trigger: ${esc(c.trigger)}</div>` : ''}
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          ${(c.matched||[]).map(m => `<span style="font-size:11px;background:#fff;border:1px solid #e5e7eb;border-radius:4px;padding:2px 6px;color:#374151;">${esc(m)}</span>`).join('')}
+        </div>
+      </div>`;
+    });
+  }
+
+  // VPPS 추출 증상 (원시 hits)
+  if (d.vpps_hits && d.vpps_hits.length) {
+    html += `<div class="pt-section-title">VPPS 추출 증상 (${d.vpps_hits.length}개)</div>
+    <div class="pt-hit-list">`;
+    d.vpps_hits.forEach(h => {
+      html += `<div class="pt-hit-item ${h.alarm_level}">
+        <span>${h.alarm_level==='RED'?'🔴':'🟡'}</span>
+        <span style="font-size:12px;">${esc(h.label)}</span>
+        <span style="margin-left:auto;font-size:10px;color:#9ca3af;">${(h.weight*100).toFixed(0)}%</span>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  // 환자 컨텍스트
+  if (d.patient_context && d.patient_context.session_count > 1) {
+    html += `<div class="pt-section-title">환자 이력 (${d.patient_context.session_count}세션)</div>
+    <div style="background:#f8fafc;border-radius:7px;padding:9px 11px;font-size:12px;color:#374151;margin-bottom:12px;">${esc(d.patient_context.summary)}</div>`;
+  }
+
+  // 리퍼럴 레터
+  if (d.referral_letter) {
+    html += `<div class="pt-section-title">📄 Physician Referral Letter</div>
+    <div class="pt-referral" id="referral-text">${esc(d.referral_letter)}</div>
+    <button class="pt-copy-btn" onclick="copyReferral()">📋 Copy Letter</button>`;
+  }
+
+  const content = document.getElementById('result-content');
+  content.innerHTML = html;
+  content.style.display = 'block';
+  document.getElementById('result-empty').style.display = 'none';
+  content.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function resetResult() {
+  document.getElementById('result-content').style.display = 'none';
+  document.getElementById('result-content').innerHTML = '';
+  document.getElementById('result-empty').style.display = 'block';
+}
+
+// ── 유틸 ────────────────────────────────────────────
+function alarmLabel(a) {
+  return {RED:'🚨 RED',YELLOW:'⚠️ YELLOW',NONE:'✅ NONE'}[a] || a;
+}
+
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function copySessionSoap(btn, sessionId) {
+  const sess = _sessions.find(s => s.id === sessionId);
+  const formattedHtml = formatSoap(sess?.soap_text, sess?.id, sess?.clinical_context);
+  const tmp = document.createElement('div');
+  tmp.innerHTML = formattedHtml;
+  const soapText = tmp.innerText || sess?.soap_text || '';
+  navigator.clipboard.writeText(soapText).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓ 복사됨';
+    btn.style.color  = '#16a34a';
+    btn.style.border = '1px solid #bbf7d0';
+    setTimeout(() => {
+      btn.textContent = '⎘ 복사';
+      btn.style.color  = '#6b7280';
+      btn.style.border = '1px solid #d1d5db';
+    }, 2000);
+  }).catch(() => {
+    btn.textContent = '❌ 실패';
+    setTimeout(() => { btn.textContent = '⎘ 복사'; }, 2000);
+  });
+}
+
+function toggleSoapCompare() {
+  const single  = document.getElementById('soap-body-single');
+  const compare = document.getElementById('soap-body-compare');
+  const btn     = document.getElementById('soap-compare-btn');
+  if (!single || !compare) return;
+  const isCompare = compare.style.display !== 'none';
+  single.style.display  = isCompare ? '' : 'none';
+  compare.style.display = isCompare ? 'none' : 'grid';
+  btn.textContent       = isCompare ? '⇄ 비교' : '✕ 비교 닫기';
+  btn.style.background  = isCompare ? 'transparent' : '#eef2ff';
+}
+
+async function runReseed() {
+  if (!confirm('전체 세션을 삭제하고 실습 데이터(16개 + Margaret 10회)를 재적재합니다. 계속할까요?')) return;
+  const btn = document.getElementById('reseed-btn');
+  btn.textContent = '⏳ Seeding...';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/pt/api/admin/reseed/', {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF},
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) {
+      btn.textContent = '❌ Error';
+      btn.title = JSON.stringify(d);
+      btn.disabled = false;
+      return;
+    }
+    const errNote = d.errors && d.errors.length ? ` (${d.errors.length} err)` : '';
+    btn.textContent = `✅ ${d.seeded} seeded${errNote}`;
+    setTimeout(() => { btn.textContent = '🌱 Clear & Reseed All'; btn.disabled = false; }, 3000);
+    // 뷰 완전 초기화 후 환자 목록 리로드
+    activePatientId  = null;
+    currentPatientId = null;
+    _sessions        = [];
+    _showView('view-new');
+    await loadPatients();
+  } catch(e) {
+    btn.textContent = '❌ ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+async function runBackfill() {
+  const btn = document.getElementById('rescore-btn');
+  btn.textContent = '⏳ Running...';
+  btn.disabled = true;
+  try {
+    const r = await fetch('/pt/api/backfill-rescore/', {
+      method: 'POST',
+      headers: {'X-CSRFToken': CSRF},
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) {
+      btn.textContent = '❌ Error';
+      btn.title = JSON.stringify(d);
+      btn.disabled = false;
+      return;
+    }
+    btn.textContent = `✅ ${d.changed}/${d.total} updated`;
+    setTimeout(() => { btn.textContent = '🔄 Re-score All'; btn.disabled = false; }, 3000);
+    if (d.changed > 0) {
+      activePatientId  = null;
+      currentPatientId = null;
+      _sessions        = [];
+      _showView('view-new');
+      await loadPatients();
+    }
+  } catch(e) {
+    btn.textContent = '❌ ' + e.message;
+    btn.disabled = false;
+  }
+}
+
+async function copyReferral() {
+  const text = document.getElementById('referral-text')?.innerText || '';
+  await navigator.clipboard.writeText(text);
+  const btn = event.target;
+  btn.textContent = '✅ Copied!';
+  setTimeout(() => { btn.textContent = '📋 Copy Letter'; }, 2000);
+}
+
+// ── SOAP 포맷팅 ───────────────────────────────────────────────
+function _soapTitle(label) {
+  return `<span class="soap-section-title">${label}</span>`;
+}
+
+// ── Path A: clinical_context (AI 분류) → 섹션 제목 + 추출값 ──────
+function _renderFromCtx(ctx) {
+  const rows = (vals) => {
+    const items = Array.isArray(vals) ? vals : (vals ? [String(vals)] : []);
+    return items.filter(Boolean).map(v =>
+      `<span style="display:block;">${esc(String(v))}</span>`
+    ).join('');
+  };
+
+  const S = [
+    ctx.chief_complaint,
+    ctx.onset_duration,
+    ctx.vas_score ? `Pain score: ${ctx.vas_score}` : null,
+    ...(ctx.comorbidities || []),
+  ].filter(Boolean);
+
+  const O = [
+    ...(ctx.mmt_findings         || []),
+    ...(ctx.rom_findings          || []),
+    ...(ctx.neurological_findings || []),
+    ...(ctx.special_tests         || []),
+  ];
+
+  const A = [
+    ctx.primary_diagnosis,
+    ...(ctx.red_flag_findings     || []),
+    ...(ctx.functional_limitations|| []),
+  ].filter(Boolean);
+
+  const P = [
+    ...(ctx.treatment_performed   || []),
+    ...(ctx.medications           || []),
+    ...(ctx.precautions           || []),
+  ];
+
+  const Other = ctx.other_findings || [];
+
+  let html = '';
+  if (S.length) html += _soapTitle('Subjective') + rows(S);
+  if (O.length) html += _soapTitle('Objective')  + rows(O);
+  if (A.length) html += _soapTitle('Assessment') + rows(A);
+  if (P.length) html += _soapTitle('Plan')       + rows(P);
+  if (Other.length) html += _soapTitle('Other')  + rows(Other);
+  return html;
+}
+
+// ── Path B: 키워드 감지 → 섹션 제목 삽입 ─────────────────────────
+const _KEYWORD_SECTION = [
+  { re: /^(Patient|Chief\s*complaint?|CC|Onset|History|PMH|HPI|Additional|Prior|Previous|Mechanism|MOI|Aggravat|Easing|Reliev|Exacerbat|Social\s*history|Occupation|Work\s*history|Complaint|Symptom|Duration|Sleep|Bowel|Bladder|Medication|Drug|Allerg|Report)/i,
+    sec: 'Subjective' },
+  { re: /^(Objective|Observation|Inspection|Measurements?|MMT|ROM|AROM|PROM|RROM|Posture|Gait|Palpation|SLR|Strength|Neurolog|Neuro|Special\s*test|Sensation|Reflex|DTR|Edema|Swelling|Vital|Functional\s*mobility)/i,
+    sec: 'Objective'  },
+  { re: /^(Diagnosis|Assessment|Clinical\s*impression|Progress|Response|Prognosis|Problem|Intervention|Functional\s*status)/i,
+    sec: 'Assessment' },
+  { re: /^(LTG|STG|Goal|Plan|Precaution|HEP|Home\s*exercise|Follow.?up|Frequency|Education|Discharge|Return|Next\s*visit|Treatment\s*plan|Rehab)/i,
+    sec: 'Plan'       },
+];
+
+function _sectionOf(t) {
+  for (const { re, sec } of _KEYWORD_SECTION) {
+    if (re.test(t)) return sec;
+  }
+  return null;
+}
+
+// Level 1: 알려진 키워드가 줄 중간에 나타나면 앞에 줄바꿈 삽입
+function _normalizeSoapLines(text) {
+  const kw = [
+    'Patient','Chief\\s+complaint?','CC','Onset','History','PMH','HPI','Additional',
+    'Prior','Previous','Mechanism','MOI','Aggravat','Easing','Reliev','Exacerbat',
+    'Social\\s+history','Occupation','Work\\s+history','Complaint','Symptom','Duration',
+    'Sleep','Bowel','Bladder','Medication','Drug','Allerg','Report',
+    'Objective','Observation','Inspection','Measurements?','MMT',
+    'ROM','AROM','PROM','RROM','Posture','Gait','Palpation','SLR','Strength',
+    'Neurolog','Neuro','Special\\s+test','Sensation','Reflex','DTR','Edema','Vital',
+    'Functional\\s+mobility',
+    'Diagnosis','Assessment','Clinical\\s+impression','Progress','Response',
+    'Prognosis','Problem','Intervention','Functional\\s+status',
+    'LTG','STG','Goal','Plan','Precaution','HEP','Home\\s+exercise',
+    'Follow.?up','Frequency','Education','Discharge','Return','Next\\s+visit',
+    'Treatment\\s+plan','Rehab',
+  ].join('|');
+  return text.replace(
+    new RegExp(`([^\\n])[ \\t]+((?:${kw})\\s*:)`, 'gi'),
+    '$1\n$2'
+  );
+}
+
+// Level 2: sessionId별 사용자 섹션 오버라이드 저장
+const _sectionOverrides = {};  // key: `${sessionId}_${lineIdx}`
+
+function _renderFromKeywords(rawText, sessionId) {
+  const normalized = _normalizeSoapLines(rawText);
+  let html = '';
+  let cur  = null;
+  const seenSections = new Set();   // 이미 타이틀을 출력한 섹션
+  let lineIdx = 0;
+
+  for (const line of normalized.split('\n')) {
+    const t = line.trim();
+    if (!t) { lineIdx++; continue; }
+
+    const detectedSec = _sectionOf(t);
+
+    if (detectedSec) {
+      // 오버라이드 확인 — 사용자가 이 줄의 섹션을 변경했을 수 있음
+      const key         = `${sessionId}_${lineIdx}`;
+      const overrideSec = sessionId != null ? _sectionOverrides[key] : null;
+      const effectiveSec = overrideSec || detectedSec;
+
+      if (effectiveSec !== cur) {
+        // 이미 출력된 섹션이면 타이틀 중복 삽입 금지
+        if (!seenSections.has(effectiveSec)) {
+          html += _soapTitle(effectiveSec);
+          seenSections.add(effectiveSec);
+        }
+        cur = effectiveSec;
+      }
+
+      const colon = t.indexOf(':');
+      let lineContent = '';
+      if (colon > 0) {
+        const label = t.slice(0, colon).trim();
+        const rest  = esc(t.slice(colon + 1).trim());
+        lineContent = `<strong style="color:#374151;">${esc(label)}:</strong>${rest ? ' ' + rest : ''}`;
+      } else {
+        lineContent = esc(t);
+      }
+
+      if (sessionId != null) {
+        const badge = effectiveSec[0];
+        const cls   = overrideSec ? ' overridden' : '';
+        html += `<span class="soap-line">` +
+                `<button class="soap-pick-btn${cls}" onclick="showSectionPick(event,'${sessionId}',${lineIdx},'${effectiveSec}')" title="섹션 변경">${badge}</button>` +
+                `${lineContent}</span>\n`;
+      } else {
+        html += lineContent + '\n';
+      }
+    } else {
+      // 키워드 없는 라인 — 오버라이드 또는 상속 섹션 사용
+      const key         = `${sessionId}_${lineIdx}`;
+      const overrideSec = sessionId != null ? _sectionOverrides[key] : null;
+      const effectiveSec = overrideSec || cur;
+
+      if (overrideSec && overrideSec !== cur) {
+        if (!seenSections.has(overrideSec)) {
+          html += _soapTitle(overrideSec);
+          seenSections.add(overrideSec);
+        }
+        cur = overrideSec;
+      }
+
+      if (sessionId != null) {
+        const badge = effectiveSec ? effectiveSec[0] : '?';
+        const cls   = overrideSec ? ' overridden' : '';
+        html += `<span class="soap-line">` +
+                `<button class="soap-pick-btn${cls}" onclick="showSectionPick(event,'${sessionId}',${lineIdx},'${effectiveSec||''}')" title="섹션 변경">${badge}${overrideSec ? '' : '?'}</button>` +
+                `${esc(t)}</span>\n`;
+      } else {
+        html += esc(t) + '\n';
+      }
+    }
+    lineIdx++;
+  }
+  return html;
+}
+
+// 섹션 picker 표시
+function showSectionPick(evt, sessionId, lineIdx, currentSec) {
+  evt.stopPropagation();
+  const popupId = 'soap-picker-popup';
+  const existing = document.getElementById(popupId);
+  if (existing) {
+    const isSame = existing.dataset.for === `${sessionId}_${lineIdx}`;
+    existing.remove();
+    if (isSame) return;
+  }
+  const sections = ['Subjective','Objective','Assessment','Plan'];
+  const popup = document.createElement('span');
+  popup.id = popupId;
+  popup.dataset.for = `${sessionId}_${lineIdx}`;
+  popup.className = 'soap-picker-popup';
+  popup.innerHTML = sections.map(s =>
+    `<button class="soap-pick-opt${s===currentSec?' active':''}" ` +
+    `onclick="applySectionPick('${sessionId}',${lineIdx},'${s}')">${s[0]}</button>`
+  ).join('');
+  evt.currentTarget.insertAdjacentElement('afterend', popup);
+}
+
+// 외부 클릭 시 picker 닫기
+document.addEventListener('click', () => document.getElementById('soap-picker-popup')?.remove());
+
+// 섹션 선택 적용 + 자동 저장
+function applySectionPick(sessionId, lineIdx, sec) {
+  _sectionOverrides[`${sessionId}_${lineIdx}`] = sec;
+  document.getElementById('soap-picker-popup')?.remove();
+  _refreshSoapDisplay(sessionId);
+  _saveSessionOverrides(sessionId);
+}
+
+// 오버라이드 서버 저장
+async function _saveSessionOverrides(sessionId) {
+  const prefix   = `${sessionId}_`;
+  const overrides = {};
+  for (const [key, sec] of Object.entries(_sectionOverrides)) {
+    if (key.startsWith(prefix)) {
+      overrides[key.slice(prefix.length)] = sec;
+    }
+  }
+  try {
+    await fetch(`/pt/api/sessions/${sessionId}/overrides/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ overrides }),
+    });
+  } catch(e) {
+    console.warn('Section overrides save failed:', e);
+  }
+}
+
+// 세션 로드 시 저장된 오버라이드 복원
+function _loadSessionOverrides(sessions) {
+  for (const s of sessions) {
+    const saved = (s.clinical_context || {}).soap_section_overrides || {};
+    for (const [lineIdx, sec] of Object.entries(saved)) {
+      _sectionOverrides[`${s.id}_${lineIdx}`] = sec;
+    }
+  }
+}
+
+// SOAP 표시 영역만 재렌더링
+function _refreshSoapDisplay(sessionId) {
+  const s = _sessions.find(x => String(x.id) === String(sessionId));
+  if (!s) return;
+  const formatted = formatSoap(s.soap_text, s.id, s.clinical_context);
+  const single = document.getElementById('soap-body-single');
+  if (single && single.style.display !== 'none') {
+    single.querySelector('.soap-display').innerHTML = formatted;
+  }
+  const compareRight = document.querySelector('#soap-body-compare .soap-compare-col:last-child .soap-display');
+  if (compareRight) compareRight.innerHTML = formatted;
+}
+
+// ── 진입점 ────────────────────────────────────────────────────────
+function formatSoap(rawText, sessionId, clinicalCtx) {
+  if (!rawText) return '<span style="color:#9ca3af;">내용 없음</span>';
+  // Path B 고정: 항상 라인별 원문 + pick 버튼 렌더링.
+  // clinical_context(AI 분류)는 문서 생성·스코어링에서만 사용.
+  // 라인별 섹션 오버라이드 = AI 분류 vs 치료사 교정 paired data.
+  return _renderFromKeywords(rawText, sessionId ?? null);
+}
+
+function _hasCtxContent(ctx) {
+  return !!(
+    ctx.chief_complaint || ctx.primary_diagnosis ||
+    (ctx.rom_findings      && ctx.rom_findings.length)      ||
+    (ctx.mmt_findings      && ctx.mmt_findings.length)      ||
+    (ctx.special_tests     && ctx.special_tests.length)     ||
+    (ctx.treatment_performed && ctx.treatment_performed.length) ||
+    (ctx.goals_stg         && ctx.goals_stg.length)         ||
+    (ctx.other_findings    && ctx.other_findings.length)
+  );
+}
+
+const _sessionCtxCache = {};
+
+// ── Letter 포맷팅 ─────────────────────────────────────────────
+function formatLetter(rawText) {
+  if (!rawText) return '<span style="color:#9ca3af;">Letter 없음</span>';
+
+  return rawText.split('\n').map(line => {
+    const t = line.trim();
+
+    // 빈 줄
+    if (!t) return '';
+
+    // ===== 구분선 → 얇은 실선
+    if (/^={4,}$/.test(t)) {
+      return `<span style="display:block;border-top:1px solid #e2e8f0;margin:6px 0;font-size:0;"></span>`;
+    }
+    // ----- 구분선 → 더 연한 실선
+    if (/^-{4,}$/.test(t)) {
+      return `<span style="display:block;border-top:1px dashed #e2e8f0;margin:4px 0;font-size:0;"></span>`;
+    }
+
+    // [RED] / [YELLOW] / [GREEN] 배지 처리
+    const colored = t
+      .replace(/\[RED\]/g,    `<span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[RED]</span>`)
+      .replace(/\[YELLOW\]/g, `<span style="background:#fef3c7;color:#b45309;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[YELLOW]</span>`)
+      .replace(/\[GREEN\]/g,  `<span style="background:#dcfce7;color:#15803d;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[GREEN]</span>`);
+
+    // Urgency: EMERGENCY / WARNING 강조
+    if (/^Urgency:/i.test(t)) {
+      const isEmergency = /EMERGENCY/i.test(t);
+      const bg    = isEmergency ? '#fef2f2' : '#fffbeb';
+      const color = isEmergency ? '#dc2626'  : '#b45309';
+      return `<span style="display:inline-block;padding:3px 8px;border-radius:5px;background:${bg};`
+           + `border:1px solid ${color}40;font-weight:700;color:${color};">${colored}</span>`;
+    }
+
+    // ALL CAPS 헤딩 (OVERALL ALERT LEVEL, IDENTIFIED CONDITIONS 등)
+    if (/[A-Z]/.test(t) && !/[a-z]/.test(t) && t.length >= 4 && !/^\[/.test(t)) {
+      return `<strong style="display:inline-block;margin-top:4px;font-size:12px;font-weight:800;`
+           + `color:#111827;letter-spacing:.3px;">${colored}</strong>`;
+    }
+
+    // Key: value 라벨
+    const m = t.match(/^([A-Za-z][^:]{0,28}):\s*(.*)$/);
+    if (m) {
+      const val = m[2]
+        .replace(/\[RED\]/g,    `<span style="background:#fee2e2;color:#dc2626;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[RED]</span>`)
+        .replace(/\[YELLOW\]/g, `<span style="background:#fef3c7;color:#b45309;padding:1px 6px;border-radius:4px;font-weight:800;font-size:11px;">[YELLOW]</span>`);
+      return `<strong style="font-weight:700;color:#374151;">${esc(m[1])}:</strong> <span style="color:#1e293b;">${val}</span>`;
+    }
+
+    // bullet (•)
+    if (/^[•·\-]\s/.test(t)) {
+      return `<span style="color:#374151;padding-left:6px;display:inline-block;">${colored}</span>`;
+    }
+
+    return `<span style="color:#1e293b;">${colored}</span>`;
+  }).join('\n');
+}
+
+// ── 슬라이드 패널 드래그 핸들 ─────────────────────────────────
+let _slideDrag = null;
+
+function setupSlideDivider() {
+  const divider = document.getElementById('slide-divider');
+  const leftCol = document.getElementById('slide-left-col');
+  const cols    = document.getElementById('slide-cols');
+  if (!divider || !leftCol || !cols) return;
+  divider.addEventListener('mousedown', e => {
+    e.preventDefault();
+    divider.classList.add('dragging');
+    _slideDrag = { divider, leftCol, cols,
+                   startX: e.clientX,
+                   startW: leftCol.getBoundingClientRect().width };
+  });
+}
+
+document.addEventListener('mousemove', e => {
+  if (!_slideDrag) return;
+  const { leftCol, cols, startX, startW } = _slideDrag;
+  const dx     = e.clientX - startX;
+  const totalW = cols.getBoundingClientRect().width;
+  const newW   = Math.max(150, Math.min(totalW - 150, startW + dx));
+  leftCol.style.flex  = 'none';
+  leftCol.style.width = newW + 'px';
+  e.preventDefault();
+});
+
+document.addEventListener('mouseup', () => {
+  if (!_slideDrag) return;
+  _slideDrag.divider.classList.remove('dragging');
+  _slideDrag = null;
+});
+
+// ── Phase 7: Audit Loop ──────────────────────────────────────────────
+
+// SOAP 편집
+function openSoapEditor(sessionId) {
+  const s = _sessions.find(x => String(x.id) === String(sessionId));
+  if (!s) return;
+  const panel = document.getElementById(`soap-editor-${sessionId}`);
+  const ta    = document.getElementById(`soap-edit-ta-${sessionId}`);
+  if (!panel || !ta) return;
+  ta.value = s.soap_text || '';
+  panel.style.display = 'block';
+  ta.focus();
+}
+
+function closeSoapEditor(sessionId) {
+  const panel = document.getElementById(`soap-editor-${sessionId}`);
+  if (panel) panel.style.display = 'none';
+}
+
+async function saveSoapEdit(sessionId) {
+  const ta = document.getElementById(`soap-edit-ta-${sessionId}`);
+  if (!ta) return;
+  const edited = ta.value.trim();
+  if (!edited) return;
+  const saveBtn = ta.closest('div[id^="soap-editor"]')?.querySelector('button:last-child');
+  if (saveBtn) { saveBtn.textContent = '저장 중…'; saveBtn.disabled = true; }
+  try {
+    const r = await fetch(`/pt/api/sessions/${sessionId}/soap-edit/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body:    JSON.stringify({ edited_soap: edited }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      closeSoapEditor(sessionId);
+      if (saveBtn) { saveBtn.textContent = '✅ 저장됨'; saveBtn.disabled = false; setTimeout(() => saveBtn.textContent = '저장', 2000); }
+    }
+  } catch(e) {
+    alert('저장 실패: ' + e.message);
+    if (saveBtn) { saveBtn.textContent = '저장'; saveBtn.disabled = false; }
+  }
+}
+
+// Alarm 결정
+async function submitAlarmDecision(decision) {
+  _pendingDecision = decision;
+  const reasonEl = document.getElementById('alarm-decision-reason');
+  if (reasonEl) reasonEl.style.display = 'block';
+}
+
+async function confirmAlarmDecision() {
+  if (!_currentAlertId || !_pendingDecision) return;
+  const reason  = (document.getElementById('alarm-decision-text')?.value || '').trim();
+  const confirmBtn = document.querySelector('#alarm-decision-reason button');
+  if (confirmBtn) { confirmBtn.textContent = '저장 중…'; confirmBtn.disabled = true; }
+  try {
+    const r = await fetch(`/pt/api/alerts/${_currentAlertId}/decision/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body:    JSON.stringify({ decision: _pendingDecision, reason }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      const labels = { ADOPTED:'✅ 채택됨', REJECTED:'❌ 기각됨', MODIFIED:'✏ 수정 후 채택됨' };
+      const btnsEl   = document.getElementById('alarm-decision-btns');
+      const reasonEl = document.getElementById('alarm-decision-reason');
+      if (btnsEl) btnsEl.innerHTML = `<span style="font-size:13px;font-weight:700;color:#16a34a;">${labels[_pendingDecision] || '저장됨'}</span>`;
+      if (reasonEl) reasonEl.style.display = 'none';
+      _pendingDecision = null;
+    }
+  } catch(e) {
+    alert('저장 실패: ' + e.message);
+    if (confirmBtn) { confirmBtn.textContent = '확인'; confirmBtn.disabled = false; }
+  }
+}
+
+// 문서 편집
+function toggleDocEdit(btn) {
+  const body = document.getElementById('doc-modal-body');
+  if (!body) return;
+
+  if (btn.dataset.editing === '1') {
+    // 편집 모드 → 읽기 모드 (저장 없이 취소)
+    body.style.cssText = '';
+    body.classList.add('text-mode');
+    body.innerHTML = formatLetter(_docModalCopyText);
+    btn.textContent = '✏ 수정';
+    btn.dataset.editing = '0';
+  } else {
+    // 읽기 모드 → 편집 모드
+    body.classList.remove('text-mode');
+    body.style.cssText = 'flex:1;min-height:0;display:flex;flex-direction:column;padding:0;overflow:hidden;';
+    const ta = document.createElement('textarea');
+    ta.id = 'doc-edit-ta';
+    ta.value = _docModalCopyText;
+    ta.style.cssText = 'flex:1;min-height:calc(65vh - 110px);width:100%;padding:16px 20px;' +
+                       'border:none;outline:none;' +
+                       'font-size:12px;font-family:"Courier New",monospace;resize:none;box-sizing:border-box;';
+    body.innerHTML = '';
+    body.appendChild(ta);
+
+    const saveBar = document.createElement('div');
+    saveBar.style.cssText = 'padding:10px 16px;display:flex;justify-content:flex-end;gap:8px;' +
+                            'border-top:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0;';
+    saveBar.innerHTML = `<button onclick="saveDocEdit()"
+      style="padding:6px 16px;background:#6366f1;color:#fff;border:none;border-radius:6px;
+             font-size:12px;font-weight:600;cursor:pointer;">수정본 저장</button>`;
+    body.appendChild(saveBar);
+
+    btn.textContent = '취소';
+    btn.dataset.editing = '1';
+    ta.focus();
+  }
+}
+
+async function saveDocEdit() {
+  const ta = document.getElementById('doc-edit-ta');
+  if (!ta || !_currentDocType || !_currentDocPatientId) return;
+  const edited = ta.value.trim();
+  if (!edited) return;
+  const saveBtn = document.querySelector('#doc-modal-body button');
+  if (saveBtn) { saveBtn.textContent = '저장 중…'; saveBtn.disabled = true; }
+  try {
+    const r = await fetch(
+      `/pt/api/patients/${encodeURIComponent(_currentDocPatientId)}/doc/${encodeURIComponent(_currentDocType)}/edit/`, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body:    JSON.stringify({ original_doc: _docModalCopyText, edited_doc: edited }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      _docModalCopyText = edited;
+      const editBtn = document.getElementById('doc-modal-edit-btn');
+      if (editBtn) { editBtn.dataset.editing = '0'; editBtn.textContent = '✏ 수정'; }
+      const body = document.getElementById('doc-modal-body');
+      body.style.cssText = '';
+      body.classList.add('text-mode');
+      body.innerHTML = formatLetter(edited);
+      if (saveBtn) { saveBtn.textContent = '✅ 저장됨'; setTimeout(() => saveBtn.disabled = false, 1500); }
+    }
+  } catch(e) {
+    alert('저장 실패: ' + e.message);
+    if (saveBtn) { saveBtn.textContent = '수정본 저장'; saveBtn.disabled = false; }
+  }
+}
+
+
+// ── Email 발송 ────────────────────────────────────────────────────────────────
+
+let _emailContacts = [];   // 현재 환자의 저장된 수신자
+
+async function openEmailModal() {
+  _emailContacts = [];
+  const overlay = document.getElementById('email-modal-overlay');
+  document.getElementById('email-send-status').textContent = '';
+  document.getElementById('email-add-name').value  = '';
+  document.getElementById('email-add-email').value = '';
+  document.getElementById('email-add-org').value   = '';
+  overlay.classList.add('open');
+
+  if (_currentDocPatientId) {
+    try {
+      const r = await fetch(`/pt/api/patients/${encodeURIComponent(_currentDocPatientId)}/contacts/`);
+      const d = await r.json();
+      _emailContacts = d.contacts || [];
+    } catch(_) {}
+  }
+  renderEmailContacts();
+}
+
+function closeEmailModal() {
+  document.getElementById('email-modal-overlay').classList.remove('open');
+}
+
+const _ROLE_LABEL = { physician:'Physician', lawyer:'Lawyer', insurance:'Insurance', other:'Other' };
+
+function renderEmailContacts() {
+  const el = document.getElementById('email-contact-list');
+  if (!_emailContacts.length) {
+    el.innerHTML = '<p style="font-size:12px;color:#9ca3af;margin:0 0 8px;">저장된 수신자 없음. 아래에서 추가하세요.</p>';
+    return;
+  }
+  el.innerHTML = _emailContacts.map(c => `
+    <div class="email-contact-item">
+      <input type="checkbox" id="ec-${c.id}" value="${c.id}" checked>
+      <span class="email-contact-role ${c.role}">${_ROLE_LABEL[c.role] || c.role}</span>
+      <div class="email-contact-info">
+        <div class="email-contact-name">${esc(c.name)}${c.organization ? ' · ' + esc(c.organization) : ''}</div>
+        <div class="email-contact-email">${esc(c.email)}</div>
+      </div>
+      <button class="email-contact-del" onclick="deleteEmailContact(${c.id})" title="삭제">✕</button>
+    </div>`).join('');
+}
+
+async function addEmailContact() {
+  const role  = document.getElementById('email-add-role').value;
+  const name  = document.getElementById('email-add-name').value.trim();
+  const email = document.getElementById('email-add-email').value.trim();
+  const org   = document.getElementById('email-add-org').value.trim();
+  if (!name || !email) { alert('이름과 이메일은 필수입니다.'); return; }
+  const r = await fetch(`/pt/api/patients/${encodeURIComponent(_currentDocPatientId)}/contacts/`, {
+    method: 'POST',
+    headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+    body: JSON.stringify({role, name, email, organization: org}),
+  });
+  const d = await r.json();
+  if (d.ok) {
+    _emailContacts = _emailContacts.filter(c => c.role !== role);
+    _emailContacts.push({id: d.id, role, name, email, organization: org});
+    document.getElementById('email-add-name').value  = '';
+    document.getElementById('email-add-email').value = '';
+    document.getElementById('email-add-org').value   = '';
+    renderEmailContacts();
+  }
+}
+
+async function deleteEmailContact(contactId) {
+  await fetch(`/pt/api/contacts/${contactId}/delete/`, {
+    method: 'DELETE', headers: {'X-CSRFToken': CSRF},
+  });
+  _emailContacts = _emailContacts.filter(c => c.id !== contactId);
+  renderEmailContacts();
+}
+
+async function sendDocumentEmail() {
+  const checked = [...document.querySelectorAll('#email-contact-list input[type=checkbox]:checked')]
+    .map(cb => _emailContacts.find(c => c.id == cb.value))
+    .filter(Boolean);
+  if (!checked.length) { alert('수신자를 선택하세요.'); return; }
+
+  const btn    = document.getElementById('email-send-btn');
+  const status = document.getElementById('email-send-status');
+  btn.disabled = true;
+  btn.textContent = '발송 중…';
+  status.textContent = '';
+
+  const title = document.getElementById('doc-modal-title')?.textContent || 'Document';
+
+  try {
+    const r = await fetch('/pt/api/docs/send-email/', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({
+        patient_id: _currentDocPatientId,
+        doc_type:   _currentDocType,
+        doc_title:  title,
+        content:    _docModalCopyText,
+        recipients: checked.map(c => ({id:c.id, name:c.name, email:c.email, role:c.role})),
+      }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      const names = d.sent_to.map(s => s.name || s.email).join(', ');
+      status.style.color = '#16a34a';
+      status.textContent = `✓ 발송 완료: ${names}`;
+      btn.textContent = '✉ 발송';
+      btn.disabled = false;
+      if (d.failed?.length) {
+        status.textContent += ` (실패: ${d.failed.map(f=>f.email).join(', ')})`;
+        status.style.color = '#b45309';
+      }
+    } else {
+      status.style.color = '#dc2626';
+      status.textContent = `오류: ${d.error || '발송 실패'}`;
+      btn.textContent = '✉ 발송';
+      btn.disabled = false;
+    }
+  } catch(e) {
+    status.style.color = '#dc2626';
+    status.textContent = `네트워크 오류: ${e.message}`;
+    btn.textContent = '✉ 발송';
+    btn.disabled = false;
+  }
+}
+
+
+// ── Pilot Feedback 챗봇 ───────────────────────────────────────────────────────
+
+let _fbCat      = 'improvement';
+let _fbOpened   = false;
+let _actionLog  = [];
+
+function _logAction(action) {
+  _actionLog.push({ action, ts: Date.now() });
+  if (_actionLog.length > 5) _actionLog.shift();
+}
+
+function _fbAddMsg(text, role = 'bot') {
+  const box = document.getElementById('feedback-messages');
+  const el  = document.createElement('div');
+  if (role === 'bot') {
+    el.className = 'fb-msg-bot';
+    el.innerHTML = `<div class="fb-msg-bot-avatar">SP</div>
+                    <div class="fb-msg-bot-bubble">${text}</div>`;
+  } else {
+    el.className = 'fb-msg-user';
+    el.innerHTML = `<div class="fb-msg-user-bubble">${text}</div>`;
+  }
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function _fbSetQuickReplies(items) {
+  const box = document.getElementById('feedback-quick-replies');
+  box.innerHTML = items.map(i =>
+    `<button class="fb-quick-btn" onclick="fbQuickSelect('${i.cat}','${i.label}')">${i.label}</button>`
+  ).join('');
+}
+
+function fbQuickSelect(cat, label) {
+  _fbCat = cat;
+  _fbAddMsg(label, 'user');
+  document.getElementById('feedback-quick-replies').innerHTML = '';
+  setTimeout(() => {
+    _fbAddMsg('어떤 점인지 자유롭게 입력해 주세요. 😊');
+    document.getElementById('feedback-text').focus();
+  }, 300);
+}
+
+function toggleFeedback() {
+  const panel = document.getElementById('feedback-panel');
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    setTimeout(() => { panel.style.cssText = ''; }, 230);
+    return;
+  }
+  panel.style.cssText = 'display:flex;flex-direction:column;width:320px;height:480px;';
+  requestAnimationFrame(() => panel.classList.add('open'));
+
+  if (!_fbOpened) {
+    _fbOpened = true;
+    setTimeout(() => {
+      _fbAddMsg('안녕하세요! 👋<br>파일럿 사용 중 느끼신 점을 알려주세요.');
+      setTimeout(() => _fbSetQuickReplies([
+        { cat: 'improvement', label: '💡 개선 제안' },
+        { cat: 'bug',         label: '🐛 버그 신고' },
+        { cat: 'praise',      label: '👍 칭찬'     },
+        { cat: 'question',    label: '❓ 질문'     },
+      ]), 500);
+    }, 200);
+  }
+}
+
+async function submitFeedback() {
+  const ta  = document.getElementById('feedback-text');
+  const msg = ta.value.trim();
+  if (!msg) { ta.focus(); return; }
+
+  _fbAddMsg(msg, 'user');
+  ta.value = '';
+  document.getElementById('feedback-send-btn').disabled = true;
+
+  try {
+    await fetch('/pt/api/feedback/', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({
+        category:   _fbCat,
+        message:    msg,
+        page_url:   location.pathname,
+        patient_id: typeof _currentDocPatientId !== 'undefined' ? _currentDocPatientId : '',
+        doc_type:   typeof _currentDocType      !== 'undefined' ? _currentDocType      : '',
+        action_log: _actionLog,
+      }),
+    });
+    setTimeout(() => {
+      _fbAddMsg('소중한 의견 감사합니다! 개발팀에 전달하겠습니다. 🙏');
+      _fbSetQuickReplies([{ cat: 'improvement', label: '+ 추가 의견' }]);
+      document.getElementById('feedback-send-btn').disabled = false;
+      _fbCat = 'improvement';
+    }, 300);
+  } catch(e) {
+    _fbAddMsg('전송에 실패했습니다. 다시 시도해 주세요.');
+    document.getElementById('feedback-send-btn').disabled = false;
+  }
+}
+
+</script>
+</body>
+</html>

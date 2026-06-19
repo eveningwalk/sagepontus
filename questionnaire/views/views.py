@@ -5,17 +5,27 @@ import os
 from django.conf import settings
 from django.contrib import messages
 import json as _json
-from django.http import HttpResponse, JsonResponse, StreamingHttpResponse
+from django.http import JsonResponse, StreamingHttpResponse, FileResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.cache import never_cache
-from questionnaire.models.models import Question,Category, Answer
+from django.views.decorators.http import require_POST
+from questionnaire.models.models import Question, Category, Answer
+from questionnaire.models import PerfTestResult
 from django.contrib.auth.decorators import login_required
 
 from questionnaire.models.models_braintree import BrainTree, BrainBlockNode, BrainNode
 from questionnaire.demo_config import get_demo_default_answer, pick_demo_domain_category_name
 from questionnaire.prompts import run_prompt_generation_pair
-from questionnaire.prompts.service import generate_ai_followup_questions, _chat_generate_with_usage, autofill_answers_from_brain_dump
+from questionnaire.prompts.service import generate_ai_followup_questions, _chat_generate_with_usage, autofill_answers_from_brain_dump, distill_extra_context, generate_soap_note, generate_soap_warning, _SOAP_DOMAINS, _SKIP_COMMON_DOMAINS
+
+_DOMAIN_TITLES = {
+    'therapist_soap': 'SOAP 작성',
+    'startup_bizplan': '모두의 창업 사업계획서',
+    # 미국 런칭 시 추가:
+    # 'therapist_insurance': '보험사 증빙 자료',
+    # 'therapist_court':     '법원 제출 자료',
+}
 from questionnaire.device import landing_template_name
 
 logger = logging.getLogger(__name__)
@@ -38,18 +48,10 @@ def _demo_flow_template(request, base_name: str) -> str:
 
 
 def root(request):
-    """
-    루트 URL(/). Next.js 빌드 랜딩 페이지 우선 제공.
-    빌드 파일 없으면 기존 Django 랜딩으로 fallback.
-    """
-    landing_html = os.path.join(settings.BASE_DIR, "static", "landing", "index.html")
-    if os.path.exists(landing_html):
-        with open(landing_html, "rb") as f:
-            response = HttpResponse(f.read(), content_type="text/html; charset=utf-8")
-            response["Cache-Control"] = "no-store, no-cache, must-revalidate"
-            return response
+    host = request.get_host().split(':')[0]
+    is_pt_domain = (host == 'pt.sagepontus.com')
 
-    if request.user.is_authenticated:
+    if not is_pt_domain and request.user.is_authenticated:
         demo_username = getattr(settings, "DEMO_USER_USERNAME", "")
         if getattr(settings, "DEMO_ENABLED", False) and demo_username and request.user.get_username() == demo_username:
             response = redirect("demo")
@@ -57,25 +59,32 @@ def root(request):
             response["Pragma"] = "no-cache"
             return response
         return home(request)
-    if getattr(settings, "DEMO_ENABLED", False):
-        response = render(request, landing_template_name(request), {})
-        response["Cache-Control"] = "no-store, no-cache, must-revalidate"
-        response["Pragma"] = "no-cache"
-        return response
-    return redirect("accounts:login")
+
+    # Serve built Next.js landing page if available
+    landing_html = os.path.join(settings.BASE_DIR, "static", "landing", "index.html")
+    if os.path.exists(landing_html):
+        with open(landing_html, "rb") as f:
+            response = HttpResponse(f.read(), content_type="text/html; charset=utf-8")
+            response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+            return response
+
+    # Fallback to old landing template
+    response = render(request, landing_template_name(request), {})
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate"
+    response["Pragma"] = "no-cache"
+    return response
 
 
 @login_required
 def home(request):
-    # 로그인한 유저의 BrainTree 불러오기
-    braintrees = BrainTree.objects.filter(user=request.user).order_by("created_at")
+    braintrees = BrainTree.objects.filter(user=request.user)
+    count = braintrees.count()
 
-    if request.method == "POST":
-        new_name = request.POST.get("name", "Untitled BrainTree")
-        new_tree = BrainTree.objects.create(user=request.user, title=new_name)
-        return redirect("questionnaire:create_tree_and_start")
+    if count == 1:
+        braintree = braintrees.first()
+        return redirect("questionnaire:resume_tree", tree_id=braintree.id)
 
-    return render(request, "questionnaire/test/home.html", {"braintrees": braintrees})
+    return redirect("questionnaire:my_trees")
 
 @login_required
 def show_question_step(request, category, order, block_id):
@@ -99,8 +108,24 @@ def show_question_step(request, category, order, block_id):
     question = get_object_or_404(Question, category=cat, order=order)
     
     if request.method == 'POST':
-        # 「앞으로 가기」: 이전에 답했던 질문 화면으로 이동 (저장·제출 없음)
+        # 「앞으로 가기」: 이전 질문으로 이동 — 현재 답변도 저장
         if request.POST.get('forward') == '1':
+            answer_text = request.POST.get('answer', '').strip()
+            if answer_text:
+                node = BrainNode.objects.filter(block=block_node, order=question.order).first()
+                if not node:
+                    node = BrainNode.objects.create(
+                        block=block_node,
+                        question_text=question.question_text.strip(),
+                        order=question.order,
+                    )
+                Answer.objects.update_or_create(
+                    user=request.user,
+                    question=question,
+                    brainnode=node,
+                    defaults={'answer_text': answer_text},
+                )
+
             if order > 1:
                 return redirect(
                     'questionnaire:show_question_step',
@@ -181,6 +206,23 @@ def show_question_step(request, category, order, block_id):
                             block_id=preselected['domain_block_id'],
                         )
                     return redirect('questionnaire:select_domain', parent_block_id=block_node.id)
+                elif block_node.type == 'vertical_profile':
+                    preselected = request.session.pop(
+                        f'preselected_domain_{block_node.id}', None
+                    )
+                    if preselected:
+                        if preselected.get('track') == 'autofill':
+                            return redirect(
+                                'questionnaire:brain_dump_autofill',
+                                domain_block_id=preselected['domain_block_id'],
+                            )
+                        return redirect(
+                            'questionnaire:show_question_step',
+                            category=preselected['domain'],
+                            order=1,
+                            block_id=preselected['domain_block_id'],
+                        )
+                    return redirect('questionnaire:select_domain', parent_block_id=block_node.parent.id)
                 else:
                     return redirect('questionnaire:ai_question_start', block_id=block_node.id)
 
@@ -214,13 +256,14 @@ def show_question_step(request, category, order, block_id):
 
 def select_domain(request, parent_block_id):
     parent_node = get_object_or_404(BrainBlockNode, id=parent_block_id)
-    tree = parent_node.braintree  # ← 이렇게 바로 접근 가능!
-    categories = Category.objects.exclude(name='common')  # 'common' 제외
+    tree = parent_node.braintree
+    categories = Category.objects.exclude(name='common')
     allowed_domain = getattr(settings, "DEMO_DOMAIN_CATEGORY", "startup")
+    allowed_domains = _SKIP_COMMON_DOMAINS | {allowed_domain}
 
     if request.method == "POST":
         selected_domain = request.POST.get("domain")
-        if selected_domain != allowed_domain:
+        if selected_domain not in allowed_domains:
             demo_mode = bool(request.session.get("demo_mode"))
             demo_default_domain = None
             if _is_demo_session(request):
@@ -235,6 +278,7 @@ def select_domain(request, parent_block_id):
                     "demo_mode": demo_mode,
                     "demo_default_domain": demo_default_domain,
                     "allowed_domain": allowed_domain,
+                    "allowed_domains": allowed_domains,
                 },
             )
 
@@ -245,16 +289,15 @@ def select_domain(request, parent_block_id):
         domain_node = BrainBlockNode.objects.create(
             parent=parent_node,
             braintree=tree,
-            title=f"{selected_domain} 시작",
+            title=_DOMAIN_TITLES.get(selected_domain, selected_domain),
             type="domain",
-            description=f"{selected_domain} 관련 질문 흐름",
+            description=selected_domain,
             order=1
         )
 
         # 3. 해당 도메인의 첫 질문 가져오기
         first_question = Question.objects.filter(category=category, order=1).first()
         if not first_question:
-            # 질문이 없으면 에러 페이지나 안내로
             return render(request, "questionnaire/test/no_questions.html", {"category": category})
 
         # 4. 질문 단계로 이동
@@ -277,6 +320,7 @@ def select_domain(request, parent_block_id):
         "demo_mode": demo_mode,
         "demo_default_domain": demo_default_domain,
         "allowed_domain": allowed_domain,
+        "allowed_domains": allowed_domains,
     })
 
 def _get_prompt_flow_answers(user, block_id):
@@ -380,13 +424,49 @@ def answers_review(request, block_id):
         current_block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
         return redirect('questionnaire:prompt_flow_results', block_id=block_id)
 
+    user_block = _get_or_create_user_block(current_block)
     return render(request, _demo_flow_template(request, "answers_review"), {
         'answers': answers,
         'ai_brainnodes': ai_brainnodes,
         'user_brainnodes': user_brainnodes,
+        'user_block_id': user_block.id,
         'block_id': block_id,
         'tree': current_block.braintree,
     })
+
+
+@login_required
+@require_POST
+def save_custom_node(request):
+    """사용자 추가 노드 개별 저장 (AJAX)."""
+    import json as _json
+    node_id = request.POST.get('node_id', '').strip()
+    block_id = request.POST.get('block_id', '').strip()
+    question_text = request.POST.get('question_text', '').strip()
+    answer_text = request.POST.get('answer_text', '').strip()
+
+    if not question_text:
+        return JsonResponse({'success': False, 'error': '제목을 입력해주세요.'}, status=400)
+
+    if node_id and node_id != '0':
+        node = get_object_or_404(BrainNode, id=int(node_id), block__braintree__user=request.user)
+        node.question_text = question_text
+        node.answer_text = answer_text
+        node.save(update_fields=['question_text', 'answer_text'])
+        return JsonResponse({'success': True, 'id': node.id})
+
+    if block_id:
+        block = get_object_or_404(BrainBlockNode, id=int(block_id), braintree__user=request.user, type='user_custom')
+        order = block.brainnodes.count()
+        node = BrainNode.objects.create(
+            block=block,
+            question_text=question_text,
+            answer_text=answer_text,
+            order=order,
+        )
+        return JsonResponse({'success': True, 'id': node.id})
+
+    return JsonResponse({'success': False, 'error': '잘못된 요청입니다.'}, status=400)
 
 
 @never_cache
@@ -396,18 +476,28 @@ def prompt_flow_results(request, block_id):
     current_block, answers = _get_prompt_flow_answers(request.user, block_id)
     user_block = _get_user_block(current_block)
     user_brainnodes = list(user_block.brainnodes.order_by('order')) if user_block else []
+    ai_block = _get_ai_block(current_block)
+    ai_brainnodes = list(ai_block.brainnodes.order_by('order')) if ai_block else []
+    is_soap = any(
+        getattr(getattr(a, 'question', None), 'category', None) and
+        a.question.category.name in _SOAP_DOMAINS
+        for a in answers
+    )
     base_ctx = {
         'answers': answers,
         'user_brainnodes': user_brainnodes,
+        'ai_brainnodes': ai_brainnodes,
         'tree': current_block.braintree,
         'block_id': block_id,
+        'brain_dump_text': _get_brain_dump_text(current_block.braintree),
+        'is_soap': is_soap,
     }
     session_data = request.session.get(_session_key(block_id))
 
     # 세션 없으면 DB 캐시 확인
     if not session_data:
         cached = current_block.cached_cra or {}
-        if current_block.cached_result_1 and current_block.cached_result_2:
+        if current_block.cached_result_2:
             session_data = {
                 "result_1": current_block.cached_result_1,
                 "result_2": current_block.cached_result_2,
@@ -418,6 +508,7 @@ def prompt_flow_results(request, block_id):
                 "real_sp_result": cached.get("real_sp_result", ""),
                 "token_before": cached.get("token_before") or {},
                 "token_after": cached.get("token_after") or {},
+                "warning_alarm": cached.get("warning_alarm") or {},
             }
             # 세션에도 복원
             request.session[_session_key(block_id)] = session_data
@@ -439,6 +530,7 @@ def prompt_flow_results(request, block_id):
         'real_sp_result': session_data.get('real_sp_result', ''),
         'token_before': session_data.get('token_before', {}),
         'token_after': session_data.get('token_after', {}),
+        'warning_alarm': session_data.get('warning_alarm') or {},
     })
 
 
@@ -461,36 +553,67 @@ def prompt_flow_stream(request, block_id):
                     if bn.question_text and bn.answer_text:
                         extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
             user_block = _get_user_block(current_block)
+            user_extra_qa = []
             for bn in (user_block.brainnodes.order_by('order') if user_block else []):
                 if bn.question_text and bn.answer_text:
-                    extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
+                    user_extra_qa.append({"q": bn.question_text, "a": bn.answer_text})
+
+            # brain dump distilled context 로드 (startup_bizplan 등)
+            distilled_context = (current_block.cached_cra or {}).get('distilled_context') or None
 
             yield send({"step": 1, "total": 6, "label": "답변 분석 준비 중...", "progress": 5})
 
-            yield send({"step": 2, "total": 6, "label": "전략 방향 도출 중...", "progress": 18})
-            result_1 = run_single_task("strategy", answers, extra_qa=extra_qa)
-
-            yield send({"step": 3, "total": 6, "label": "맞춤 프롬프트 생성 중...", "progress": 35})
-            result_2 = run_single_task("prompt_builder", answers, extra_qa=extra_qa)
-
-            yield send({"step": 4, "total": 6, "label": "핵심 개념 추출 중 (CRA 분석)...", "progress": 55})
-            from questionnaire.prompts.cra_engine import run_cra_pipeline
+            # 도메인 감지 (CRA 및 분기 판단용 — 미리 실행)
             from pathlib import Path as _Path
-            combined_text = " ".join(
+            combined_text_early = " ".join(
                 a.answer_text for a in answers if a.answer_text and a.answer_text.strip()
             )
-            for item in extra_qa:
-                combined_text += f" [추가정보] {item['q']}: {item['a']}"
-            kb_names = [p.stem for p in (_Path(__file__).resolve().parent.parent / "prompts" / "kb").glob("*.json")]
-            block_title = (current_block.title or "").lower().replace(" ", "_")
-            domain = next((k for k in kb_names if k in block_title), None)
-            if not domain:
+            kb_names_early = [p.stem for p in (_Path(__file__).resolve().parent.parent / "prompts" / "kb").glob("*.json")]
+            block_title_early = (current_block.title or "").lower().replace(" ", "_")
+            domain_early = next((k for k in kb_names_early if k in block_title_early), None)
+            if not domain_early:
                 for a in answers:
                     cat_name = getattr(getattr(a, 'question', None), 'category', None)
                     cat_name = getattr(cat_name, 'name', '') or ''
-                    if cat_name in kb_names and cat_name != 'common':
-                        domain = cat_name
+                    if cat_name in kb_names_early and cat_name != 'common':
+                        domain_early = cat_name
                         break
+            # KB에 없는 도메인(startup_bizplan 등)은 카테고리 직접 확인
+            if not domain_early:
+                for a in answers:
+                    cat_name = getattr(getattr(a, 'question', None), 'category', None)
+                    cat_name = getattr(cat_name, 'name', '') or ''
+                    if cat_name and cat_name != 'common':
+                        domain_early = cat_name
+                        break
+            is_soap = domain_early in _SOAP_DOMAINS
+
+            if is_soap:
+                all_answers = list(answers)
+                profile_answers = [a for a in all_answers if getattr(getattr(a, 'question', None), 'category', None) and a.question.category.name == 'therapist_profile']
+                soap_answers   = [a for a in all_answers if getattr(getattr(a, 'question', None), 'category', None) and a.question.category.name in _SOAP_DOMAINS]
+
+                yield send({"step": 2, "total": 6, "label": "위험 신호 분석 중 (Red Flag Check)...", "progress": 18})
+                warning_alarm = generate_soap_warning(soap_answers)
+                result_1 = ""
+
+                yield send({"step": 3, "total": 6, "label": "SOAP 노트 생성 중...", "progress": 35})
+                result_2 = generate_soap_note(soap_answers, profile_answers=profile_answers, extra_qa=extra_qa)
+            else:
+                warning_alarm = {}
+                yield send({"step": 2, "total": 6, "label": "전략 방향 도출 중...", "progress": 18})
+                result_1 = run_single_task("strategy", answers, extra_qa=extra_qa, distilled_context=distilled_context, user_qa=user_extra_qa)
+
+                yield send({"step": 3, "total": 6, "label": "맞춤 프롬프트 생성 중...", "progress": 35})
+                prompt_task = "startup_bizplan_prompt" if domain_early == "startup_bizplan" else "prompt_builder"
+                result_2 = run_single_task(prompt_task, answers, extra_qa=extra_qa, distilled_context=distilled_context, user_qa=user_extra_qa)
+
+            yield send({"step": 4, "total": 6, "label": "핵심 개념 추출 중 (CRA 분석)...", "progress": 55})
+            from questionnaire.prompts.cra_engine import run_cra_pipeline
+            combined_text = combined_text_early
+            for item in extra_qa:
+                combined_text += f" [추가정보] {item['q']}: {item['a']}"
+            domain = domain_early
             pipeline_result = run_cra_pipeline(
                 combined_text, domain=domain, use_ai=True,
                 user=request.user, braintree=current_block.braintree,
@@ -505,29 +628,30 @@ def prompt_flow_stream(request, block_id):
                         list(cra_call3.keys()) if cra_call3 else "empty",
                         len((cra_call3.get("expert_output") or "")))
 
-            yield send({"step": 5, "total": 6, "label": "일반 AI 응답 생성 중...", "progress": 73})
-            call = _chat_generate_with_usage()
-            raw_prompt = (
-                "아래는 사용자가 입력한 답변입니다. 이를 바탕으로 실행 가능한 조언을 해주세요.\n\n"
-                + combined_text
-            )
-            try:
-                real_generic_result, token_before = call(
-                    "gemini-2.5-flash-lite", raw_prompt, {"max_tokens": 600, "temperature": 0.5}
-                )
-            except Exception as e:
-                logger.warning("Before AI 호출 실패 (무시): %s", e)
+            if is_soap:
+                # SOAP 도메인: 일반 AI 비교 불필요
+                yield send({"step": 5, "total": 6, "label": "임상 정보 최종 검토 중...", "progress": 73})
                 real_generic_result, token_before = "", {}
-
-            yield send({"step": 6, "total": 6, "label": "Sage Pontus 심층 분석 중...", "progress": 90})
-            sp_prompt = result_2 if result_2 else combined_text
-            try:
-                real_sp_result, token_after = call(
-                    "gemini-2.5-flash-lite", sp_prompt, {"max_tokens": 600, "temperature": 0.5}
+            else:
+                yield send({"step": 5, "total": 6, "label": "일반 AI 프롬프트 생성 중...", "progress": 73})
+                call = _chat_generate_with_usage()
+                raw_prompt = (
+                    "아래는 사용자가 입력한 답변입니다.\n"
+                    "이 내용을 바탕으로 다른 AI에게 전달할 수 있는 프롬프트를 작성해주세요.\n"
+                    "프롬프트는 명확한 지시와 필요한 맥락을 포함한 2~4 문단의 산문 형태로 작성하세요.\n\n"
+                    + combined_text
                 )
-            except Exception as e:
-                logger.warning("After AI 호출 실패 (무시): %s", e)
-                real_sp_result, token_after = "", {}
+                try:
+                    real_generic_result, token_before = call(
+                        "gemini-2.5-flash-lite", raw_prompt, {"max_tokens": 600, "temperature": 0.5}
+                    )
+                except Exception as e:
+                    logger.warning("Before AI 호출 실패 (무시): %s", e)
+                    real_generic_result, token_before = "", {}
+
+            yield send({"step": 6, "total": 6, "label": "결과 정리 중...", "progress": 90})
+            real_sp_result = result_2 if result_2 else ""
+            token_after = {}
 
             session_payload = {
                 "result_1": result_1, "result_2": result_2,
@@ -536,6 +660,7 @@ def prompt_flow_stream(request, block_id):
                 "real_generic_result": real_generic_result,
                 "real_sp_result": real_sp_result,
                 "token_before": token_before, "token_after": token_after,
+                "warning_alarm": warning_alarm,
             }
             request.session[_session_key(block_id)] = session_payload
             request.session.save()
@@ -551,6 +676,7 @@ def prompt_flow_stream(request, block_id):
                 "token_before": token_before,
                 "token_after": token_after,
                 "call1": {"domain_hits": cra_tokens},
+                "warning_alarm": warning_alarm,
             }
             current_block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
 
@@ -602,6 +728,18 @@ def edit_answer(request, answer_id):
     return render(request, _demo_flow_template(request, "edit_answer"), {'answer': answer})
 
 
+@login_required
+def regenerate_prompt(request, block_id):
+    """캐시 초기화 후 결과 페이지로 리다이렉트 → SSE 재실행."""
+    block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
+    request.session.pop(_session_key(block_id), None)
+    block.cached_result_1 = ""
+    block.cached_result_2 = ""
+    block.cached_cra = None
+    block.save(update_fields=["cached_result_1", "cached_result_2", "cached_cra"])
+    return redirect('questionnaire:prompt_flow_results', block_id=block_id)
+
+
 def can_create_tree(user):
     plan = user.policy.plan
     count = user.brain_trees.filter(status="active").count()
@@ -634,7 +772,7 @@ def demo_session_list(request):
     도메인 블록이 있으면 결과 페이지 링크를 제공한다.
     """
     if not _is_demo_session(request):
-        return redirect('landing')
+        return redirect('questionnaire:my_trees')
 
     trees = BrainTree.objects.filter(user=request.user).order_by('-created_at')
 
@@ -650,8 +788,15 @@ def demo_session_list(request):
             'domain_block': domain_block,
         })
 
+    perf_history = list(
+        PerfTestResult.objects.filter(user=request.user)
+        .order_by('-created_at')
+        .values('id', 'case_name', 'created_at', 'tokens', 'usage_a', 'usage_b', 'vote')[:10]
+    )
+
     return render(request, _demo_flow_template(request, 'demo_session_list'), {
         'sessions': sessions,
+        'perf_history': perf_history,
     })
 
 
@@ -843,6 +988,7 @@ def brain_dump(request, block_id):
     return render(request, _demo_flow_template(request, 'brain_dump'), {
         'root_block': root_block,
         'tree': root_block.braintree,
+        'brain_dump_text': _get_brain_dump_text(root_block.braintree),
     })
 
 
@@ -853,6 +999,7 @@ def brain_dump_setup(request, block_id):
     root_block = get_object_or_404(BrainBlockNode, id=block_id, braintree__user=request.user)
     categories = Category.objects.exclude(name='common')
     allowed_domain = getattr(settings, 'DEMO_DOMAIN_CATEGORY', 'physical_therapist')
+    allowed_domains = _SKIP_COMMON_DOMAINS | {allowed_domain}
     brain_dump_text = _get_brain_dump_text(root_block.braintree)
 
     if request.method == 'POST':
@@ -864,7 +1011,7 @@ def brain_dump_setup(request, block_id):
                 'root_block': root_block,
                 'tree': root_block.braintree,
                 'categories': categories,
-                'allowed_domain': allowed_domain,
+                'allowed_domains': allowed_domains,
                 'brain_dump_text': brain_dump_text,
                 'error': '도메인을 선택해 주세요.',
             })
@@ -875,11 +1022,48 @@ def brain_dump_setup(request, block_id):
             parent=root_block,
             type='domain',
             defaults={
-                'title': f'{selected_domain} 시작',
-                'description': f'{selected_domain} 관련 질문 흐름',
+                'title': _DOMAIN_TITLES.get(selected_domain, selected_domain),
+                'description': selected_domain,
                 'order': 1,
             },
         )
+
+        # SOAP 도메인: vertical_profile 미완성이면 먼저 거침, 완성이면 바로 분기
+        if selected_domain in _SOAP_DOMAINS:
+            profile_block, _ = BrainBlockNode.objects.get_or_create(
+                braintree=root_block.braintree,
+                parent=root_block,
+                type='vertical_profile',
+                defaults={
+                    'title': 'PT 프로필',
+                    'description': '치료사 컨텍스트 — 세션 간 재사용',
+                    'order': 0,
+                },
+            )
+            has_profile = Answer.objects.filter(
+                user=request.user,
+                brainnode__block=profile_block,
+            ).exists()
+            if has_profile:
+                if track == 'autofill':
+                    return redirect('questionnaire:brain_dump_autofill', domain_block_id=domain_block.id)
+                return redirect(
+                    'questionnaire:show_question_step',
+                    category=selected_domain,
+                    order=1,
+                    block_id=domain_block.id,
+                )
+            request.session[f'preselected_domain_{profile_block.id}'] = {
+                'domain': selected_domain,
+                'domain_block_id': domain_block.id,
+                'track': track,
+            }
+            return redirect(
+                'questionnaire:show_question_step',
+                category='therapist_profile',
+                order=1,
+                block_id=profile_block.id,
+            )
 
         if track == 'autofill':
             return redirect('questionnaire:brain_dump_autofill', domain_block_id=domain_block.id)
@@ -903,7 +1087,7 @@ def brain_dump_setup(request, block_id):
         'root_block': root_block,
         'tree': root_block.braintree,
         'categories': categories,
-        'allowed_domain': allowed_domain,
+        'allowed_domains': allowed_domains,
         'brain_dump_text': brain_dump_text,
     })
 
@@ -919,12 +1103,14 @@ def brain_dump_autofill(request, domain_block_id):
     brain_dump_text = _get_brain_dump_text(root_block.braintree)
 
     if request.method == 'POST':
-        domain_name = domain_block.title.replace(' 시작', '').strip()
+        domain_name = (domain_block.description or '').strip() or domain_block.title.replace(' 시작', '').strip()
+        logger.info(f"[autofill] domain_name={domain_name!r} | description={domain_block.description!r} | title={domain_block.title!r} | _SOAP_DOMAINS={_SOAP_DOMAINS}")
         common_cat = Category.objects.filter(name='common').first()
         domain_cat = Category.objects.filter(name=domain_name).first()
 
         all_questions = []
-        if common_cat:
+        # _SKIP_COMMON_DOMAINS은 공통 질문 없이 도메인 질문만 사용
+        if domain_name not in _SKIP_COMMON_DOMAINS and common_cat:
             all_questions += list(
                 Question.objects.filter(category=common_cat).order_by('order')
             )
@@ -956,17 +1142,32 @@ def brain_dump_autofill(request, domain_block_id):
                 defaults={'answer_text': answer_text},
             )
 
+        # startup_bizplan: autofill 잔여 정보를 구조화된 컨텍스트로 추출
+        distilled = None
+        if domain_name == 'startup_bizplan' and brain_dump_text:
+            filled_qa = [
+                {"q": q['text'], "a": ai_answers.get(q['id'], '')}
+                for q in q_dicts
+                if ai_answers.get(q['id'], '').strip()
+            ]
+            distilled = distill_extra_context(brain_dump_text, filled_qa) or None
+
         # 세션 캐시 초기화 (이전 결과 있을 경우 대비)
         request.session.pop(_session_key(domain_block.id), None)
         domain_block.cached_result_1 = ''
         domain_block.cached_result_2 = ''
-        domain_block.cached_cra = None
+        domain_block.cached_cra = {'distilled_context': distilled} if distilled else None
         domain_block.save(update_fields=['cached_result_1', 'cached_result_2', 'cached_cra'])
 
-        return redirect('questionnaire:summary', block_id=domain_block.id)
+        # SOAP 도메인은 AI 보완 질문 없이 바로 결과로, 그 외는 AI 보완 질문 단계 거침
+        if domain_name in _SOAP_DOMAINS:
+            return redirect('questionnaire:summary', block_id=domain_block.id)
+        return redirect('questionnaire:ai_question_start', block_id=domain_block.id)
 
+    domain_name_for_ctx = (domain_block.description or '').strip() or domain_block.title.replace(' 시작', '').strip()
     return render(request, _demo_flow_template(request, 'brain_dump_autofill'), {
         'domain_block': domain_block,
         'tree': domain_block.braintree,
         'brain_dump_text': brain_dump_text,
+        'is_soap': domain_name_for_ctx in _SOAP_DOMAINS,
     })

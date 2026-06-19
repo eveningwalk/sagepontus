@@ -46,11 +46,11 @@
     <p class="text-sm font-medium text-muted-foreground mb-3">도메인 목록</p>
     <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
       {% for category in categories %}
-        {% if category.name == allowed_domain %}
+        {% if category.name == allowed_domain or category.name in allowed_domains %}
         <button type="submit" name="domain" value="{{ category.name }}"
                 title="{{ category.description|default:category.name }}"
                 class="flex items-center justify-center h-12 rounded-xl border-2 border-primary/30 bg-primary/5 text-primary font-semibold text-sm hover:bg-primary hover:text-white hover:border-primary transition-all shadow-sm hover:shadow-md">
-          {{ category.name }}
+          {% if category.name == "therapist_soap" %}SOAP 노트{% else %}{{ category.name }}{% endif %}
         </button>
         {% else %}
         <button type="button" disabled aria-disabled="true" title="준비 중입니다"

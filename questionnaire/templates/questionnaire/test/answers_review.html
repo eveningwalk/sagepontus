@@ -44,6 +44,12 @@
           name="answer_{{ a.id }}"
           rows="4"
         >{{ a.answer_text }}</textarea>
+        {% if not a.answer_text and ai_brainnodes %}
+        <p class="mt-1 text-xs text-secondary flex items-center gap-1">
+          <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2a10 10 0 100 20A10 10 0 0012 2z"/></svg>
+          AI 보완 답변에서 자동 참조됩니다
+        </p>
+        {% endif %}
         <a class="mt-1 inline-block text-xs text-muted-foreground hover:text-primary transition-colors"
            href="{% url 'questionnaire:edit_answer' a.id %}">이 답만 상세 수정 →</a>
       </div>
@@ -120,6 +126,11 @@
                      class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors">
             </div>
             <button type="button"
+                    onclick="saveCustomNode(this, {{ bn.id }}, null)"
+                    class="save-btn flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-white hover:bg-emerald-600 border border-emerald-300 bg-white px-2.5 h-7 rounded-lg transition-colors">
+              저장
+            </button>
+            <button type="button"
                     onclick="deleteCustomBlock({{ bn.id }})"
                     class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors">
               <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -140,6 +151,7 @@
       <!-- 새 항목 추가 영역 (JS로 동적 생성) -->
       <div id="new-custom-items" class="space-y-3 mt-3"></div>
       <input type="hidden" name="new_custom_count" id="new_custom_count" value="0">
+      <input type="hidden" id="user_block_id" value="{{ user_block_id }}">
     </div>
 
     <div class="flex items-center justify-between pt-4 border-t border-border">
@@ -181,6 +193,8 @@
 
 // ── 사용자 추가 항목 JS ──────────────────────────────────
 var newItemCount = 0;
+var SAVE_URL = "{% url 'questionnaire:save_custom_node' %}";
+var CSRF_TOKEN = "{{ csrf_token }}";
 
 function addCustomItem() {
   newItemCount++;
@@ -203,9 +217,13 @@ function addCustomItem() {
         <input type="text"
                name="new_custom_question_${idx}"
                placeholder="질문 / 제목을 입력하세요"
-               class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors"
-               autofocus>
+               class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors">
       </div>
+      <button type="button"
+              onclick="saveCustomNode(this, 0, ${idx})"
+              class="save-btn flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-emerald-700 hover:text-white hover:bg-emerald-600 border border-emerald-300 bg-white px-2.5 h-7 rounded-lg transition-colors">
+        저장
+      </button>
       <button type="button"
               onclick="removeNewItem(${idx})"
               class="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-50 transition-colors">
@@ -220,15 +238,12 @@ function addCustomItem() {
               class="w-full rounded-lg border border-emerald-200 bg-white text-foreground px-3 py-2 text-sm leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-emerald-300 focus:border-emerald-400 transition-colors ml-8"></textarea>
   `;
   container.appendChild(div);
-
-  // 새로 생긴 input에 포커스
   div.querySelector('input[type="text"]').focus();
 }
 
 function removeNewItem(idx) {
   var el = document.getElementById('new-custom-item-' + idx);
   if (el) el.remove();
-  // 남은 new 아이템 수 재계산
   var remaining = document.querySelectorAll('#new-custom-items > div').length;
   document.getElementById('new_custom_count').value = remaining;
 }
@@ -246,6 +261,102 @@ function deleteCustomBlock(id) {
     row.style.position = 'relative';
     row.appendChild(badge);
   }
+}
+
+function saveCustomNode(btn, nodeId, newIdx) {
+  var row = newIdx
+    ? document.getElementById('new-custom-item-' + newIdx)
+    : btn.closest('[data-custom-id]');
+
+  var qInput = row.querySelector(nodeId ? '[name="custom_question_' + nodeId + '"]' : '[name="new_custom_question_' + newIdx + '"]');
+  var aInput = row.querySelector(nodeId ? '[name="custom_answer_' + nodeId + '"]' : '[name="new_custom_answer_' + newIdx + '"]');
+  var blockId = document.getElementById('user_block_id').value;
+
+  var q = (qInput ? qInput.value : '').trim();
+  var a = (aInput ? aInput.value : '').trim();
+
+  if (!q) { _saveFeedback(btn, 'error', '제목을 입력하세요'); return; }
+
+  btn.disabled = true;
+  btn.textContent = '저장 중…';
+
+  var fd = new FormData();
+  fd.append('csrfmiddlewaretoken', CSRF_TOKEN);
+  fd.append('node_id', nodeId || '0');
+  fd.append('block_id', blockId);
+  fd.append('question_text', q);
+  fd.append('answer_text', a);
+
+  fetch(SAVE_URL, { method: 'POST', body: fd })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.success) {
+        _saveFeedback(btn, 'ok', '저장됨');
+        // 새 항목이었으면 기존 항목으로 전환
+        if (newIdx) {
+          _convertNewToExisting(row, data.id, q, a, newIdx);
+        }
+      } else {
+        _saveFeedback(btn, 'error', data.error || '오류');
+      }
+    })
+    .catch(function() { _saveFeedback(btn, 'error', '네트워크 오류'); });
+}
+
+function _saveFeedback(btn, state, label) {
+  btn.disabled = false;
+  btn.textContent = label;
+  if (state === 'ok') {
+    btn.classList.add('text-white', 'bg-emerald-600', 'border-emerald-600');
+    btn.classList.remove('text-emerald-700', 'bg-white');
+    setTimeout(function() {
+      btn.textContent = '저장';
+      btn.classList.remove('text-white', 'bg-emerald-600', 'border-emerald-600');
+      btn.classList.add('text-emerald-700', 'bg-white');
+    }, 2000);
+  } else {
+    btn.classList.add('text-white', 'bg-red-500', 'border-red-500');
+    btn.classList.remove('text-emerald-700', 'bg-white');
+    setTimeout(function() {
+      btn.textContent = '저장';
+      btn.classList.remove('text-white', 'bg-red-500', 'border-red-500');
+      btn.classList.add('text-emerald-700', 'bg-white');
+    }, 2500);
+  }
+}
+
+function _convertNewToExisting(row, id, q, a, newIdx) {
+  // new 항목을 기존 항목 형식으로 전환
+  row.setAttribute('data-custom-id', id);
+  row.id = '';
+
+  var qInput = row.querySelector('[name="new_custom_question_' + newIdx + '"]');
+  var aInput = row.querySelector('[name="new_custom_answer_' + newIdx + '"]');
+  if (qInput) qInput.name = 'custom_question_' + id;
+  if (aInput) aInput.name = 'custom_answer_' + id;
+
+  // delete flag 추가
+  var flag = document.createElement('input');
+  flag.type = 'hidden';
+  flag.name = 'delete_custom_' + id;
+  flag.value = '0';
+  flag.id = 'del_flag_' + id;
+  row.appendChild(flag);
+
+  // save 버튼 onclick 업데이트
+  var saveBtn = row.querySelector('.save-btn');
+  if (saveBtn) saveBtn.setAttribute('onclick', 'saveCustomNode(this, ' + id + ', null)');
+
+  // 삭제 버튼 onclick 업데이트
+  var delBtn = row.querySelector('[onclick^="removeNewItem"]');
+  if (delBtn) delBtn.setAttribute('onclick', 'deleteCustomBlock(' + id + ')');
+
+  // new_custom_count 재계산
+  var remaining = document.querySelectorAll('#new-custom-items > div').length;
+  document.getElementById('new_custom_count').value = remaining;
+
+  // 이 row를 custom-blocks-list로 이동
+  document.getElementById('custom-blocks-list').appendChild(row);
 }
 
 document.getElementById('add-custom-btn').addEventListener('click', addCustomItem);

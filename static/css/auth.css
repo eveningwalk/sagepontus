@@ -1,0 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* Landing page design tokens */
+:root {
+  --sp-bg:               oklch(0.985 0.002 247);
+  --sp-fg:               oklch(0.145 0.005 250);
+  --sp-primary:          oklch(0.596 0.145 163);
+  --sp-primary-fg:       oklch(0.985 0 0);
+  --sp-muted:            oklch(0.96 0.005 247);
+  --sp-muted-fg:         oklch(0.45 0.01 250);
+  --sp-border:           oklch(0.9 0.01 247);
+  --sp-destructive:      oklch(0.577 0.245 27.325);
+  --sp-radius:           0.625rem;
+}
+
+.auth-wrap {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: var(--sp-bg);
+  font-family: 'Inter', system-ui, sans-serif;
+  color: var(--sp-fg);
+}
+
+.auth-card {
+  background: #fff;
+  border-radius: calc(var(--sp-radius) * 2);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.06);
+  border: 1px solid var(--sp-border);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 420px;
+}
+
+.auth-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  text-decoration: none;
+}
+
+.auth-logo__mark {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--sp-radius);
+  background: var(--sp-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sp-primary-fg);
+  font-weight: 700;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.auth-logo__name {
+  font-weight: 600;
+  font-size: 1.05rem;
+  color: var(--sp-fg);
+}
+
+.auth-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--sp-fg);
+  margin: 0 0 0.375rem;
+}
+
+.auth-sub {
+  font-size: 0.9rem;
+  color: var(--sp-muted-fg);
+  margin: 0 0 2rem;
+}
+
+.auth-field {
+  margin-bottom: 1.25rem;
+}
+
+.auth-field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--sp-fg);
+  margin-bottom: 0.375rem;
+}
+
+.auth-field input,
+.auth-field select {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--sp-border);
+  border-radius: var(--sp-radius);
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--sp-fg);
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.auth-field input:focus,
+.auth-field select:focus {
+  border-color: var(--sp-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--sp-primary) 20%, transparent);
+}
+
+.auth-field--error input,
+.auth-field--error select {
+  border-color: var(--sp-destructive);
+}
+
+.auth-field__error {
+  font-size: 0.8rem;
+  color: var(--sp-destructive);
+  margin-top: 0.3rem;
+}
+
+.auth-btn {
+  width: 100%;
+  padding: 0.7rem;
+  background: var(--sp-primary);
+  color: var(--sp-primary-fg);
+  border: none;
+  border-radius: var(--sp-radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  transition: opacity 0.15s;
+}
+
+.auth-btn:hover { opacity: 0.88; }
+.auth-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.auth-footer {
+  text-align: center;
+  margin-top: 1.25rem;
+  font-size: 0.875rem;
+  color: var(--sp-muted-fg);
+}
+
+.auth-footer a {
+  color: var(--sp-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.auth-footer a:hover { text-decoration: underline; }
+
+.auth-success {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.auth-success__icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: color-mix(in oklch, var(--sp-primary) 12%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.auth-success__icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: var(--sp-primary);
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.auth-success__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--sp-fg);
+  margin: 0 0 0.5rem;
+}
+
+.auth-success__msg {
+  font-size: 0.9rem;
+  color: var(--sp-muted-fg);
+  line-height: 1.6;
+  margin: 0;
+}
