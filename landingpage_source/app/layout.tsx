@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Hanken_Grotesk, Inter, Inter_Tight } from 'next/font/google'
-import { Analytics } from '@vercel/analytics/next'
 import Script from 'next/script'
 import './globals.css'
 
@@ -79,7 +78,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="font-hanken antialiased">
         {children}
-        {process.env.NODE_ENV === 'production' && <Analytics />}
         {process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_LINKEDIN_PARTNER_ID && (
           <Script id="linkedin-insight" strategy="afterInteractive">{`
             _linkedin_partner_id = "${process.env.NEXT_PUBLIC_LINKEDIN_PARTNER_ID}";
