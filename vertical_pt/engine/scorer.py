@@ -25,6 +25,15 @@ _PATHOLOGICAL_FRACTURE = {
 }
 
 
+def _build_screening_breakdown(condition_hits: list[dict]) -> dict[str, list[str]]:
+    """hits를 screening_source별로 그룹핑 → 리퍼럴 레터 섹션 분류에 사용."""
+    breakdown: dict[str, list[str]] = {}
+    for h in condition_hits:
+        src = h.get("screening_source") or "other"
+        breakdown.setdefault(src, []).append(h["label"])
+    return breakdown
+
+
 def _load_index() -> list[dict]:
     path = _PROTOCOLS_DIR / "index.json"
     with open(path, encoding="utf-8") as f:
@@ -42,42 +51,46 @@ def _score_condition(protocol: dict, hits: list[dict]) -> dict[str, Any]:
     condition_hits = [h for h in hits if h["condition_ref"] == condition_ref]
 
     if not condition_hits:
-        return {"alarm": "NONE", "score": 0.0, "matched": [], "trigger": ""}
+        return {"alarm": "NONE", "score": 0.0, "matched": [], "trigger": "", "screening_breakdown": {}}
 
-    logic = protocol.get("decision_logic", "WEIGHTED_SUM")
+    matched_labels   = [h["label"] for h in condition_hits]
+    breakdown        = _build_screening_breakdown(condition_hits)
+    logic            = protocol.get("decision_logic", "WEIGHTED_SUM")
 
     # ── ANY_CARDINAL ──────────────────────────────────────────────────────
     if logic == "ANY_CARDINAL":
         for hit in condition_hits:
             if hit["alarm_level"] == "RED":
                 return {
-                    "alarm":   "RED",
-                    "score":   1.0,
-                    "matched": [h["label"] for h in condition_hits],
-                    "trigger": hit["label"],
+                    "alarm":                "RED",
+                    "score":               1.0,
+                    "matched":             matched_labels,
+                    "trigger":             hit["label"],
+                    "screening_breakdown": breakdown,
                 }
         if len(condition_hits) >= 2:
-            return {"alarm": "RED", "score": 0.9, "matched": [h["label"] for h in condition_hits], "trigger": ""}
-        return {"alarm": "YELLOW", "score": 0.5, "matched": [h["label"] for h in condition_hits], "trigger": ""}
+            return {"alarm": "RED",    "score": 0.9, "matched": matched_labels, "trigger": "", "screening_breakdown": breakdown}
+        return     {"alarm": "YELLOW", "score": 0.5, "matched": matched_labels, "trigger": "", "screening_breakdown": breakdown}
 
     # ── SCREEN_OF_5 ───────────────────────────────────────────────────────
     if logic == "SCREEN_OF_5":
-        threshold = protocol.get("threshold", {})
+        threshold  = protocol.get("threshold", {})
         cancer_hit = next((h for h in condition_hits if h["kb_id"] == "RF_009"), None)
         if cancer_hit:
             return {
-                "alarm":   "RED",
-                "score":   1.0,
-                "matched": [h["label"] for h in condition_hits],
-                "trigger": cancer_hit["label"],
+                "alarm":                "RED",
+                "score":               1.0,
+                "matched":             matched_labels,
+                "trigger":             cancer_hit["label"],
+                "screening_breakdown": breakdown,
             }
         count = len(condition_hits)
         score = round(count / 5.0, 3)
         if count >= threshold.get("red", 3):
-            return {"alarm": "RED",    "score": score, "matched": [h["label"] for h in condition_hits], "trigger": ""}
+            return {"alarm": "RED",    "score": score, "matched": matched_labels, "trigger": "", "screening_breakdown": breakdown}
         if count >= threshold.get("yellow", 2):
-            return {"alarm": "YELLOW", "score": score, "matched": [h["label"] for h in condition_hits], "trigger": ""}
-        return {"alarm": "NONE", "score": score, "matched": [h["label"] for h in condition_hits], "trigger": ""}
+            return {"alarm": "YELLOW", "score": score, "matched": matched_labels, "trigger": "", "screening_breakdown": breakdown}
+        return     {"alarm": "NONE",   "score": score, "matched": matched_labels, "trigger": "", "screening_breakdown": breakdown}
 
     # ── WEIGHTED_SUM (기본) ───────────────────────────────────────────────
     threshold = protocol.get("threshold", {"red": 0.70, "yellow": 0.45})
@@ -85,10 +98,11 @@ def _score_condition(protocol: dict, hits: list[dict]) -> dict[str, Any]:
     for hit in condition_hits:
         if hit["alarm_level"] == "RED" and hit["weight"] >= 0.95:
             return {
-                "alarm":   "RED",
-                "score":   1.0,
-                "matched": [h["label"] for h in condition_hits],
-                "trigger": hit["label"],
+                "alarm":                "RED",
+                "score":               1.0,
+                "matched":             matched_labels,
+                "trigger":             hit["label"],
+                "screening_breakdown": breakdown,
             }
 
     score = min(sum(h["weight"] for h in condition_hits), 1.0)
@@ -112,10 +126,11 @@ def _score_condition(protocol: dict, hits: list[dict]) -> dict[str, Any]:
             raw = "YELLOW"
 
     return {
-        "alarm":   raw,
-        "score":   round(score, 3),
-        "matched": [h["label"] for h in condition_hits],
-        "trigger": "",
+        "alarm":                raw,
+        "score":               round(score, 3),
+        "matched":             matched_labels,
+        "trigger":             "",
+        "screening_breakdown": breakdown,
     }
 
 

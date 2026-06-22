@@ -32,7 +32,9 @@
     "depth": 1.0,
     "category": "red_flag_emergency",
     "condition_ref": "cauda_equina",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "ros",
+    "soap_primary": "S+O"
   },
   "RF_002": {
     "label": "Bladder Dysfunction (방광 기능 이상)",
@@ -72,7 +74,9 @@
     "depth": 0.95,
     "category": "red_flag_emergency",
     "condition_ref": "cauda_equina",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "ros",
+    "soap_primary": "S+O"
   },
   "RF_003": {
     "label": "Bowel Dysfunction (장 기능 이상)",
@@ -102,7 +106,9 @@
     "depth": 0.95,
     "category": "red_flag_emergency",
     "condition_ref": "cauda_equina",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "ros",
+    "soap_primary": "S+O"
   },
   "RF_004": {
     "label": "Bilateral LE Weakness (양측 하지 근력 약화)",
@@ -144,7 +150,9 @@
     "depth": 0.9,
     "category": "red_flag_emergency",
     "condition_ref": "cauda_equina",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "O"
   },
   "RF_005": {
     "label": "Progressive Neurological Deficit (진행성 신경학적 악화)",
@@ -193,7 +201,9 @@
     "depth": 0.85,
     "category": "red_flag_urgent",
     "condition_ref": "cauda_equina",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S+O"
   },
   "RF_006": {
     "label": "Significant Trauma (중대 외상력)",
@@ -260,7 +270,9 @@
     "depth": 0.8,
     "category": "red_flag_urgent",
     "condition_ref": "fracture",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
   },
   "RF_007": {
     "label": "Osteoporosis (골다공증)",
@@ -282,7 +294,9 @@
     "depth": 0.7,
     "category": "red_flag_risk",
     "condition_ref": "fracture",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "pmh",
+    "soap_primary": "S"
   },
   "RF_008": {
     "label": "Point Tenderness on Percussion (타진 시 국소 압통)",
@@ -317,7 +331,9 @@
     "depth": 0.75,
     "category": "red_flag_urgent",
     "condition_ref": "fracture",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "O"
   },
   "RF_009": {
     "label": "Previous Cancer History (암 기왕력)",
@@ -371,7 +387,9 @@
     "depth": 1.0,
     "category": "red_flag_urgent",
     "condition_ref": "malignancy",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "pmh",
+    "soap_primary": "S"
   },
   "RF_010": {
     "label": "Unexplained Weight Loss (원인 불명 체중 감소)",
@@ -398,17 +416,19 @@
       "losing weight",
       "significant weight loss"
     ],
-    "depth": 0.85,
-    "category": "red_flag_urgent",
-    "condition_ref": "malignancy",
-    "alarm_level": "RED",
     "patterns": [
       "\\b\\d+\\s*(?:lb|lbs|pounds?)\\s+(?:weight\\s+)?loss",
       "lost\\s+\\d+\\s*(?:lb|lbs|pounds?|kg)",
       "\\b\\d+\\s*(?:kg|kilo)\\s+(?:weight\\s+)?loss",
       "\\b\\d+\\s*킬로\\s*(?:이상|가량)?\\s*(?:감소|빠짐|줄었)",
       "체중\\s*\\d+\\s*(?:kg|킬로)?\\s*(?:감소|빠짐|줄었)"
-    ]
+    ],
+    "depth": 0.85,
+    "category": "red_flag_urgent",
+    "condition_ref": "malignancy",
+    "alarm_level": "RED",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S"
   },
   "RF_011": {
     "label": "Night Pain / No Relief with Rest (야간통 / 안정 무관 통증)",
@@ -453,10 +473,6 @@
       "disrupts sleep",
       "pain worse at night"
     ],
-    "depth": 0.8,
-    "category": "red_flag_urgent",
-    "condition_ref": "malignancy",
-    "alarm_level": "RED",
     "patterns": [
       "pain\\b[^.\\n]{0,40}at\\s+rest",
       "\\d+\\s*/\\s*10\\b[^.\\n]{0,30}at\\s+rest",
@@ -465,7 +481,13 @@
       "wakes?\\s+(?:him|her|them|the\\s+patient|pt)?\\s*from\\s+sleep",
       "worse\\s+(?:at|during)\\s+night",
       "pain\\s+(?:at|during)\\s+night"
-    ]
+    ],
+    "depth": 0.8,
+    "category": "red_flag_urgent",
+    "condition_ref": "malignancy",
+    "alarm_level": "RED",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
   },
   "RF_012": {
     "label": "No Improvement ≥ 4 Weeks (4주 보존치료 무반응)",
@@ -499,7 +521,9 @@
     "depth": 0.7,
     "category": "red_flag_watchlist",
     "condition_ref": "malignancy",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
   },
   "RF_013": {
     "label": "Fever (발열)",
@@ -545,14 +569,16 @@
       "temperature of 101",
       "temperature of 102"
     ],
+    "patterns": [
+      "temp(?:erature)?\\s+(?:of\\s+)?(?:1(?:0[0-9]|[1-9]\\d))\\s*[Ff]",
+      "(?:1(?:0[1-9]|[1-9]\\d))\\s*[Ff]\\b"
+    ],
     "depth": 0.85,
     "category": "red_flag_urgent",
     "condition_ref": "infection",
     "alarm_level": "RED",
-    "patterns": [
-      "temp(?:erature)?\\s+(?:of\\s+)?(?:1(?:0[0-9]|[1-9]\\d))\\s*[Ff]",
-      "(?:1(?:0[1-9]|[1-9]\\d))\\s*[Ff]\\b"
-    ]
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S+O"
   },
   "RF_014": {
     "label": "Recent Systemic Infection (최근 전신 감염력)",
@@ -598,7 +624,9 @@
     "depth": 0.75,
     "category": "red_flag_urgent",
     "condition_ref": "infection",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "pmh",
+    "soap_primary": "S"
   },
   "RF_015": {
     "label": "Immunocompromised State (면역 저하 상태)",
@@ -627,7 +655,9 @@
     "depth": 0.7,
     "category": "red_flag_risk",
     "condition_ref": "infection",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "risk_factor",
+    "soap_primary": "S"
   },
   "RF_016": {
     "label": "Pulsating Abdominal Mass (박동성 복부 종괴)",
@@ -653,7 +683,9 @@
     "depth": 1.0,
     "category": "red_flag_emergency",
     "condition_ref": "vascular",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S+O"
   },
   "RF_017": {
     "label": "Pain Unaffected by Position (자세 무관 통증)",
@@ -678,15 +710,17 @@
       "does not change with movement or position",
       "does not change with movement"
     ],
-    "depth": 0.65,
-    "category": "red_flag_urgent",
-    "condition_ref": "vascular",
-    "alarm_level": "RED",
     "patterns": [
       "pain\\b[^.\\n]{0,50}(?:no|not|without)\\s+(?:positional|position)\\s+(?:relief|change|effect)",
       "(?:position|posture)\\s+(?:does\\s+not|doesn\\'t|no)\\s+(?:change|affect|relieve)",
       "\\b(?:same|identical|unchanged)\\s+pain\\b[^.\\n]{0,30}(?:position|posture|movement)"
-    ]
+    ],
+    "depth": 0.65,
+    "category": "red_flag_urgent",
+    "condition_ref": "vascular",
+    "alarm_level": "RED",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
   },
   "RF_018": {
     "label": "Sudden Severe Pain Escalation (갑작스러운 통증 극대화)",
@@ -707,7 +741,9 @@
     "depth": 1.0,
     "category": "red_flag_emergency",
     "condition_ref": "vascular",
-    "alarm_level": "RED"
+    "alarm_level": "RED",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
   },
   "RF_019": {
     "label": "Morning Stiffness > 1 Hour (1시간 이상 조조 강직)",
@@ -735,7 +771,9 @@
     "depth": 0.8,
     "category": "red_flag_watchlist",
     "condition_ref": "inflammatory",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S"
   },
   "RF_020": {
     "label": "Improves with Exercise / Worsens with Rest (운동 시 호전)",
@@ -761,7 +799,9 @@
     "depth": 0.85,
     "category": "red_flag_watchlist",
     "condition_ref": "inflammatory",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
   },
   "RF_021": {
     "label": "Alternating Buttock Pain (교대성 둔부통)",
@@ -780,7 +820,9 @@
     "depth": 0.8,
     "category": "red_flag_watchlist",
     "condition_ref": "inflammatory",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
   },
   "RF_022": {
     "label": "Night Sweats (야간 발한)",
@@ -803,7 +845,9 @@
     "depth": 0.5,
     "category": "red_flag_watchlist",
     "condition_ref": "malignancy",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S"
   },
   "RF_023": {
     "label": "Prolonged Steroid Use (장기 스테로이드 복용)",
@@ -826,7 +870,9 @@
     "depth": 0.65,
     "category": "red_flag_risk",
     "condition_ref": "fracture",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "risk_factor",
+    "soap_primary": "S"
   },
   "RF_024": {
     "label": "Unexplained Fatigue / Malaise (원인 불명 피로감)",
@@ -853,7 +899,374 @@
     "depth": 0.55,
     "category": "red_flag_watchlist",
     "condition_ref": "malignancy",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S"
+  },
+  "RF_025": {
+    "label": "Age > 50 (50세 이상)",
+    "label_en": "Age > 50",
+    "synonyms": [
+      "50대", "60대", "70대", "80대",
+      "50세 이상", "60세 이상", "70세 이상", "80세 이상",
+      "50세", "51세", "52세", "53세", "54세", "55세",
+      "56세", "57세", "58세", "59세", "60세", "61세",
+      "62세", "63세", "64세", "65세", "66세", "67세",
+      "68세", "69세", "70세", "71세", "72세", "73세",
+      "74세", "75세", "76세", "77세", "78세", "79세",
+      "80세", "81세", "82세", "83세", "84세", "85세",
+      "over 50", "over 60", "over 70", "over 80",
+      "50 y/o", "55 y/o", "60 y/o", "65 y/o", "70 y/o", "75 y/o", "80 y/o",
+      "50-year-old", "55-year-old", "60-year-old", "65-year-old", "70-year-old",
+      "age 50", "age 52", "age 54", "age 55", "age 56", "age 57", "age 58",
+      "age 59", "age 60", "age 61", "age 62", "age 63", "age 64", "age 65",
+      "age 66", "age 67", "age 68", "age 69", "age 70", "age 71", "age 72",
+      "age 73", "age 74", "age 75", "age 76", "age 77", "age 78", "age 79",
+      "age 80", "age 81", "age 82", "age 83", "age 84", "age 85"
+    ],
+    "depth": 0.6,
+    "category": "red_flag_risk",
+    "condition_ref": "malignancy",
+    "alarm_level": "YELLOW",
+    "screening_source": "risk_factor",
+    "soap_primary": "S"
+  },
+  "RF_026": {
+    "label": "Age of Onset < 40 (40세 미만 발병)",
+    "label_en": "Age of Onset < 40",
+    "synonyms": [
+      "20대부터 아팠음", "30대부터 요통", "젊을 때부터 아팠음", "young onset",
+      "20대 요통", "30대 요통", "20s back pain", "30s back pain",
+      "onset in 20s", "onset in 30s", "young patient back pain",
+      "early onset back pain", "20대에 시작", "30대에 시작"
+    ],
+    "patterns": [
+      "\\b(1[89]|2\\d|3\\d)\\s*(yo|y/o|year[s]?[- ]old|세)",
+      "onset.*?(20|2[0-9]|30|3[0-9])\\s*(yo|y/o|year|세)"
+    ],
+    "depth": 0.65,
+    "category": "red_flag_risk",
+    "condition_ref": "inflammatory",
+    "alarm_level": "YELLOW",
+    "screening_source": "risk_factor",
+    "soap_primary": "S"
+  },
+  "RF_027": {
+    "label": "Insidious Onset > 3 Months (3개월 이상 서서히 시작)",
+    "label_en": "Insidious Onset > 3 Months",
+    "synonyms": [
+      "언제부터인지 모르게 아팠음", "서서히 시작", "insidious onset", "gradual onset",
+      "뚜렷한 계기 없음", "그냥 어느 날부터", "3개월 이상 지속",
+      "slow onset", "gradually started", "계기 없이 시작", "원인 모르게 시작",
+      "3달 이상", "수개월 전부터", "오래전부터 서서히"
+    ],
+    "patterns": [
+      "insidious",
+      "gradual.{0,20}onset",
+      "onset.{0,20}(3|4|5|6|seven|several).{0,10}(month|mo\\b)"
+    ],
+    "depth": 0.7,
+    "category": "red_flag_watchlist",
+    "condition_ref": "inflammatory",
+    "alarm_level": "YELLOW",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
+  },
+  "RF_028": {
+    "label": "Night Pain — Second Half (새벽 2-5시 통증 각성)",
+    "label_en": "Night Pain — Second Half of Night",
+    "synonyms": [
+      "새벽에 아파서 깸", "새벽 통증", "밤 후반부 통증",
+      "night pain second half", "새벽 2시에 깸", "새벽 3시에 깸",
+      "새벽 4시에 깸", "새벽에 뒤척임", "이른 아침 통증으로 각성",
+      "wakes in early morning", "wakes second half of night",
+      "2am pain", "3am pain", "4am pain", "early morning pain wakes"
+    ],
+    "patterns": [
+      "wakes?.{0,20}(2|3|4)\\s*(am|a\\.m)",
+      "pain.{0,20}second half.{0,20}night",
+      "새벽\\s*[2345]시"
+    ],
+    "depth": 0.75,
+    "category": "red_flag_watchlist",
+    "condition_ref": "inflammatory",
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S"
+  },
+  "RF_029": {
+    "label": "Rapid Response to NSAIDs (NSAIDs 48시간 내 뚜렷한 호전)",
+    "label_en": "Rapid Response to NSAIDs",
+    "synonyms": [
+      "소염제 먹으면 잘 듣는다", "이부프로펜 효과 있음", "소염제 효과 좋음",
+      "NSAID response", "약 먹으면 많이 나아짐", "소염진통제 잘 들음",
+      "ibuprofen helps", "naproxen helps", "NSAIDs work well",
+      "responds well to anti-inflammatory", "anti-inflammatory effective",
+      "소염제에 잘 반응", "NSAIDs에 효과"
+    ],
+    "patterns": [
+      "(ibuprofen|naproxen|NSAIDs?|anti.?inflamm).{0,30}(help|work|reliev|effect|respond|improv)",
+      "(help|work|reliev|effect|respond|improv).{0,30}(ibuprofen|naproxen|NSAIDs?|anti.?inflamm)"
+    ],
+    "depth": 0.7,
+    "category": "red_flag_watchlist",
+    "condition_ref": "inflammatory",
+    "alarm_level": "YELLOW",
+    "screening_source": "clinical_presentation",
+    "soap_primary": "S"
+  },
+  "RF_030": {
+    "label": "Family History of Cancer (암 가족력)",
+    "label_en": "Family History of Cancer",
+    "synonyms": [
+      "가족 중 암",
+      "부모 암",
+      "형제 암",
+      "암 가족력",
+      "어머니 암",
+      "아버지 암",
+      "자매 암",
+      "형 암",
+      "유방암 가족력",
+      "대장암 가족력",
+      "family history of cancer",
+      "family hx of cancer",
+      "mother had cancer",
+      "father had cancer",
+      "sibling had cancer",
+      "parent had cancer",
+      "family cancer history",
+      "FHx cancer",
+      "FH cancer",
+      "FH malignancy",
+      "familial cancer",
+      "hereditary cancer"
+    ],
+    "patterns": [
+      "(?:family|mother|father|parent|sibling|sister|brother).{0,30}(?:cancer|malignancy|tumor|CA\\b)",
+      "(?:cancer|malignancy).{0,30}(?:family|mother|father|parent|sibling)"
+    ],
+    "depth": 0.65,
+    "category": "red_flag_risk",
+    "condition_ref": "malignancy",
+    "alarm_level": "YELLOW",
+    "screening_source": "pmh",
+    "soap_primary": "S"
+  },
+  "RF_031": {
+    "label": "Cardiovascular / Aortic History (심혈관 / 대동맥 기왕력)",
+    "label_en": "Cardiovascular / Aortic History",
+    "synonyms": [
+      "심혈관 질환",
+      "심장 질환 있음",
+      "대동맥류",
+      "혈관 질환",
+      "동맥경화",
+      "심장 수술",
+      "관상동맥 질환",
+      "협심증",
+      "말초혈관 질환",
+      "뇌졸중 기왕력",
+      "뇌경색",
+      "심근경색",
+      "심장 스텐트",
+      "aortic aneurysm",
+      "AAA",
+      "abdominal aortic aneurysm",
+      "cardiovascular disease",
+      "cardiac history",
+      "heart disease",
+      "coronary artery disease",
+      "CAD",
+      "peripheral vascular disease",
+      "PVD",
+      "vascular disease",
+      "history of MI",
+      "prior MI",
+      "myocardial infarction",
+      "stroke history",
+      "prior stroke",
+      "TIA",
+      "arterial disease",
+      "atherosclerosis",
+      "aortic disease",
+      "vascular surgery"
+    ],
+    "patterns": [
+      "(?:hx|history)\\s+of\\s+(?:AAA|aortic|vascular|cardiac|cardiovascular|MI|stroke|TIA)",
+      "(?:aortic|abdominal)\\s+aneurysm",
+      "\\bAAA\\b"
+    ],
+    "depth": 0.7,
+    "category": "red_flag_risk",
+    "condition_ref": "vascular",
+    "alarm_level": "YELLOW",
+    "screening_source": "pmh",
+    "soap_primary": "S"
+  },
+  "RF_032": {
+    "label": "Smoking History (흡연력)",
+    "label_en": "Smoking History",
+    "synonyms": [
+      "흡연",
+      "담배 피움",
+      "흡연 중",
+      "흡연자",
+      "과거 흡연",
+      "담배 끊음",
+      "담배 몇 년째",
+      "하루 한 갑",
+      "smoker",
+      "current smoker",
+      "former smoker",
+      "ex-smoker",
+      "tobacco use",
+      "cigarette smoker",
+      "smokes cigarettes",
+      "smoking history",
+      "tobacco history",
+      "pack-year",
+      "pack year",
+      "quit smoking",
+      "stopped smoking",
+      "nicotine use",
+      "tobacco user",
+      "chews tobacco"
+    ],
+    "patterns": [
+      "\\d+\\s*pack.?year",
+      "smokes?\\s+\\d+\\s*(?:pack|cigarette)",
+      "\\b(?:current|former|ex).?smoker\\b",
+      "담배\\s*\\d+\\s*(?:년|갑|개비)"
+    ],
+    "depth": 0.55,
+    "category": "red_flag_risk",
+    "condition_ref": "malignancy",
+    "alarm_level": "YELLOW",
+    "screening_source": "risk_factor",
+    "soap_primary": "S"
+  },
+  "RF_033": {
+    "label": "Hypertension (고혈압)",
+    "label_en": "Hypertension",
+    "synonyms": [
+      "고혈압",
+      "혈압이 높음",
+      "혈압 약 복용",
+      "혈압 조절 중",
+      "고혈압 기왕력",
+      "혈압이 높아서",
+      "hypertension",
+      "HTN",
+      "high blood pressure",
+      "elevated blood pressure",
+      "BP elevated",
+      "blood pressure high",
+      "antihypertensive",
+      "blood pressure medication",
+      "on BP meds",
+      "on hypertensive meds",
+      "controlled hypertension",
+      "uncontrolled HTN"
+    ],
+    "patterns": [
+      "BP\\s+(?:of\\s+)?(?:1[4-9]\\d|[2-9]\\d\\d)\\s*/\\s*(?:9\\d|[1-9]\\d\\d)",
+      "blood\\s+pressure\\s+(?:of\\s+)?(?:1[4-9]\\d|[2-9]\\d\\d)"
+    ],
+    "depth": 0.55,
+    "category": "red_flag_risk",
+    "condition_ref": "vascular",
+    "alarm_level": "YELLOW",
+    "screening_source": "risk_factor",
+    "soap_primary": "S+O"
+  },
+  "RF_034": {
+    "label": "Cardiovascular ROS Positive (심혈관 계통 문진 양성)",
+    "label_en": "Cardiovascular ROS Positive",
+    "synonyms": [
+      "가슴이 아픔",
+      "흉통",
+      "가슴 두근거림",
+      "심계항진",
+      "숨이 차",
+      "호흡 곤란",
+      "가슴이 답답",
+      "숨 가쁨",
+      "등과 가슴이 동시에 아픔",
+      "흉부 불쾌감",
+      "가슴 조임",
+      "chest pain",
+      "chest tightness",
+      "chest pressure",
+      "shortness of breath",
+      "SOB",
+      "dyspnea",
+      "palpitations",
+      "heart racing",
+      "irregular heartbeat",
+      "chest discomfort",
+      "substernal pain",
+      "radiating chest pain",
+      "pain radiating to chest",
+      "back pain with chest pain",
+      "ripping chest pain",
+      "tearing chest pain"
+    ],
+    "patterns": [
+      "(?:chest|thoracic).{0,30}(?:pain|pressure|tightness|discomfort)",
+      "(?:pain|discomfort).{0,30}(?:chest|sternal|substernal)",
+      "(?:short|difficult).{0,10}(?:breath|breathing)|\\bSOB\\b|\\bdyspnea\\b",
+      "\\bpalpitation",
+      "(?:back|flank).{0,30}pain.{0,30}(?:chest|abdom)|(?:chest|abdom).{0,30}pain.{0,30}(?:back|flank)"
+    ],
+    "depth": 0.8,
+    "category": "red_flag_urgent",
+    "condition_ref": "vascular",
+    "alarm_level": "RED",
+    "screening_source": "ros",
+    "soap_primary": "S+O"
+  },
+  "RF_035": {
+    "label": "GI ROS — Blood in Stool / Melena (위장관 계통 — 혈변 / 흑색변)",
+    "label_en": "GI ROS — Blood in Stool / Melena",
+    "synonyms": [
+      "혈변",
+      "흑색변",
+      "변에 피가 섞임",
+      "변 색깔 검음",
+      "대변에 피",
+      "직장 출혈",
+      "항문 출혈",
+      "피가 나옴 변에서",
+      "blood in stool",
+      "bloody stool",
+      "melena",
+      "black stool",
+      "tarry stool",
+      "rectal bleeding",
+      "hematochezia",
+      "GI bleeding",
+      "GI bleed",
+      "blood in toilet",
+      "blood on toilet paper",
+      "dark stool",
+      "coffee ground stool"
+    ],
+    "patterns": [
+      "(?:blood|bloody|bleeding).{0,20}(?:stool|bowel|rectum|rectal)",
+      "(?:stool|bowel|fecal).{0,20}(?:blood|bloody|bleeding)",
+      "\\bmelena\\b",
+      "\\bhematochezia\\b",
+      "black.{0,10}(?:stool|feces|bowel|tarry)",
+      "tarry.{0,10}stool",
+      "혈변|흑색변|변에\\s*피"
+    ],
+    "depth": 0.8,
+    "category": "red_flag_urgent",
+    "condition_ref": "malignancy",
+    "alarm_level": "RED",
+    "screening_source": "ros",
+    "soap_primary": "S"
   },
   "YF_001": {
     "label": "Kinesiophobia / Fear of Movement (운동 공포증)",
@@ -895,7 +1308,9 @@
     "depth": 0.65,
     "category": "yellow_flag_psychosocial",
     "condition_ref": "yellow_flag",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S"
   },
   "YF_002": {
     "label": "Fear-Avoidance Beliefs (공포-회피 신념)",
@@ -925,7 +1340,9 @@
     "depth": 0.65,
     "category": "yellow_flag_psychosocial",
     "condition_ref": "yellow_flag",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S+O"
   },
   "YF_003": {
     "label": "Pain Catastrophizing (통증 파국화)",
@@ -963,7 +1380,9 @@
     "depth": 0.6,
     "category": "yellow_flag_psychosocial",
     "condition_ref": "yellow_flag",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S"
   },
   "YF_004": {
     "label": "Passive Coping Style (수동적 대처 방식)",
@@ -988,7 +1407,9 @@
     "depth": 0.55,
     "category": "yellow_flag_psychosocial",
     "condition_ref": "yellow_flag",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S"
   },
   "YF_005": {
     "label": "Depression / Anxiety Symptoms (우울 / 불안 증상)",
@@ -1042,7 +1463,9 @@
     "depth": 0.6,
     "category": "yellow_flag_psychosocial",
     "condition_ref": "yellow_flag",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "associated_symptoms",
+    "soap_primary": "S+O"
   },
   "YF_006": {
     "label": "Work Disability Risk (직업적 복귀 장벽)",
@@ -1073,110 +1496,8 @@
     "depth": 0.55,
     "category": "yellow_flag_occupational",
     "condition_ref": "yellow_flag",
-    "alarm_level": "YELLOW"
-  },
-  "RF_025": {
-    "label": "Age > 50 (50세 이상)",
-    "label_en": "Age > 50",
-    "synonyms": [
-      "50대",
-      "60대",
-      "70대",
-      "80대",
-      "50세 이상",
-      "60세 이상",
-      "70세 이상",
-      "80세 이상",
-      "50세",
-      "51세",
-      "52세",
-      "53세",
-      "54세",
-      "55세",
-      "56세",
-      "57세",
-      "58세",
-      "59세",
-      "60세",
-      "61세",
-      "62세",
-      "63세",
-      "64세",
-      "65세",
-      "66세",
-      "67세",
-      "68세",
-      "69세",
-      "70세",
-      "71세",
-      "72세",
-      "73세",
-      "74세",
-      "75세",
-      "76세",
-      "77세",
-      "78세",
-      "79세",
-      "80세",
-      "81세",
-      "82세",
-      "83세",
-      "84세",
-      "85세",
-      "over 50",
-      "over 60",
-      "over 70",
-      "over 80",
-      "50 y/o",
-      "55 y/o",
-      "60 y/o",
-      "65 y/o",
-      "70 y/o",
-      "75 y/o",
-      "80 y/o",
-      "50-year-old",
-      "55-year-old",
-      "60-year-old",
-      "65-year-old",
-      "70-year-old",
-      "age 50",
-      "age 52",
-      "age 54",
-      "age 55",
-      "age 56",
-      "age 57",
-      "age 58",
-      "age 59",
-      "age 60",
-      "age 61",
-      "age 62",
-      "age 63",
-      "age 64",
-      "age 65",
-      "age 66",
-      "age 67",
-      "age 68",
-      "age 69",
-      "age 70",
-      "age 71",
-      "age 72",
-      "age 73",
-      "age 74",
-      "age 75",
-      "age 76",
-      "age 77",
-      "age 78",
-      "age 79",
-      "age 80",
-      "age 81",
-      "age 82",
-      "age 83",
-      "age 84",
-      "age 85"
-    ],
-    "depth": 0.6,
-    "category": "red_flag_risk",
-    "condition_ref": "malignancy",
-    "alarm_level": "YELLOW"
+    "alarm_level": "YELLOW",
+    "screening_source": "risk_factor",
+    "soap_primary": "S"
   }
 }

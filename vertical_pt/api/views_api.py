@@ -117,14 +117,16 @@ def analyze(request):
         )
 
     response_data = {
-        "alarm":          result["alarm"],
-        "condition":      result["condition"],
-        "score":          result["score"],
-        "matched":        result["matched"],
-        "trigger":        result.get("trigger", ""),
-        "alert_id":       alert_id,
-        "referral_letter": referral_text,
-        "patient_context": patient_ctx,
+        "alarm":               result["alarm"],
+        "condition":           result["condition"],
+        "score":               result["score"],
+        "matched":             result["matched"],
+        "trigger":             result.get("trigger", ""),
+        "conditions":          result.get("conditions", []),        # 전체 활성 조건 + screening_breakdown
+        "hits":                result.get("vpps", {}).get("hits", []),  # screening_source/soap_primary 포함
+        "alert_id":            alert_id,
+        "referral_letter":     referral_text,
+        "patient_context":     patient_ctx,
     }
     return Response(response_data, status=status.HTTP_200_OK)
 

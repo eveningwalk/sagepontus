@@ -220,13 +220,13 @@ SCENARIOS = [
     },
     {
         "id": "YEL_06",
-        "description": "YELLOW — 혈관 위험인자 조합 (AAA 주의)",
+        "description": "RED — 혈관 위험인자 조합 (HTN+동맥경화+자세무관통증 → vascular RED)",
         "soap_text": (
             "66M. Hypertension, atherosclerosis hx. Back pain 2 weeks. "
             "Pain does not change with movement or position notably. "
             "No pulsating mass palpated. No acute change."
         ),
-        "expected_alarm": "YELLOW",
+        "expected_alarm": "RED",
         "expected_condition": "vascular",
     },
     {

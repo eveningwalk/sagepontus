@@ -21,6 +21,32 @@ def _strip_md(text: str) -> str:
     text = re.sub(r'`{1,3}', '', text)
     return text.strip()
 
+_SCREENING_SOURCE_LABELS: dict[str, str] = {
+    "pmh":                   "Past Medical History",
+    "risk_factor":           "Risk Factors",
+    "clinical_presentation": "Clinical Presentation",
+    "associated_symptoms":   "Associated Signs & Symptoms",
+    "ros":                   "Review of Systems",
+}
+
+_SOURCE_ORDER = ["pmh", "risk_factor", "clinical_presentation", "associated_symptoms", "ros", "other"]
+
+
+def _format_indicators_grouped(matched: list[str], breakdown: dict[str, list[str]]) -> str:
+    """screening_breakdown 있으면 카테고리별 그룹, 없으면 단순 목록."""
+    if not breakdown:
+        return "\n".join(f"  • {m}" for m in matched)
+    lines: list[str] = []
+    for src in _SOURCE_ORDER:
+        items = breakdown.get(src, [])
+        if not items:
+            continue
+        label = _SCREENING_SOURCE_LABELS.get(src, src.replace("_", " ").title())
+        lines.append(f"  [{label}]")
+        lines.extend(f"    • {item}" for item in items)
+    return "\n".join(lines)
+
+
 _CONDITION_META = {
     "cauda_equina": {
         "title":    "Cauda Equina Syndrome (마미총 증후군)",
@@ -179,7 +205,9 @@ def generate_multi_referral_letter(
             "guideline":"Clinical judgment",
             "action":   "Physician evaluation",
         })
-        indicators_str = "\n".join(f"  • {m}" for m in c.get("matched", []))
+        indicators_str = _format_indicators_grouped(
+            c.get("matched", []), c.get("screening_breakdown", {})
+        )
         trigger_line = f"\n  Primary trigger: {c['trigger']}\n" if c.get("trigger") else ""
         section = (
             f"  [{c['alarm']}] {meta['title']}\n"
@@ -249,7 +277,9 @@ def generate_referral_letter_ai(
         "action":   "Physician evaluation",
     })
 
-    indicators_str = "\n".join(f"  • {label}" for label in alert.matched_indicators)
+    raw_indicators = list(alert.matched_indicators)
+    breakdown      = getattr(alert, "screening_breakdown", {}) or {}
+    indicators_str = _format_indicators_grouped(raw_indicators, breakdown)
 
     few_shot_block = ""
     if few_shot_examples:

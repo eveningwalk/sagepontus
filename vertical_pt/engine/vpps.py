@@ -17,7 +17,7 @@ import re
 from pathlib import Path
 from typing import Any
 
-from vertical_pt.engine.normalizer import normalize, Source
+from vertical_pt.engine.normalizer import normalize, split_sections, Source
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +26,25 @@ _FALLBACK_KB_PATH = Path(__file__).resolve().parents[2] / "questionnaire/prompts
 
 # 부정 표현 — "no improvement" 같이 자체가 Red Flag인 표현은 제외
 # 쉼표 리스트 패턴 지원: "negative for headaches, nausea, vomiting, fevers"
+
+def _section_bonus(soap_primary: str, section: str) -> float:
+    """KB soap_primary × 실제 검출 섹션 → 가중치 보정.
+
+    soap_primary="O"  : 임상가 측정 항목. O에서 잡히면 최대 보너스,
+                        S에서만 나오면 환자 자가보고 수준이므로 소폭 감점.
+    soap_primary="S+O": 양쪽 동등. O 검출 시 객관적 확인 보너스.
+    soap_primary="S"  : 주관적 보고 항목. O/A에서 나오면 임상가 확인 보너스.
+    """
+    if soap_primary == "O":
+        return {"OBJECTIVE": 0.15, "ASSESSMENT": 0.05, "SUBJECTIVE": -0.05}.get(section, 0.0)
+    if soap_primary == "S+O":
+        return {"OBJECTIVE": 0.10, "ASSESSMENT": 0.05, "SUBJECTIVE": 0.0}.get(section, 0.0)
+    if soap_primary == "S":
+        return {"OBJECTIVE": 0.05, "ASSESSMENT": 0.05, "SUBJECTIVE": 0.0}.get(section, 0.0)
+    # fallback (soap_primary 미정의)
+    return {"OBJECTIVE": 0.10, "ASSESSMENT": 0.05}.get(section, 0.0)
+
+
 _NEGATION_RE = re.compile(
     r"(?:no|without|denies?|absence of|negative for|ruled out|"
     r"not experiencing|not having|no history of|no evidence of)"
@@ -46,18 +65,24 @@ def _strip_negations(text: str) -> str:
     return _NEGATION_RE.sub(lambda m: " " * len(m.group(0)), text)
 
 
-def _make_hit(kb_id: str, entry: dict) -> dict:
+def _make_hit(kb_id: str, entry: dict, section: str = "UNKNOWN") -> dict:
+    soap_primary = entry.get("soap_primary", "")
+    bonus  = _section_bonus(soap_primary, section)
+    weight = max(0.0, min(round(entry["depth"] + bonus, 3), 1.0))
     return {
-        "kb_id":         kb_id,
-        "label":         entry["label"],
-        "weight":        entry["depth"],
-        "alarm_level":   entry.get("alarm_level", "YELLOW"),
-        "condition_ref": entry.get("condition_ref", ""),
-        "category":      entry.get("category", ""),
+        "kb_id":            kb_id,
+        "label":            entry["label"],
+        "weight":           weight,
+        "alarm_level":      entry.get("alarm_level", "YELLOW"),
+        "condition_ref":    entry.get("condition_ref", ""),
+        "category":         entry.get("category", ""),
+        "section":          section,
+        "screening_source": entry.get("screening_source", ""),
+        "soap_primary":     soap_primary,
     }
 
 
-def _rule_match(text: str, kb: dict) -> list[dict]:
+def _rule_match(text: str, kb: dict, section: str = "UNKNOWN") -> list[dict]:
     """KB synonym 매칭 — 긴 패턴 우선, 부정어 처리 후."""
     clean = _strip_negations(text).lower()
     hits: list[dict] = []
@@ -80,20 +105,19 @@ def _rule_match(text: str, kb: dict) -> list[dict]:
         if " " not in syn_lower:
             if re.search(r'\b' + re.escape(syn_lower) + r'\b', clean):
                 seen.add(kb_id)
-                hits.append(_make_hit(kb_id, entry))
+                hits.append(_make_hit(kb_id, entry, section=section))
         elif syn_lower in clean:
             seen.add(kb_id)
-            hits.append(_make_hit(kb_id, entry))
+            hits.append(_make_hit(kb_id, entry, section=section))
 
     return hits
 
 
-def _regex_match(text: str, kb: dict, seen: set[str]) -> list[dict]:
+def _regex_match(text: str, kb: dict, seen: set[str], section: str = "UNKNOWN") -> list[dict]:
     """
     KB patterns 필드 기반 정규식 매칭 — substring으로 못 잡는 구조적 표현 포착.
     예: "Pain 8/10 at rest", "15lbs weight loss", "no mechanism of injury"
     """
-    # 부정어 처리된 텍스트 사용
     clean = _strip_negations(text)
     hits: list[dict] = []
 
@@ -104,7 +128,7 @@ def _regex_match(text: str, kb: dict, seen: set[str]) -> list[dict]:
             try:
                 if re.search(raw_pattern, clean, re.IGNORECASE | re.DOTALL):
                     seen.add(kb_id)
-                    hits.append(_make_hit(kb_id, entry))
+                    hits.append(_make_hit(kb_id, entry, section=section))
                     break
             except re.error as e:
                 logger.warning("VPPA regex error kb_id=%s pattern=%r: %s", kb_id, raw_pattern, e)
@@ -130,20 +154,34 @@ def extract_symptoms(soap_text: str, use_ai: bool = False,
             "source": "rule" | "ai",
         }
     """
-    if source != "raw":
-        soap_text = normalize(soap_text, source=source).text
+    # raw 포함 항상 normalize — 섹션 태깅 적용
+    soap_text = normalize(soap_text, source=source).text
 
     kb = _load_kb()
+    sections = split_sections(soap_text)
 
-    # 1차: substring 매칭
-    hits = _rule_match(soap_text, kb)
-    seen = {h["kb_id"] for h in hits}
+    # ── 1차: rule_match (섹션별, soap_primary × 실제 섹션 교차 보너스) ──────
+    all_hits: list[dict] = []
+    for section_name, section_text in sections.items():
+        if not section_text:
+            continue
+        all_hits.extend(_rule_match(section_text, kb, section=section_name))
 
-    # 2차: regex 매칭 (substring에서 놓친 것만)
-    regex_hits = _regex_match(soap_text, kb, seen)
-    hits = sorted(hits + regex_hits, key=lambda h: h["weight"], reverse=True)
+    # ── 2차: regex_match (섹션별, 1차 미탐지만) ──────────────────────────
+    rule_found_ids = {h["kb_id"] for h in all_hits}
+    for section_name, section_text in sections.items():
+        if not section_text:
+            continue
+        all_hits.extend(_regex_match(section_text, kb, rule_found_ids.copy(), section=section_name))
 
-    # 2.5차: UI에서 직접 확인된 항목 주입 (체크박스 오버라이드)
+    # 동일 kb_id는 최고 weight 기준 dedup
+    hits_by_id: dict[str, dict] = {}
+    for hit in all_hits:
+        if hit["kb_id"] not in hits_by_id or hit["weight"] > hits_by_id[hit["kb_id"]]["weight"]:
+            hits_by_id[hit["kb_id"]] = hit
+    hits = sorted(hits_by_id.values(), key=lambda h: h["weight"], reverse=True)
+
+    # ── 2.5차: UI에서 직접 확인된 항목 주입 (체크박스 오버라이드) ──────────
     if pre_confirmed_ids:
         seen = {h["kb_id"] for h in hits}
         for rf_id in pre_confirmed_ids:
@@ -152,7 +190,7 @@ def extract_symptoms(soap_text: str, use_ai: bool = False,
                 seen.add(rf_id)
         hits = sorted(hits, key=lambda h: h["weight"], reverse=True)
 
-    # 3차: AI 패스 (옵션, 여전히 아무것도 안 잡혔을 때만)
+    # ── 3차: AI 패스 (옵션, 여전히 아무것도 안 잡혔을 때만) ─────────────
     if use_ai and not hits:
         hits = _ai_extract(soap_text, kb) or hits
 

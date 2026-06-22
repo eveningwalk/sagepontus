@@ -24,6 +24,8 @@ from typing import Literal
 
 Source = Literal["mtsamples", "webpt", "raw"]
 
+_SECTION_NAMES: frozenset[str] = frozenset({"SUBJECTIVE", "OBJECTIVE", "ASSESSMENT", "PLAN"})
+
 # ── SOAP 섹션 헤더 정규화 매핑 ────────────────────────────────────────────────
 _SOAP_HEADER_MAP: dict[str, str] = {
     # Subjective
@@ -215,3 +217,27 @@ def normalize_batch(
     tag_sections: bool = True,
 ) -> list[NormalizeResult]:
     return [normalize(t, source, tag_sections) for t in texts]
+
+
+def split_sections(text: str) -> dict[str, str]:
+    """
+    태깅된 SOAP 텍스트를 섹션별로 분리.
+    normalize(..., tag_sections=True) 결과에 적용.
+
+    Returns:
+        {"SUBJECTIVE": "...", "OBJECTIVE": "...", "ASSESSMENT": "...",
+         "PLAN": "...", "UNKNOWN": "..."}
+    """
+    buckets: dict[str, list[str]] = {s: [] for s in _SECTION_NAMES}
+    buckets["UNKNOWN"] = []
+    current = "UNKNOWN"
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        candidate = stripped.rstrip(":")
+        if stripped.endswith(":") and candidate in _SECTION_NAMES:
+            current = candidate
+        else:
+            buckets[current].append(line)
+
+    return {k: "\n".join(v).strip() for k, v in buckets.items()}
