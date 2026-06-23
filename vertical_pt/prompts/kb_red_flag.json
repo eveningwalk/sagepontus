@@ -338,7 +338,18 @@
       "tender to palpation",
       "trochanteric tenderness",
       "greater trochanter tenderness",
-      "tenderness over trochanter"
+      "tenderness over trochanter",
+      "spinal percussion test",
+      "vertebral percussion test",
+      "spinous process percussion test",
+      "percussion test at vertebrae",
+      "tuning fork test at vertebrae",
+      "tuning fork test at spine",
+      "spinal tuning fork test"
+    ],
+    "patterns": [
+      "positive\\s+(?:tuning\\s+fork|percussion)\\s+test[^.\\n]{0,40}(?:vertebr|spine|spinal|T\\d|L\\d|thorac|lumbar|cervical)",
+      "(?:tuning\\s+fork|percussion)\\s+test\\s+positive[^.\\n]{0,40}(?:vertebr|spine|spinal|T\\d|L\\d|thorac|lumbar|cervical)"
     ],
     "depth": 0.75,
     "category": "red_flag_urgent",
@@ -483,7 +494,13 @@
       "preventing sleep",
       "disturbs sleep",
       "disrupts sleep",
-      "pain worse at night"
+      "pain worse at night",
+      "worsened throughout the night",
+      "worsens throughout the night",
+      "limiting sleep",
+      "limits sleep",
+      "limits his sleep",
+      "limits her sleep"
     ],
     "patterns": [
       "pain\\b[^.\\n]{0,40}at\\s+rest",
