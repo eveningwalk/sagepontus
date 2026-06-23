@@ -460,6 +460,7 @@
       "rest(?:ing)?\\s+pain",
       "wakes?\\s+(?:him|her|them|the\\s+patient|pt)?\\s*from\\s+sleep",
       "worse\\s+(?:at|during)\\s+night",
+      "pain\\b[^.\\n]{0,40}(?:at|during)\\s+night",
       "pain\\s+(?:at|during)\\s+night"
     ],
     "depth": 0.8,
@@ -688,7 +689,11 @@
       "no change with movement",
       "pain same with movement",
       "does not change with movement or position",
-      "does not change with movement"
+      "does not change with movement",
+      "unresponsive to position",
+      "pain unresponsive to position",
+      "constant regardless of position",
+      "constant regardless of activity or position"
     ],
     "patterns": [
       "pain\\b[^.\\n]{0,50}(?:no|not|without)\\s+(?:positional|position)\\s+(?:relief|change|effect)",
@@ -1309,7 +1314,7 @@
       "tearing chest pain"
     ],
     "patterns": [
-      "(?:chest|thoracic).{0,30}(?:pain|pressure|tightness|discomfort)",
+      "(?:chest).{0,30}(?:pain|pressure|tightness|discomfort)",
       "(?:pain|discomfort).{0,30}(?:chest|sternal|substernal)",
       "(?:short|difficult).{0,10}(?:breath|breathing)|\\bSOB\\b|\\bdyspnea\\b",
       "\\bpalpitation",
