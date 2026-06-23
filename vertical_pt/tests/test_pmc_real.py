@@ -9,12 +9,13 @@ PMC (PubMed Central) Real-World Academic Case Report Integration Tests
   PMC6112066  — Malignancy (breast cancer metastasis, runner)         → RED  TP
   PMC9603351  — Malignancy + CES (vertebral hemangioma, direct access)→ RED  TP
   PMC5878400  — Infection (spondylodiscitis, Salmonella, scuba diver) → RED  TP
+  PMC7836320  — Infection (C. perfringens discitis, fever 39C, DM)   → RED  TP
   PMC4101555  — Malignancy initial eval (lung cancer, subtle flags)   → YELLOW FN (known gap)
   PMC7772297  — Infection (spondylodiscitis, afebrile at eval)        → YELLOW FN (known gap)
   PMC12643639 — Vascular (AAA 92mm, HTN+hyperlipidemia+smoker, 56M)  → YELLOW FN (known gap)
 
 결과 (2026-06-23):
-  TP=5, FP=0, FN=3, Total=8
+  TP=6, FP=0, FN=3, Total=9
   FN 사유: 초기 평가 시점의 정보만으로는 RED 판정 불가
     PMC4101555: 암 기왕력 없음, 야간통 경미, 초기 평가 YELLOW가 임상적으로 합리적
     PMC7772297: 발열 없음(afebrile), 감염 기왕력 없음, 야간발한+체중감소=악성종양 패턴으로 분류
@@ -117,6 +118,23 @@ Marked tenderness at L2/3 on palpation. No neurological deficits.
 
 A: Severe chronic LBP, 18 months no improvement. Prior documented Salmonella infection
 with fever. Immunocompromised state (haemochromatosis). Imaging required prior to PT.
+"""
+
+SOAP_PMC7836320_INF = """
+S: 67-year-old male. PMH: diabetes mellitus type 2 (poorly controlled, blood glucose
+235 mg/dL), morbid obesity (140 kg), hypothyroidism, gout. Fell at home repeatedly
+3 days ago. Dull lower back pain since the fall, progressively worsening. Generalized
+weakness for 4 days. Developed fever and chills at home prior to presentation.
+No bowel or bladder incontinence. No lower extremity weakness.
+
+O: Temperature 39 degrees Celsius (febrile). Heart rate 104 bpm. Blood pressure 126/76 mmHg.
+Mild tenderness on palpation of lumbosacral spine. No paraspinal muscle spasm.
+Neurologically intact: 5/5 bilateral lower extremity strength. Negative straight leg raise.
+No saddle numbness. Gait slow but steady.
+
+A: LBP following fall. Active fever 39C with immunocompromised state (poorly controlled
+diabetes mellitus type 2). Infection Red Flag: fever, diabetes, recent fall. Urgent
+medical evaluation required before PT intervention.
 """
 
 SOAP_PMC12643639_AAA_FN = """
@@ -242,6 +260,23 @@ SCENARIOS = [
         ),
     },
 
+    {
+        "id": "PMC7836320",
+        "title": "Infection — C. perfringens 척추염 (67M, 발열 39°C + 당뇨 + 낙상)",
+        "soap_text": SOAP_PMC7836320_INF,
+        "system_expected": "RED",
+        "clinical_truth": "RED",
+        "expected_condition": "infection",
+        "accuracy": "TP",
+        "source": "PMC7836320 — Am J Case Rep. 2021",
+        "clinical_note": (
+            "평가 당시 활성 발열 39°C + 당뇨(면역저하) → infection RED. "
+            "PMC5878400(과거 발열+면역저하)과 대비: 이 케이스는 현재 진행형 발열로 감지. "
+            "낙상 외상력 → fracture RED도 동시 활성(두 조건 모두 RED). "
+            "실제: L5-S1 C. perfringens 척추염 + 경막외 농양. IV ampicillin 8주로 완치."
+        ),
+    },
+
     # ── YELLOW FN (알려진 한계: 초기 평가 정보 부족) ─────────────────────────
     {
         "id": "PMC4101555",
@@ -351,7 +386,7 @@ def test_pmc_accuracy_summary():
     fn = sum(1 for s in SCENARIOS if s["accuracy"] == "FN")
     total = len(SCENARIOS)
 
-    assert tp == 5, f"Expected 5 TP, got {tp}"
+    assert tp == 6, f"Expected 6 TP, got {tp}"
     assert fp == 0, f"Expected 0 FP, got {fp}"
     assert fn == 3, f"Expected 3 FN (known gaps), got {fn}"
-    assert total == 8, f"Expected 8 total, got {total}"
+    assert total == 9, f"Expected 9 total, got {total}"
