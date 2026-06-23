@@ -259,7 +259,17 @@
       "slipped",
       "미끄러짐",
       "미끄러져",
-      "fall down stairs"
+      "fall down stairs",
+      "fell on face",
+      "fell on her face",
+      "fell on his face",
+      "fell on head",
+      "fell on her head",
+      "fell on his head",
+      "face-first fall",
+      "head-first fall",
+      "fell face-first",
+      "fell head-first"
     ],
     "patterns": [
       "(?:바닥|계단|사다리|지붕|나무|자전거|오토바이|말)에서\\s*떨어짐",

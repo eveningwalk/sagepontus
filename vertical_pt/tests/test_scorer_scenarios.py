@@ -79,6 +79,17 @@ SCENARIOS = [
         "expected_alarm": "RED",
         "expected_condition": "fracture",
     },
+    {
+        "id": "FX_04",
+        "description": "골절 — 안면 낙상 후 경추통 (Jefferson/Hangman 골절 위험)",
+        "soap_text": (
+            "38F. Fell on face 2 days ago, no loss of consciousness. "
+            "Neck pain 8/10 with severe cervical ROM limitation. "
+            "Referred pain left shoulder. No UMN signs on screen."
+        ),
+        "expected_alarm": "RED",
+        "expected_condition": "fracture",
+    },
 
     # ── RED: Malignancy (3건) ─────────────────────────────────────────────────
     {
