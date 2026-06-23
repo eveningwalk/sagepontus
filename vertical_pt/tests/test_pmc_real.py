@@ -11,13 +11,16 @@ PMC (PubMed Central) Real-World Academic Case Report Integration Tests
   PMC5878400  — Infection (spondylodiscitis, Salmonella, scuba diver) → RED  TP
   PMC4101555  — Malignancy initial eval (lung cancer, subtle flags)   → YELLOW FN (known gap)
   PMC7772297  — Infection (spondylodiscitis, afebrile at eval)        → YELLOW FN (known gap)
+  PMC12643639 — Vascular (AAA 92mm, HTN+hyperlipidemia+smoker, 56M)  → YELLOW FN (known gap)
 
 결과 (2026-06-23):
-  TP=5, FP=0, FN=2
+  TP=5, FP=0, FN=3, Total=8
   FN 사유: 초기 평가 시점의 정보만으로는 RED 판정 불가
     PMC4101555: 암 기왕력 없음, 야간통 경미, 초기 평가 YELLOW가 임상적으로 합리적
     PMC7772297: 발열 없음(afebrile), 감염 기왕력 없음, 야간발한+체중감소=악성종양 패턴으로 분류
+    PMC12643639: 박동성 종괴 없음, 기침 시 악화(기계적 성분), HTN 단독 vascular 임계 미달
   PMC5878400 감지 경로: 과거 살모넬라 발열 기록 + 혈색소침착증(면역저하) → infection RED
+  Skip: PMC12643639 Case2 (35M 대동맥 박리, 건강인 경추통) — 어떤 스크리닝도 감지 불가
 
 KB 수정 내역 (이 케이스들로 발견):
   RF_008: 척추 맥락 한정 percussion/tuning fork test 패턴 추가 (PMC6733320)
@@ -114,6 +117,23 @@ Marked tenderness at L2/3 on palpation. No neurological deficits.
 
 A: Severe chronic LBP, 18 months no improvement. Prior documented Salmonella infection
 with fever. Immunocompromised state (haemochromatosis). Imaging required prior to PT.
+"""
+
+SOAP_PMC12643639_AAA_FN = """
+S: 56-year-old male. PMH: arterial hypertension, hyperlipidemia, nephrolithiasis, smoker.
+Referred to pain clinic after orthopedic and urologic evaluation for lower back pain
+persisting approximately 2 weeks. Pain described as dull and pressure-like, without
+radicular features. Worsened with coughing and sneezing. Lumbar X-ray showed
+osteochondrosis L2/3 and L5/S1, no listhesis or compression. Repeatedly diagnosed with
+lumbosacral syndrome. Persistent pain 3-4/10 NRS despite tramadol, metamizole, meloxicam.
+Nocturnal awakenings and disrupted sleep due to pain. Left-sided hydronephrosis on
+prior ultrasound.
+
+O: No neurological deficits. No pulsatile abdominal mass documented on physical exam.
+Hypertension and hyperlipidemia on medication.
+
+A: LBP 2 weeks, refractory to full analgesic course. Cardiovascular risk factors:
+hypertension, hyperlipidemia, smoking. Night pain with sleep disruption.
 """
 
 SOAP_PMC4101555_MAL_FN = """
@@ -255,6 +275,23 @@ SCENARIOS = [
             "감염 Red Flag(발열/면역저하/IV drug use) 부재로 infection 미감지 — 합리적 FN."
         ),
     },
+    {
+        "id": "PMC12643639",
+        "title": "[FN] Vascular — 대동맥류 92mm (56M, HTN+고지혈증+흡연, 박동성 종괴 없음)",
+        "soap_text": SOAP_PMC12643639_AAA_FN,
+        "system_expected": "YELLOW",
+        "clinical_truth": "RED",
+        "expected_condition": None,
+        "accuracy": "FN",
+        "source": "PMC12643639 — Medicine (Baltimore). 2025",
+        "clinical_note": (
+            "알려진 FN. KB 갭: 박동성 복부 종괴 없음, 통증이 기침 시 악화(기계적 성분), "
+            "hyperlipidemia KB 미등록. RF_033(HTN, 0.4) 단독으로 vascular YELLOW 임계 미달. "
+            "시스템: malignancy YELLOW (야간통+흡연+무반응). "
+            "실제: 흉복부 대동맥류 92mm — CT angiography로 발견, 수술 성공. "
+            "YELLOW라도 임상적으로는 추가 영상 검사 유도 → 결과적으로 발견 가능한 케이스."
+        ),
+    },
 ]
 
 
@@ -302,5 +339,5 @@ def test_pmc_accuracy_summary():
 
     assert tp == 5, f"Expected 5 TP, got {tp}"
     assert fp == 0, f"Expected 0 FP, got {fp}"
-    assert fn == 2, f"Expected 2 FN (known gaps), got {fn}"
-    assert total == 7, f"Expected 7 total, got {total}"
+    assert fn == 3, f"Expected 3 FN (known gaps), got {fn}"
+    assert total == 8, f"Expected 8 total, got {total}"
