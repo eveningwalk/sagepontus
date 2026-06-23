@@ -77,6 +77,46 @@ sensory screen. Deep tendon reflexes diminished bilateral lower extremity.
 Bowel and bladder dysfunction reported. Emergent referral indicated.
 """
 
+# [2mo ago post] — 12세 여아, 6개월 진행성 보행 장애, L2/L3/L4 운동 기능 소실
+# 가위형 보행, 좌측 허리/고관절 통증 6→10/10, 안정 시 통증
+# Hip X-ray 음성, 혈액검사 정상, PT 6회 이상에도 악화 일로
+# 커뮤니티 감별: tethered cord, 척수 종양, Friedreich's ataxia, FND
+# → 전원(neuro) 필요, 알람 RED 임상 정합
+SOAP_RDT07_PEDIATRIC_NEURO = """
+S: 12-year-old female presenting with insidious onset progressive gait dysfunction over
+the past 6 months. Left-sided lumbar spine and left hip pain rated 6/10 at rest, worsening
+to 10/10 with any active or passive movement. One year ago was playing soccer and walking
+normally; now cannot tolerate a full school day of walking or sitting. Has seen pediatrician,
+hip specialist, spine specialist, and neurology — all returned patient to PT without diagnosis.
+Six-plus PT sessions completed with no improvement; condition continues to worsen with each visit.
+Born 4 weeks premature via emergency C-section due to maternal preeclampsia. Blood work normal.
+
+O: Bilateral in-toeing gait, left greater than right. Torsional scissoring gait pattern
+observed. Multiple levels of motor loss at L2, L3, L4, left greater than right.
+Prefers right sidelying or W-sitting with excessive hip internal rotation.
+Cannot tolerate prone or supine with hip in neutral position.
+Multiple hip X-rays negative. Unable to tolerate upright standing for spinal imaging.
+Progressive neurological deficit over 6 months including motor loss and gait deterioration.
+"""
+
+# Ok-Background5947 댓글 — 30대 남성, 9일 지속 흉추 통증 → 우측 전흉부 방사
+# 야간각성(2am), 야간발한(파트너 확인), 발열, 자세무관 상수통 8-9/10
+# 혈액 검사 음성, 흉추 MRI 예정. 커뮤니티 감별: 암, 감염, AAA, 담낭
+# 결과: "모든 검사 음성, 정형외과처럼 치료하라" — 확진 없음
+SOAP_RDT06_THORACIC_RF = """
+S: Male patient early 30s presents with mid-back pain radiating to right anterior chest,
+onset 9 days ago. No specific mechanism recalled — pain began after core exercise session.
+Pain is crushing in quality, 8-9/10 constantly for 9 days with no improvement.
+Wakes from sleep at approximately 2am every night due to pain, unable to return to sleep.
+Night sweats drenching — partner confirmed patient soaks sheets nightly. Fever present.
+Pain unchanged with any position or movement — no positional relief with any technique.
+Pain only partially relieved with high-dose analgesics. PMH: lumbar disc herniation,
+prior PT course completed. No other significant medical history.
+
+O: Pain constant regardless of position. No improvement with any movement or position change.
+Pain pattern does not follow mechanical or musculoskeletal presentation.
+"""
+
 # PaperPusherPT 댓글 — 양측 무릎 구축, 고관절 이하 감각·운동 소실
 # 결과: 척추 종양 의심으로 신경과 의뢰 (직장 이직 후 결과 불명)
 # KB 갭: UMN 징후 (spasticity, hyperreflexia, complete LE sensory/motor loss) 미탐지
@@ -158,19 +198,53 @@ SCENARIOS = [
         ),
     },
     {
+        "id": "RDT_07",
+        "title": "소아 진행성 신경장애 — 12세 여아 6개월 보행 악화 + L2/L3/L4 운동 소실",
+        "soap_text": SOAP_RDT07_PEDIATRIC_NEURO,
+        "system_expected": "RED",
+        "clinical_truth": "RED",
+        "accuracy": "TP",
+        "kb_gap": None,
+        "clinical_note": (
+            "RF_005(Progressive Neurological Deficit) 단독 트리거 — score 1.0 RED. "
+            "'progressive neurological deficit', 'motor loss', 'gait deterioration' 복합 매칭. "
+            "소아 케이스 데이터셋 최초 — 성인 중심 KB가 소아 진행성 신경 증상도 정확히 탐지. "
+            "커뮤니티 감별: tethered cord, 척수 종양, Friedreich's ataxia, FND. "
+            "공통 결론: 신경과 즉시 의뢰 필요 — 알람 RED 정합."
+        ),
+    },
+    {
+        "id": "RDT_06",
+        "title": "흉추 비기계적 통증 — 야간각성+야간발한+발열+자세무관 (Ok-Background5947)",
+        "soap_text": SOAP_RDT06_THORACIC_RF,
+        "system_expected": "RED",
+        "clinical_truth": "RED",
+        "accuracy": "TP",
+        "kb_gap": None,
+        "clinical_note": (
+            "다중 조건 동시 활성 케이스. "
+            "vascular RED (RF_034 우측전흉부통증 + RF_017 자세무관통증), "
+            "infection RED (RF_013 발열 단독), "
+            "malignancy YELLOW (RF_011+RF_012+RF_022 = 3/5). "
+            "커뮤니티 감별진단(AAA, 감염, 악성종양) 3개 모두 탐지. "
+            "최종 진단 미확정이나 알람 RED는 임상 정합. "
+            "Goodman's 교과서 사례급 복합 Red Flag 발현."
+        ),
+    },
+    {
         "id": "RDT_05",
         "title": "척추 종양 — 완전 양측 하지 감각·운동 소실 + UMN 징후 (PaperPusherPT)",
         "soap_text": SOAP_RDT05_SPINAL_TUMOR,
-        "system_expected": "NONE",
+        "system_expected": "RED",
         "clinical_truth": "RED",
-        "accuracy": "FN",
-        "kb_gap": "UMN signs (hyperreflexia, spasticity, complete LE sensory/motor loss) — KB is LMN/CES focused",
+        "accuracy": "TP",
+        "kb_gap": None,
         "clinical_note": (
-            "KB 갭: VPPS는 LMN(CES) 중심으로 설계됨. "
-            "UMN 징후인 spasticity, hyperreflexia, 완전 양측 하지 감각·운동 소실은 "
-            "현재 어떤 KB entry에도 synonym/pattern 없음. "
-            "negation stripper 이슈도 없음 — 'absent bilaterally' 같이 긍정 표현으로 기술해도 탐지 실패. "
-            "수정 방향: RF_005에 UMN synonym 추가 또는 신규 RF entry 신설."
+            "RF_005(Progressive Neurological Deficit)에 UMN synonym/pattern 추가 후 탐지. "
+            "'upper motor neuron signs', bilateral hyperreflexia pattern, "
+            "motor/sensory absent bilateral pattern으로 RED 도달. "
+            "조건 레이블: cauda_equina (실제 진단은 spinal tumor/UMN — "
+            "LMN과 UMN 모두 동일 KB entry 사용, 알람 레벨은 정확)."
         ),
     },
 ]
@@ -211,31 +285,12 @@ def test_reddit_clinical_accuracy_tp(scenario):
     )
 
 
-@pytest.mark.parametrize(
-    "scenario",
-    [s for s in SCENARIOS if s["accuracy"] == "FN"],
-    ids=[s["id"] for s in SCENARIOS if s["accuracy"] == "FN"],
-)
-@pytest.mark.xfail(
-    reason="Known KB gap — UMN signs not in KB. Will auto-pass when RF_005 UMN synonyms added.",
-    strict=True,
-)
-def test_reddit_known_gaps_xfail(scenario):
-    """FN 케이스: KB 갭으로 현재 탐지 실패 — KB 수정 시 자동 pass."""
-    result = score_soap(scenario["soap_text"])
-    assert result["alarm"] == scenario["clinical_truth"], (
-        f"[{scenario['id']}] Gap: {scenario['kb_gap']}\n"
-        f"  clinical_truth : {scenario['clinical_truth']}\n"
-        f"  got            : {result['alarm']}"
-    )
-
-
 def test_reddit_accuracy_summary():
     """Reddit 케이스 전체 정확도 요약 — TP/FN 비율 추적."""
     tp = sum(1 for s in SCENARIOS if s["accuracy"] == "TP")
     fn = sum(1 for s in SCENARIOS if s["accuracy"] == "FN")
     total = len(SCENARIOS)
 
-    assert tp == 4, f"TP regression: expected 4, got {tp}"
-    assert fn == 1, f"FN count changed: expected 1 (UMN gap), got {fn}"
-    assert total == 5
+    assert tp == 7, f"TP regression: expected 7, got {tp}"
+    assert fn == 0, f"FN count changed: expected 0, got {fn}"
+    assert total == 7
