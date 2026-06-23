@@ -8,14 +8,16 @@ PMC (PubMed Central) Real-World Academic Case Report Integration Tests
   PMC6733320  — Fracture (L1 burst fracture, recreational runner)     → RED  TP
   PMC6112066  — Malignancy (breast cancer metastasis, runner)         → RED  TP
   PMC9603351  — Malignancy + CES (vertebral hemangioma, direct access)→ RED  TP
+  PMC5878400  — Infection (spondylodiscitis, Salmonella, scuba diver) → RED  TP
   PMC4101555  — Malignancy initial eval (lung cancer, subtle flags)   → YELLOW FN (known gap)
   PMC7772297  — Infection (spondylodiscitis, afebrile at eval)        → YELLOW FN (known gap)
 
 결과 (2026-06-23):
-  TP=4, FP=0, FN=2
+  TP=5, FP=0, FN=2
   FN 사유: 초기 평가 시점의 정보만으로는 RED 판정 불가
     PMC4101555: 암 기왕력 없음, 야간통 경미, 초기 평가 YELLOW가 임상적으로 합리적
     PMC7772297: 발열 없음(afebrile), 감염 기왕력 없음, 야간발한+체중감소=악성종양 패턴으로 분류
+  PMC5878400 감지 경로: 과거 살모넬라 발열 기록 + 혈색소침착증(면역저하) → infection RED
 
 KB 수정 내역 (이 케이스들로 발견):
   RF_008: 척추 맥락 한정 percussion/tuning fork test 패턴 추가 (PMC6733320)
@@ -92,6 +94,26 @@ motion test positive, reproducing familiar deep widespread sacral pain.
 A: Multiple red flags: prior malignancy, unexplained weight loss, progressive unremitting
 sacral pain, bladder dysfunction, saddle sensory changes, positive percussion at L4-S1.
 Urgent MRI required. Direct access case — PT initiated referral.
+"""
+
+SOAP_PMC5878400_INF = """
+S: 54-year-old female scuba diving instructor. PMH: haemochromatosis (4 years),
+L4-S1 spinal fusion at age 16 for congenital spondylolisthesis, episodic LBP history.
+18-month history of severe persistent lower back and right buttock pain, onset after
+returning from overseas diving trip. Hospital admission documented Salmonella infection
+with fever, loose stools, and abdominal cramping — GI symptoms resolved with antibiotics
+but severe back pain persisted despite full analgesic and NSAID course.
+No improvement over 18 months despite multiple practitioners. Constant pain not previously
+present. Pain worse with walking and upright activities.
+Currently taking tramadol 50mg five times daily and 100mg at night, pregabalin 75mg
+twice daily, diazepam, baclofen — reports no meaningful improvement.
+
+O: Hyperlordotic posture. Active ROM markedly restricted: flexion fingertips to mid-thigh,
+extension 15 degrees short of neutral, lateral flexion left 8 degrees, right 5 degrees.
+Marked tenderness at L2/3 on palpation. No neurological deficits.
+
+A: Severe chronic LBP, 18 months no improvement. Prior documented Salmonella infection
+with fever. Immunocompromised state (haemochromatosis). Imaging required prior to PT.
 """
 
 SOAP_PMC4101555_MAL_FN = """
@@ -183,6 +205,23 @@ SCENARIOS = [
         ),
     },
 
+    {
+        "id": "PMC5878400",
+        "title": "Infection — 살모넬라 척추염 (54F, 혈색소침착증 + 과거 발열 기록)",
+        "soap_text": SOAP_PMC5878400_INF,
+        "system_expected": "RED",
+        "clinical_truth": "RED",
+        "expected_condition": "infection",
+        "accuracy": "TP",
+        "source": "PMC5878400 — BMJ Case Rep. 2018",
+        "clinical_note": (
+            "스쿠버 다이빙 강사. 살모넬라 감염 후 L2/3 미란성 척추염 발병. "
+            "감지 경로: 과거 살모넬라 발열 기록(문서화된 병원 입원) + 혈색소침착증(면역저하). "
+            "평가 당시 발열 없음이지만, 과거 발열+면역저하 조합으로 infection RED 정합. "
+            "실제: 살모넬라 코르발리스 척추염(L2/3 CT 미란 확인), 물리치료로 회복."
+        ),
+    },
+
     # ── YELLOW FN (알려진 한계: 초기 평가 정보 부족) ─────────────────────────
     {
         "id": "PMC4101555",
@@ -261,7 +300,7 @@ def test_pmc_accuracy_summary():
     fn = sum(1 for s in SCENARIOS if s["accuracy"] == "FN")
     total = len(SCENARIOS)
 
-    assert tp == 4, f"Expected 4 TP, got {tp}"
+    assert tp == 5, f"Expected 5 TP, got {tp}"
     assert fp == 0, f"Expected 0 FP, got {fp}"
     assert fn == 2, f"Expected 2 FN (known gaps), got {fn}"
-    assert total == 6, f"Expected 6 total, got {total}"
+    assert total == 7, f"Expected 7 total, got {total}"
