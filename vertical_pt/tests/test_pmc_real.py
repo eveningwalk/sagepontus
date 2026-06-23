@@ -299,15 +299,29 @@ SCENARIOS = [
 
 @pytest.mark.parametrize("scenario", SCENARIOS, ids=[s["id"] for s in SCENARIOS])
 def test_pmc_system_behavior(scenario):
-    """PMC 학술 케이스: 현재 시스템 동작 회귀 테스트 (system_expected 기준)."""
+    """PMC 학술 케이스 회귀 테스트.
+
+    TP: 정확한 alarm level 고정 (RED → RED 유지 보장)
+    FN: 알람 완전 소실 방지만 보장 (NONE 퇴행 감지)
+        — KB 개선으로 YELLOW→RED 되어도 테스트 통과
+    """
     result = score_soap(scenario["soap_text"])
-    assert result["alarm"] == scenario["system_expected"], (
-        f"[{scenario['id']}] {scenario['title']}\n"
-        f"  expected : {scenario['system_expected']}\n"
-        f"  got      : {result['alarm']}\n"
-        f"  matched  : {result['matched']}\n"
-        f"  source   : {scenario['source']}"
-    )
+
+    if scenario["accuracy"] == "FN":
+        assert result["alarm"] != "NONE", (
+            f"[{scenario['id']}] FN 케이스 알람 완전 소실 — KB 퇴행 감지\n"
+            f"  clinical_truth : {scenario['clinical_truth']}\n"
+            f"  got            : {result['alarm']} (NONE은 허용 불가)\n"
+            f"  source         : {scenario['source']}"
+        )
+    else:
+        assert result["alarm"] == scenario["system_expected"], (
+            f"[{scenario['id']}] {scenario['title']}\n"
+            f"  expected : {scenario['system_expected']}\n"
+            f"  got      : {result['alarm']}\n"
+            f"  matched  : {result['matched']}\n"
+            f"  source   : {scenario['source']}"
+        )
 
 
 @pytest.mark.parametrize(
