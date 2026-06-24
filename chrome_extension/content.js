@@ -3,6 +3,9 @@
  * content.js: 드래그 가능한 플로팅 패널 (Shadow DOM 격리)
  * toolbar 클릭 → background.js → TOGGLE_PANEL 메시지 → 패널 토글
  */
+(function () {
+if (window.SAGE_PONTUS_INITIALIZED) return;
+window.SAGE_PONTUS_INITIALIZED = true;
 
 // ── 상수 ───────────────────────────────────────────────────────────
 const DEFAULT_SERVER = "https://sagepontus-284182376290.us-east4.run.app";
@@ -320,7 +323,7 @@ let shadowRoot = null;
 let panelVisible = false;
 
 function createPanel() {
-  if (document.getElementById("sp-host")) return;  // 이미 존재
+  if (document.getElementById("sp-host")) return;
 
   const host = document.createElement("div");
   host.id = "sp-host";
@@ -393,7 +396,6 @@ let state = { token: null, username: null, serverUrl: DEFAULT_SERVER };
 function initLogic(root) {
   const $ = id => root.getElementById(id);
 
-  // 초기 상태 로드
   chrome.storage.local.get(["token", "username", "serverUrl"]).then(stored => {
     state.token     = stored.token     || null;
     state.username  = stored.username  || null;
@@ -408,16 +410,13 @@ function initLogic(root) {
     }
   });
 
-  // 닫기 버튼
   $("sp-close").addEventListener("click", hidePanel);
 
-  // 로그인
   $("btn-login").addEventListener("click", () => handleLogin($));
   $("login-password").addEventListener("keydown", e => {
     if (e.key === "Enter") handleLogin($);
   });
 
-  // 설정
   $("btn-show-settings").addEventListener("click", () => {
     $("settings-panel").classList.toggle("hidden");
   });
@@ -430,10 +429,8 @@ function initLogic(root) {
     }
   });
 
-  // 로그아웃
   $("btn-logout").addEventListener("click", () => handleLogout($));
 
-  // 붙여넣기
   $("btn-paste").addEventListener("click", async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -444,22 +441,15 @@ function initLogic(root) {
     }
   });
 
-  // 지우기
   $("btn-clear").addEventListener("click", () => {
     $("soap-text").value  = "";
     $("patient-id").value = "";
   });
 
-  // 분석
   $("btn-analyze").addEventListener("click", () => handleAnalyze($));
-
-  // 돌아가기
   $("btn-back").addEventListener("click", () => showAnalyzeScreen($));
-
-  // 리퍼럴 레터
   $("btn-referral").addEventListener("click", () => handleGenerateReferral($));
 
-  // 레터 복사
   $("btn-copy-referral").addEventListener("click", () => {
     const text = $("referral-letter").textContent;
     navigator.clipboard.writeText(text).then(() => {
@@ -580,8 +570,8 @@ async function handleAnalyze($) {
 
 // ── 결과 렌더링 ──────────────────────────────────────────────────────
 function renderResult($, data, soapText, patientId) {
-  const alarm    = data.alarm || "NONE";
-  const cfg      = ALARM_CONFIG[alarm] || ALARM_CONFIG.NONE;
+  const alarm     = data.alarm || "NONE";
+  const cfg       = ALARM_CONFIG[alarm] || ALARM_CONFIG.NONE;
   const condLabel = CONDITION_LABELS[data.condition] || data.condition || "";
 
   const banner = $("alarm-banner");
@@ -711,3 +701,5 @@ function showError(el, msg) {
   el.textContent = msg;
   el.classList.remove("hidden");
 }
+
+})();
