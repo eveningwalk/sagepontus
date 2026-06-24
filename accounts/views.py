@@ -1,14 +1,14 @@
 import json
 
-from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
+from animamus_project.auth_views import authenticate_by_email
 from .models import EarlyAccessSignup
 
 def landing_page(request):
@@ -41,14 +41,9 @@ def signup(request):
 def login(request):
     error = False
     if request.method == 'POST':
-        email_or_username = request.POST.get('email', '').strip()
+        email = request.POST.get('email', '').strip()
         password = request.POST.get('password')
-        user = None
-        user_obj = User.objects.filter(email=email_or_username.lower()).first()
-        if user_obj:
-            user = authenticate(request, username=user_obj.username, password=password)
-        else:
-            user = authenticate(request, username=email_or_username, password=password)
+        user = authenticate_by_email(request, email, password)
         if user:
             auth_login(request, user)
             return redirect('questionnaire:home')

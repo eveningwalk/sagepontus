@@ -95,6 +95,7 @@ const PANEL_CSS = `
 .hint { font-weight: 400; text-transform: none; color: #9ca3af; }
 
 input[type="text"],
+input[type="email"],
 input[type="password"],
 textarea {
   width: 100%;
@@ -218,8 +219,8 @@ const PANEL_HTML = `
         </div>
       </div>
       <div class="form-group">
-        <label>Username</label>
-        <input type="text" id="login-username" placeholder="your username" autocomplete="username" />
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="your@email.com" autocomplete="email" />
       </div>
       <div class="form-group">
         <label>Password</label>
@@ -416,14 +417,14 @@ async function restorePosition(root) {
 }
 
 // ── 앱 로직 ─────────────────────────────────────────────────────────
-let state = { token: null, username: null, serverUrl: DEFAULT_SERVER };
+let state = { token: null, email: null, serverUrl: DEFAULT_SERVER };
 
 function initLogic(root) {
   const $ = id => root.getElementById(id);
 
-  chrome.storage.local.get(["token", "username", "serverUrl"]).then(stored => {
+  chrome.storage.local.get(["token", "email", "username", "serverUrl"]).then(stored => {
     state.token     = stored.token     || null;
-    state.username  = stored.username  || null;
+    state.email     = stored.email     || stored.username || null; // username: 구버전 마이그레이션
     state.serverUrl = stored.serverUrl || DEFAULT_SERVER;
 
     if (state.token) {
@@ -496,19 +497,19 @@ function showScreen($, name) {
 }
 
 function showAnalyzeScreen($) {
-  $("top-username").textContent        = state.username || "";
-  $("top-username-result").textContent = state.username || "";
+  $("top-username").textContent        = state.email || "";
+  $("top-username-result").textContent = state.email || "";
   showScreen($, "analyze");
 }
 
 // ── 로그인 ──────────────────────────────────────────────────────────
 async function handleLogin($) {
-  const username = $("login-username").value.trim();
+  const email    = $("login-email").value.trim();
   const password = $("login-password").value;
   const errEl    = $("login-error");
 
-  if (!username || !password) {
-    showError(errEl, "Please enter username and password.");
+  if (!email || !password) {
+    showError(errEl, "Please enter email and password.");
     return;
   }
 
@@ -520,7 +521,7 @@ async function handleLogin($) {
     const res = await fetch(`${state.serverUrl}/api/auth/token/`, {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
-      body:    JSON.stringify({ username, password }),
+      body:    JSON.stringify({ email, password }),
     });
 
     if (!res.ok) {
@@ -529,9 +530,9 @@ async function handleLogin($) {
     }
 
     const { token } = await res.json();
-    state.token    = token;
-    state.username = username;
-    await chrome.storage.local.set({ token, username });
+    state.token = token;
+    state.email = email;
+    await chrome.storage.local.set({ token, email });
     showAnalyzeScreen($);
 
   } catch (err) {
@@ -544,9 +545,9 @@ async function handleLogin($) {
 
 // ── 로그아웃 ─────────────────────────────────────────────────────────
 async function handleLogout($) {
-  state.token    = null;
-  state.username = null;
-  await chrome.storage.local.remove(["token", "username"]);
+  state.token = null;
+  state.email = null;
+  await chrome.storage.local.remove(["token", "email", "username"]);
   showScreen($, "login");
 }
 

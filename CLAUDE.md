@@ -232,6 +232,7 @@ RAG 인프라는 pgvector(기존 PostgreSQL 활용) + Gemini Embedding으로 구
 ## 인프라
 
 - Cloud Run 서비스: `sagepontus` (asia-northeast1)
-- git push → 자동 배포 (수동 gcloud deploy 불필요)
+- **배포는 수동** (비용 절감) — `git push`는 자동 배포되지 않음.
+  배포는 `./deploy.sh` 실행(pytest 통과 후 `gcloud run deploy --source .`)으로만 진행.
 - Django + Next.js 별도 서비스
 - DB: PostgreSQL (Cloud SQL)
