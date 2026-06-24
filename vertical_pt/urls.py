@@ -6,9 +6,10 @@ app_name = "vertical_pt"
 
 urlpatterns = [
     # ── PT 전용 인증 ──────────────────────────────────────────────────────
-    path("pt/signup/", views_pt_auth.pt_signup, name="pt_signup"),
-    path("pt/login/",  views_pt_auth.pt_login,  name="pt_login"),
-    path("pt/logout/", views_pt_auth.pt_logout, name="pt_logout"),
+    path("pt/signup/",            views_pt_auth.pt_signup,     name="pt_signup"),
+    path("pt/login/",             views_pt_auth.pt_login,      name="pt_login"),
+    path("pt/logout/",            views_pt_auth.pt_logout,     name="pt_logout"),
+    path("pt/api/check-email/",   views_pt_auth.check_email,   name="pt_check_email"),
 
     # ── REST API (Chrome Extension / 외부 클라이언트) ─────────────────────
     path("api/pt/analyze/",                  views_api.analyze,           name="analyze"),

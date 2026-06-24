@@ -563,13 +563,7 @@ def analyze_view(request):
             score=result["score"],
             trigger_label=result.get("trigger", ""),
         )
-        if result["alarm"] == "RED":
-            therapist_name  = request.user.get_full_name() or request.user.username
-            referral_letter = generate_referral_letter(
-                alert, patient_id=patient_id, therapist_name=therapist_name
-            )
-            alert.referral_letter = referral_letter
-            alert.save(update_fields=["referral_letter"])
+        pass  # letter generated on explicit user action (flywheel signal)
 
     request.session["pt_result"] = {
         "alarm":           result["alarm"],
@@ -582,6 +576,7 @@ def analyze_view(request):
         "patient_context": patient_ctx,
         "soap_text":       soap_text,
         "patient_id":      patient_id,
+        "session_date":    datetime.date.today().strftime("%Y-%m-%d"),
     }
     return redirect("vertical_pt:pt_result")
 

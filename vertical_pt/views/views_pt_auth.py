@@ -2,7 +2,10 @@
 
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
+from django.http import JsonResponse
 from django.shortcuts import render, redirect
+from django.views.decorators.http import require_GET
 
 from vertical_pt.forms import PTSignupForm
 
@@ -50,3 +53,12 @@ def pt_login(request):
 def pt_logout(request):
     logout(request)
     return redirect("vertical_pt:pt_login")
+
+
+@require_GET
+def check_email(request):
+    email = request.GET.get("email", "").strip().lower()
+    if not email:
+        return JsonResponse({"available": False}, status=400)
+    taken = User.objects.filter(email=email).exists()
+    return JsonResponse({"available": not taken})

@@ -3,67 +3,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign In — Sage Pontus PT</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+  <title>Sign In — Sage Pontus</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { box-sizing: border-box; }
     body {
-      min-height: 100vh; display: flex; align-items: center; justify-content: center;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0; min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #e8eaef; display: flex; align-items: center; justify-content: center;
+      padding: 24px 16px;
     }
-    .card {
-      background: #fff; border-radius: 16px; padding: 40px 44px;
-      width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,.4);
+    .auth-card {
+      background: #fff; border-radius: 14px; width: 100%; max-width: 420px;
+      padding: 36px 32px; box-shadow: 0 4px 20px rgba(0,0,0,.07); border: 1px solid #dcdfe4;
     }
     .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
     .brand-icon {
-      width: 36px; height: 36px; border-radius: 8px;
-      background: linear-gradient(135deg,#dc2626,#b91c1c);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
+      width: 36px; height: 36px; border-radius: 8px; background: #0f766e;
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
     }
-    .brand-name { font-size: 18px; font-weight: 700; color: #1e293b; }
-    .brand-sub  { font-size: 12px; color: #64748b; }
-    h2 { font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 6px; }
-    .subtitle { font-size: 13px; color: #64748b; margin-bottom: 28px; }
+    .brand-name { font-size: 16px; font-weight: 700; color: #1e293b; }
+    .brand-sub  { font-size: 11px; color: #64748b; }
+    h2 { margin: 0 0 4px; font-size: 22px; font-weight: 800; color: #0f172a; }
+    .subtitle { font-size: 13px; color: #64748b; margin: 0 0 28px; }
 
-    .field { margin-bottom: 18px; }
-    label { display: block; font-size: 12px; font-weight: 600; color: #374151;
-            text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; }
-    input {
-      width: 100%; padding: 11px 13px; border: 1px solid #d1d5db; border-radius: 8px;
-      font-size: 14px; outline: none; transition: border-color .15s;
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block; font-size: 12px; font-weight: 700; color: #475569;
+      text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px;
     }
-    input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.12); }
+    .form-control {
+      width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px;
+      background: #f8fafc; font-size: 14px; color: #1e293b; outline: none;
+      transition: border-color .15s;
+    }
+    .form-control:focus { border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,.1); }
 
     .error-banner {
       background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px;
-      padding: 10px 13px; font-size: 13px; color: #dc2626; margin-bottom: 18px;
+      padding: 10px 14px; font-size: 13px; color: #dc2626; margin-bottom: 18px;
     }
-    .submit-btn {
-      width: 100%; padding: 12px; border: none; border-radius: 9px;
-      background: linear-gradient(135deg,#dc2626,#b91c1c);
-      color: #fff; font-size: 15px; font-weight: 700; cursor: pointer;
-      transition: opacity .15s;
+    .btn-submit {
+      width: 100%; padding: 12px; border: none; border-radius: 8px;
+      background: #0f766e; color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; margin-top: 8px; transition: background .15s;
     }
-    .submit-btn:hover { opacity: .9; }
-    .signup-link { text-align: center; margin-top: 20px; font-size: 13px; color: #64748b; }
-    .signup-link a { color: #6366f1; font-weight: 600; text-decoration: none; }
+    .btn-submit:hover { background: #115e59; }
+    .auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: #64748b; }
+    .auth-footer a { color: #0d9488; font-weight: 600; text-decoration: none; }
   </style>
 </head>
 <body>
-<div class="card">
+<div class="auth-card">
   <div class="brand">
-    <div class="brand-icon">🚨</div>
+    <div class="brand-icon">🛡</div>
     <div>
-      <div class="brand-name">Sage Pontus PT</div>
-      <div class="brand-sub">Red Flag Alarm System</div>
+      <div class="brand-name">Sage Pontus</div>
+      <div class="brand-sub">PT Red Flag Alert</div>
     </div>
   </div>
 
-  <h2>Welcome back</h2>
-  <p class="subtitle">Sign in to your PT account.</p>
+  <h2>Sign in</h2>
+  <p class="subtitle">Enter your email and password to continue.</p>
 
   {% if error %}
     <div class="error-banner">{{ error }}</div>
@@ -71,18 +72,20 @@
 
   <form method="post">
     {% csrf_token %}
-    <div class="field">
-      <label>Email</label>
-      <input type="email" name="email" autofocus required>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" name="email" class="form-control" autofocus required autocomplete="email">
     </div>
-    <div class="field">
-      <label>Password</label>
-      <input type="password" name="password" required>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" name="password" class="form-control" required autocomplete="current-password">
     </div>
-    <button type="submit" class="submit-btn">Sign In</button>
+    <button type="submit" class="btn-submit">Sign In →</button>
   </form>
 
-  <p class="signup-link">Don't have an account? <a href="{% url 'vertical_pt:pt_signup' %}">Sign up free</a></p>
+  <div class="auth-footer">
+    Don't have an account? <a href="{% url 'vertical_pt:pt_signup' %}">Start free trial</a>
+  </div>
 </div>
 </body>
 </html>

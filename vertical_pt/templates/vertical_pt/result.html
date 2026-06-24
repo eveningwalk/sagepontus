@@ -1,97 +1,330 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
-  <title>Analysis Report — Sage Pontus</title>
+  <title>Analysis Result — Sage Pontus</title>
   <style>
-    :root {
-      --bg-workspace: #11222e;        
-      --bg-sidebar: #121d17;          
-      --bg-card: #1f3848;             
-      --border-glow: rgba(177, 212, 226, 0.08);
-      --brand-sage: #4f7c5f;          
-      --brand-pontus: #2c7595;        
-      --brand-ice: #27a0c6;           
-      --text-main: #eef6f9;           
-      --text-muted: #7eb6cd;          
-      --active-cyan: #86d5ec;         
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 14px; line-height: 1.6; color: #1a1d21;
+      background: #e8eaef;
+      padding: 32px 16px;
     }
-    body { background-color: var(--bg-workspace); color: var(--text-main); font-family: -apple-system, sans-serif; padding: 40px; margin: 0; }
-    .report-card { max-width: 760px; margin: 0 auto; background: var(--bg-card); border-radius: 16px; padding: 32px; border: 1px solid var(--border-glow); box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-    
-    .status-banner { display: flex; align-items: center; gap: 16px; padding: 20px; border-radius: 12px; margin-bottom: 24px; border: 1px solid; }
-    .status-banner.RED { background: rgba(239,68,68,0.1); border-color: #ef4444; color: #f87171; }
-    .status-banner.YELLOW { background: rgba(245,158,11,0.1); border-color: #f59e0b; color: #fbbf24; }
-    .status-banner.NONE { background: rgba(16,185,129,0.1); border-color: #10b981; color: #34d399; }
 
-    .box-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--text-muted); margin-bottom: 8px; letter-spacing: 0.8px; }
-    .box-content { background: rgba(0,0,0,0.25); padding: 18px; border-radius: 10px; font-size: 14px; line-height: 1.6; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.02); }
-    
-    .metric-row { display: flex; align-items: center; gap: 14px; margin-top: 24px; }
-    .progress-track { flex: 1; height: 8px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); }
-    .progress-fill { height: 100%; width: 0%; transition: width 0.5s ease; }
-    
-    .btn-nav { padding: 12px 20px; border: none; border-radius: 8px; background: var(--brand-pontus); color: #fff; font-weight: 600; cursor: pointer; text-decoration: none; font-size: 13px; display: inline-block; transition: filter 0.2s; }
-    .btn-nav:hover { filter: brightness(1.1); }
+    .result-wrap { max-width: 680px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 
-    @media (max-width: 767px) {
-      body { padding: 16px; }
-      .report-card { padding: 20px; }
-      .btn-nav { min-height: 44px; display: inline-flex; align-items: center; }
+    /* ── header strip ── */
+    .result-header {
+      background: #fff; border-radius: 12px; border: 1px solid #cbd5e1;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05);
+      padding: 16px 20px;
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    .alarm-badge {
+      font-size: 12px; font-weight: 800; padding: 4px 10px;
+      border-radius: 6px; letter-spacing: .5px; flex-shrink: 0;
+    }
+    .alarm-badge.RED    { background: #fee2e2; color: #dc2626; }
+    .alarm-badge.YELLOW { background: #fef3c7; color: #d97706; }
+    .alarm-badge.NONE   { background: #d1fae5; color: #059669; }
+    .header-date  { font-size: 14px; font-weight: 700; color: #1e293b; }
+    .header-risk  { font-size: 13px; font-weight: 700; color: #0f766e; }
+    .header-cond  { font-size: 13px; color: #64748b; }
+
+    /* ── card ── */
+    .result-card {
+      background: #fff; border-radius: 12px; border: 1px solid #cbd5e1;
+      box-shadow: 0 1px 3px rgba(0,0,0,.05); overflow: hidden;
+    }
+    .card-label {
+      font-size: 11px; font-weight: 700; color: #475569;
+      text-transform: uppercase; letter-spacing: .8px;
+      padding: 12px 18px; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .card-body { padding: 16px 18px; }
+
+    /* ── matched indicators ── */
+    .indicators-card { background: #fff5f5; border-color: #fecaca; }
+    .indicators-card .card-label { border-color: #fecaca; color: #dc2626; }
+    .indicator-item { font-size: 13px; color: #374151; padding: 3px 0; }
+    .indicator-item::before { content: "·  "; color: #dc2626; font-weight: 700; }
+
+    /* ── soap note ── */
+    .soap-section { font-size: 13px; color: #1e293b; }
+    .soap-section-label { font-weight: 700; color: #0f766e; margin-top: 12px; margin-bottom: 2px; }
+    .soap-section-label:first-child { margin-top: 0; }
+    .soap-section-text { color: #374151; margin: 0 0 4px; white-space: pre-wrap; }
+
+    /* ── risk bar ── */
+    .risk-row { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-top: 1px solid #e2e8f0; }
+    .risk-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: .5px; width: 72px; flex-shrink: 0; }
+    .risk-track { flex: 1; height: 7px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+    .risk-fill   { height: 100%; border-radius: 4px; transition: width .5s ease; }
+    .risk-pct   { font-size: 13px; font-weight: 700; color: #1e293b; width: 40px; text-align: right; flex-shrink: 0; }
+
+    /* ── action buttons ── */
+    .btn-generate {
+      width: 100%; padding: 16px; border: none; border-radius: 12px;
+      background: #dc2626; color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: background .15s;
+    }
+    .btn-generate:hover { background: #b91c1c; }
+    .btn-generate:disabled { opacity: .6; cursor: default; }
+
+    .btn-row-2 { display: flex; gap: 10px; }
+    .btn-monitor {
+      flex: 1; padding: 14px; border-radius: 12px;
+      background: #fff; border: 2px solid #f59e0b; color: #92400e;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s;
+    }
+    .btn-monitor:hover { background: #fffbeb; }
+    .btn-escalate {
+      flex: 1; padding: 14px; border-radius: 12px;
+      background: #dc2626; border: none; color: #fff;
+      font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s;
+    }
+    .btn-escalate:hover { background: #b91c1c; }
+
+    .btn-copy-soap {
+      font-size: 12px; font-weight: 600; color: #475569;
+      background: #f1f5f9; border: 1px solid #e2e8f0;
+      border-radius: 6px; padding: 4px 10px; cursor: pointer;
+    }
+
+    /* ── letter ── */
+    .letter-body {
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px; white-space: pre-wrap; color: #1e293b;
+      line-height: 1.7;
+    }
+
+    /* ── back link ── */
+    .back-link {
+      display: inline-block; font-size: 13px; font-weight: 600;
+      color: #64748b; text-decoration: none; padding: 10px 0;
+    }
+    .back-link:hover { color: #0f766e; }
+
+    @media (max-width: 600px) {
+      body { padding: 16px 10px; }
+      .btn-row-2 { flex-direction: column; }
     }
   </style>
 </head>
 <body>
-<div class="report-card">
-  <div class="status-banner {{ alarm }}">
-    <div style="font-size:28px;">{% if alarm == 'RED' %}🚨{% elif alarm == 'YELLOW' %}⚠️{% else %}✅{% endif %}</div>
-    <div>
-      <div style="font-weight:800; font-size:16px;">Clinical Flag Matrix: {{ alarm }}</div>
-      <div style="font-size:12px; opacity:0.7;">Structural extraction layer scanning routine finalized.</div>
+<div class="result-wrap">
+
+  <!-- ── Header ── -->
+  <div class="result-header">
+    <span class="alarm-badge {{ alarm }}">{{ alarm }}</span>
+    <span class="header-date">{{ session_date }}</span>
+    <span class="header-risk">Risk {{ score_pct }}%</span>
+    {% if condition %}<span class="header-cond">{{ condition }}</span>{% endif %}
+  </div>
+
+  <!-- ── Matched Indicators ── -->
+  {% if matched %}
+  <div class="result-card indicators-card">
+    <div class="card-label">Matched Indicators</div>
+    <div class="card-body">
+      {% for item in matched %}
+        <div class="indicator-item">{{ item }}</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ── SOAP Note ── -->
+  <div class="result-card">
+    <div class="card-label">
+      SOAP Note
+      <div style="display:flex; gap:6px;">
+        <button class="btn-copy-soap" onclick="openSoapEditor()">Edit</button>
+        <button class="btn-copy-soap" onclick="copySoap()">Copy</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="soap-section" id="soap-display"></div>
+    </div>
+    <div class="risk-row">
+      <span class="risk-label">Risk Score</span>
+      <div class="risk-track"><div class="risk-fill" id="risk-fill"></div></div>
+      <span class="risk-pct">{{ score_pct }}%</span>
     </div>
   </div>
 
-  <div class="box-title">Identified Evidence Mapping</div>
-  <div class="box-content">
-    {% if matched %}
-      <ul style="margin:0; padding-left:18px;">
-        {% for item in matched %}<li style="margin-bottom:4px;">{{ item }}</li>{% endfor %}
-      </ul>
-    {% else %}
-      No immediate critical markers extracted.
+  <!-- ── Action Buttons ── -->
+  {% if alert_id %}
+  <div id="action-area">
+    {% if alarm == 'RED' %}
+      <button class="btn-generate" onclick="handleAlarmAction('referral')">Generate Referral Letter</button>
+    {% elif alarm == 'YELLOW' %}
+      <div class="btn-row-2">
+        <button class="btn-monitor"   onclick="handleAlarmAction('monitor')">🔔 Flag for Monitoring</button>
+        <button class="btn-escalate"  onclick="handleAlarmAction('referral')">📄 Escalate to Referral</button>
+      </div>
     {% endif %}
   </div>
 
-  {% if referral_letter %}
-  <div class="box-title">Generated Physician Referral Document</div>
-  <div class="box-content" id="letter-body" style="font-family:'Courier New', Courier, monospace;">{{ referral_letter }}</div>
-  <button class="btn-nav" onclick="copyReferralText()" style="margin-bottom:24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); color: var(--text-main);">Copy Document Text</button>
+  <!-- ── Generated Letter ── -->
+  <div id="letter-wrap" style="display:none;">
+    <div class="result-card">
+      <div class="card-label">
+        Physician Referral Letter
+        <div style="display:flex; gap:6px;">
+          <button class="btn-copy-soap" onclick="openLetterEditor()">Edit</button>
+          <button class="btn-copy-soap" onclick="copyLetter()">Copy</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="letter-body" id="letter-body"></div>
+      </div>
+    </div>
+  </div>
   {% endif %}
 
-  <div class="metric-row">
-    <span style="font-size:12px; font-weight:700; color:var(--text-muted); width:80px;">Risk Core</span>
-    <div class="progress-track"><div class="progress-fill" id="track-fill"></div></div>
-    <span style="font-size:14px; font-weight:700; color:var(--active-cyan);">{{ score_pct }}%</span>
-  </div>
-  
-  <div style="margin-top:32px; border-top:1px solid rgba(255,255,255,0.05); padding-top:20px;">
-    <a href="{% url 'vertical_pt:pt_index' %}" class="btn-nav" style="background:rgba(255,255,255,0.03); color:var(--text-muted); border: 1px solid var(--border-glow);">← Return to Analysis Panel</a>
+<!-- ── SOAP Edit Modal ── -->
+<div id="soap-modal-overlay" onclick="if(event.target===this)closeSoapEditor()"
+  style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:14px; width:min(820px,96vw); height:94vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,.3);">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #e2e8f0; flex-shrink:0;">
+      <span style="font-size:15px; font-weight:700; color:#1e293b;">Edit SOAP Note</span>
+      <button onclick="closeSoapEditor()" style="background:none; border:none; font-size:20px; color:#94a3b8; cursor:pointer; line-height:1;">✕</button>
+    </div>
+    <div style="flex:1; min-height:0; padding:16px 20px; display:flex; flex-direction:column;">
+      <textarea id="soap-editor-ta" style="flex:1; width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:14px; font-family:'Courier New',Courier,monospace; font-size:13px; line-height:1.7; resize:none; outline:none; color:#1e293b;"></textarea>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid #e2e8f0; flex-shrink:0;">
+      <button onclick="closeSoapEditor()" style="padding:10px 20px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-weight:600; cursor:pointer;">Cancel</button>
+      <button onclick="saveSoapEdit()" style="padding:10px 20px; border-radius:8px; border:none; background:#0f766e; color:#fff; font-weight:700; cursor:pointer;">Save</button>
+    </div>
   </div>
 </div>
 
+<!-- ── Letter Edit Modal ── -->
+<div id="letter-modal-overlay" onclick="if(event.target===this)closeLetterEditor()"
+  style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center;">
+  <div style="background:#fff; border-radius:14px; width:min(820px,96vw); height:94vh; display:flex; flex-direction:column; box-shadow:0 24px 48px rgba(0,0,0,.3);">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid #e2e8f0; flex-shrink:0;">
+      <span style="font-size:15px; font-weight:700; color:#1e293b;">Edit Referral Letter</span>
+      <button onclick="closeLetterEditor()" style="background:none; border:none; font-size:20px; color:#94a3b8; cursor:pointer; line-height:1;">✕</button>
+    </div>
+    <div style="flex:1; min-height:0; padding:16px 20px; display:flex; flex-direction:column;">
+      <textarea id="letter-editor-ta" style="flex:1; width:100%; border:1px solid #cbd5e1; border-radius:8px; padding:14px; font-family:'Courier New',Courier,monospace; font-size:12px; line-height:1.7; resize:none; outline:none; color:#1e293b;"></textarea>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:10px; padding:14px 20px; border-top:1px solid #e2e8f0; flex-shrink:0;">
+      <button onclick="closeLetterEditor()" style="padding:10px 20px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; color:#475569; font-weight:600; cursor:pointer;">Cancel</button>
+      <button onclick="saveLetterEdit()" style="padding:10px 20px; border-radius:8px; border:none; background:#0f766e; color:#fff; font-weight:700; cursor:pointer;">Save</button>
+    </div>
+  </div>
+</div>
+
+  <a href="{% url 'vertical_pt:pt_index' %}" class="back-link">← New Session</a>
+
+</div>
+
+{{ soap_text|json_script:"soap-raw" }}
 <script>
-  (function() {
-    const scorePct = {{ score_pct|default:0 }};
-    const alarm = "{{ alarm }}";
-    const colorMap = { RED: "#ef4444", YELLOW: "#f59e0b", NONE: "#10b981" };
-    const fill = document.getElementById("track-fill");
-    if (fill) { fill.style.width = scorePct + "%"; fill.style.background = colorMap[alarm] || "#475569"; }
-  })();
-  function copyReferralText() {
-    navigator.clipboard.writeText(document.getElementById("letter-body").innerText).then(() => { alert("Referral transcript copied."); });
+(function() {
+  // ── risk bar colour ──
+  const alarm = "{{ alarm }}";
+  const pct   = {{ score_pct|default:0 }};
+  const colorMap = { RED: "#dc2626", YELLOW: "#f59e0b", NONE: "#10b981" };
+  const fill = document.getElementById("risk-fill");
+  if (fill) { fill.style.width = pct + "%"; fill.style.background = colorMap[alarm] || "#94a3b8"; }
+
+  // ── SOAP note initial render (renderSoap defined below IIFE) ──
+  setTimeout(() => {
+    const t = JSON.parse(document.getElementById("soap-raw").textContent || '""');
+    if (t) renderSoap(t);
+  }, 0);
+})();
+
+async function handleAlarmAction(action) {
+  const alertId = "{{ alert_id }}";
+  document.querySelectorAll("#action-area button").forEach(b => { b.disabled = true; b.style.opacity = ".6"; });
+
+  try {
+    const res = await fetch(`/pt/api/alerts/${alertId}/action/`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": "{{ csrf_token }}" },
+      body: JSON.stringify({ action }),
+    });
+    if (!res.ok) throw new Error("Server error " + res.status);
+    const data = await res.json();
+
+    if (action === "monitor") {
+      document.getElementById("action-area").innerHTML =
+        `<div style="background:#fffbeb; border:2px solid #f59e0b; border-radius:12px; padding:14px; color:#92400e; font-size:13px; font-weight:600;">
+          ✓ Flagged for monitoring — escalate if condition worsens.
+          <button onclick="handleAlarmAction('referral')" style="display:block; margin-top:10px; width:100%; padding:12px; background:#dc2626; border:none; border-radius:8px; color:#fff; font-weight:700; cursor:pointer; font-size:13px;">
+            📄 Escalate to Referral
+          </button>
+        </div>`;
+    } else {
+      document.getElementById("action-area").style.display = "none";
+      document.getElementById("letter-body").textContent = data.referral_letter || "";
+      document.getElementById("letter-wrap").style.display = "block";
+    }
+  } catch (err) {
+    document.querySelectorAll("#action-area button").forEach(b => { b.disabled = false; b.style.opacity = "1"; });
+    alert("Failed: " + err.message);
   }
+}
+
+function copySoap() {
+  navigator.clipboard.writeText(_soapRaw).then(() => alert("SOAP note copied."));
+}
+let _soapRaw = JSON.parse(document.getElementById("soap-raw").textContent || '""');
+
+function openSoapEditor() {
+  document.getElementById("soap-editor-ta").value = _soapRaw;
+  document.getElementById("soap-modal-overlay").style.display = "flex";
+}
+function closeSoapEditor() {
+  document.getElementById("soap-modal-overlay").style.display = "none";
+}
+function saveSoapEdit() {
+  _soapRaw = document.getElementById("soap-editor-ta").value;
+  renderSoap(_soapRaw);
+  closeSoapEditor();
+}
+function renderSoap(text) {
+  const display = document.getElementById("soap-display");
+  const sections = ["Subjective", "Objective", "Assessment", "Plan"];
+  let html = text.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  sections.forEach(s => {
+    html = html.replace(
+      new RegExp(`(${s}:?)`, "gi"),
+      `</div><div class="soap-section-label">$1</div><div class="soap-section-text">`
+    );
+  });
+  display.innerHTML = "<div class='soap-section-text'>" + html + "</div>";
+}
+
+function openLetterEditor() {
+  const text = document.getElementById("letter-body").innerText;
+  document.getElementById("letter-editor-ta").value = text;
+  const overlay = document.getElementById("letter-modal-overlay");
+  overlay.style.display = "flex";
+}
+function closeLetterEditor() {
+  document.getElementById("letter-modal-overlay").style.display = "none";
+}
+function saveLetterEdit() {
+  const edited = document.getElementById("letter-editor-ta").value;
+  document.getElementById("letter-body").textContent = edited;
+  closeLetterEditor();
+}
+function copyLetter() {
+  navigator.clipboard.writeText(document.getElementById("letter-body").innerText)
+    .then(() => alert("Referral letter copied."));
+}
 </script>
 </body>
 </html>

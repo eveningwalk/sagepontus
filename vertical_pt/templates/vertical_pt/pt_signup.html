@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
@@ -8,56 +8,165 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; }
     body {
-      margin: 0; min-height: 100vh; font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-      background: #e8eaef; display: flex; align-items: center; justify-content: center; padding: 20px;
+      margin: 0; min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #e8eaef; display: flex; align-items: center; justify-content: center;
+      padding: 24px 16px;
     }
     .auth-card {
-      background: #ffffff; border-radius: 12px; width: 100%; max-width: 460px;
-      padding: 32px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); border: 1px solid #dcdfe4;
+      background: #fff; border-radius: 14px; width: 100%; max-width: 480px;
+      padding: 36px 32px; box-shadow: 0 4px 20px rgba(0,0,0,.07); border: 1px solid #dcdfe4;
     }
-    .form-group { margin-bottom: 18px; }
-    .form-label { display: block; font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; text-transform: uppercase; }
+    .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: 8px; background: #0f766e;
+      display: flex; align-items: center; justify-content: center; font-size: 18px; color: #fff;
+    }
+    .brand-name { font-size: 16px; font-weight: 700; color: #1e293b; }
+    .brand-sub  { font-size: 11px; color: #64748b; }
+    h2 { margin: 0 0 4px; font-size: 22px; font-weight: 800; color: #0f172a; }
+    .subtitle { font-size: 13px; color: #64748b; margin: 0 0 28px; }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block; font-size: 12px; font-weight: 700; color: #475569;
+      text-transform: uppercase; letter-spacing: .4px; margin-bottom: 6px;
+    }
     .form-control, select {
       width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px;
       background: #f8fafc; font-size: 14px; color: #1e293b; outline: none;
+      transition: border-color .15s;
     }
+    .form-control:focus, select:focus { border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,.1); }
+    .field-error { font-size: 12px; color: #dc2626; margin-top: 4px; }
+    .optional { font-size: 11px; color: #94a3b8; font-weight: 400; text-transform: none; letter-spacing: 0; }
+
     .btn-submit {
-      width: 100%; padding: 12px; border: none; border-radius: 8px; background: #0f766e;
-      color: #ffffff; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 10px;
+      width: 100%; padding: 12px; border: none; border-radius: 8px;
+      background: #0f766e; color: #fff; font-size: 15px; font-weight: 700;
+      cursor: pointer; margin-top: 8px; transition: background .15s;
     }
+    .btn-submit:hover { background: #115e59; }
     .auth-footer { text-align: center; margin-top: 20px; font-size: 13px; color: #64748b; }
-    .auth-footer a { color: #0d9488; text-decoration: none; }
+    .auth-footer a { color: #0d9488; font-weight: 600; text-decoration: none; }
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 20px 0; }
+
+    @media (max-width: 480px) { .row-2 { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 <div class="auth-card">
-  <h2 style="margin-top:0; font-size:20px; font-weight:800; color:#0f172a; margin-bottom:24px;">Register Practitioner Node</h2>
-  <form method="post">
+  <div class="brand">
+    <div class="brand-icon">🛡</div>
+    <div>
+      <div class="brand-name">Sage Pontus</div>
+      <div class="brand-sub">PT Red Flag Alert</div>
+    </div>
+  </div>
+
+  <h2>Start your free trial</h2>
+  <p class="subtitle">No credit card required. Get started in 30 seconds.</p>
+
+  <form method="post" novalidate>
     {% csrf_token %}
-    <div class="form-group">
-      <label class="form-label">Username</label>
-      <input type="text" name="username" class="form-control" required>
+
+    <div class="row-2">
+      <div class="form-group">
+        <label class="form-label">First Name</label>
+        <input type="text" name="first_name" class="form-control"
+          value="{{ form.first_name.value|default:'' }}" required autocomplete="given-name">
+        {% if form.first_name.errors %}<div class="field-error">{{ form.first_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Name</label>
+        <input type="text" name="last_name" class="form-control"
+          value="{{ form.last_name.value|default:'' }}" required autocomplete="family-name">
+        {% if form.last_name.errors %}<div class="field-error">{{ form.last_name.errors.0 }}</div>{% endif %}
+      </div>
     </div>
+
     <div class="form-group">
-      <label class="form-label">Clinical Core Specialty Role</label>
+      <label class="form-label">Work Email</label>
+      <input type="email" name="email" id="email-input" class="form-control"
+        value="{{ form.email.value|default:'' }}" required autocomplete="email">
+      {% if form.email.errors %}
+        <div class="field-error">{{ form.email.errors.0 }} <a href="{% url 'vertical_pt:pt_login' %}" style="color:#0d9488; font-weight:700;">Sign in →</a></div>
+      {% endif %}
+      <div id="email-hint" style="font-size:12px; margin-top:4px;"></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Role</label>
       <select name="role">
-        <option value="PT">Physical Therapist (PT)</option>
-        <option value="DPT">Doctor of Physical Therapy (DPT)</option>
+        <option value="PT"    {% if form.role.value == 'PT'    %}selected{% endif %}>Physical Therapist (PT)</option>
+        <option value="PTA"   {% if form.role.value == 'PTA'   %}selected{% endif %}>PT Assistant (PTA)</option>
+        <option value="ADMIN" {% if form.role.value == 'ADMIN' %}selected{% endif %}>Clinic Admin</option>
       </select>
+      {% if form.role.errors %}<div class="field-error">{{ form.role.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Clinic Name <span class="optional">(optional)</span></label>
+      <input type="text" name="clinic_name" class="form-control"
+        value="{{ form.clinic_name.value|default:'' }}" placeholder="e.g. Riverside PT & Rehab" autocomplete="organization">
+    </div>
+
+    <hr class="divider">
+
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input type="password" name="password" class="form-control" required autocomplete="new-password">
+      {% if form.password.errors %}<div class="field-error">{{ form.password.errors.0 }}</div>{% endif %}
     </div>
     <div class="form-group">
-      <label class="form-label">Clinic Facility Name</label>
-      <input type="text" name="clinic_name" class="form-control">
+      <label class="form-label">Confirm Password</label>
+      <input type="password" name="password_confirm" class="form-control" required autocomplete="new-password">
+      {% if form.password_confirm.errors %}<div class="field-error">{{ form.password_confirm.errors.0 }}</div>{% endif %}
     </div>
-    <div class="form-group">
-      <label class="form-label">Secure Access Password</label>
-      <input type="password" name="password" class="form-control" required>
-    </div>
-    <button type="submit" class="btn-submit">Initialize System Engine</button>
+
+    {% if form.non_field_errors %}
+      <div class="field-error" style="margin-bottom:12px;">{{ form.non_field_errors.0 }}</div>
+    {% endif %}
+
+    <button type="submit" class="btn-submit">Create Account →</button>
   </form>
+
   <div class="auth-footer">
-    Operational practitioner already? <a href="{% url 'accounts:login' %}">Sign In</a>
+    Already have an account? <a href="{% url 'vertical_pt:pt_login' %}">Sign in</a>
   </div>
 </div>
+
+<script>
+  (function() {
+    // Pre-fill email from landing page ?email= param
+    const params = new URLSearchParams(window.location.search);
+    const prefill = params.get("email");
+    const emailInput = document.getElementById("email-input");
+    if (prefill && emailInput && !emailInput.value) {
+      emailInput.value = prefill;
+      checkEmail(prefill); // auto-check pre-filled email too
+    }
+
+    const hint = document.getElementById("email-hint");
+
+    async function checkEmail(email) {
+      const valid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+      if (!valid) { hint.innerHTML = ""; return; }
+      try {
+        const res  = await fetch(`/pt/api/check-email/?email=${encodeURIComponent(email.trim().toLowerCase())}`);
+        const data = await res.json();
+        if (!data.available) {
+          hint.innerHTML = `Already have an account. <a href="/pt/login/" style="color:#0d9488; font-weight:700;">Sign in →</a>`;
+          hint.style.color = "#dc2626";
+        } else {
+          hint.innerHTML = "";
+        }
+      } catch { hint.innerHTML = ""; }
+    }
+
+    emailInput.addEventListener("blur", () => checkEmail(emailInput.value));
+  })();
+</script>
 </body>
 </html>
