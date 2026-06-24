@@ -6,12 +6,6 @@ chrome.runtime.onInstalled.addListener(() => {
 
 chrome.action.onClicked.addListener((tab) => {
   chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_PANEL" }, () => {
-    if (chrome.runtime.lastError) {
-      // 탭에 content script가 아직 없으면 주입 후 재시도
-      chrome.scripting.executeScript(
-        { target: { tabId: tab.id }, files: ["content.js"] },
-        () => chrome.tabs.sendMessage(tab.id, { type: "TOGGLE_PANEL" })
-      );
-    }
+    void chrome.runtime.lastError; // chrome:// 등 접근 불가 탭에서 에러 억제
   });
 });
