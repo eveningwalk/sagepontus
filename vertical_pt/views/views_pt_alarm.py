@@ -119,6 +119,7 @@ def patient_sessions_json(request, patient_id):
             "referral_sent_to_email":  alert.referral_sent_to_email if alert else "",
             "referral_email_delivered": alert.referral_email_delivered if alert else False,
             "referral_followup_checked": alert.referral_followup_checked if alert else False,
+            "monitoring_flagged":      alert.monitoring_flagged if alert else False,
         })
     patient_name = qs[0].patient_name if qs else ""
     return JsonResponse({
@@ -239,7 +240,6 @@ def save_soap_ajax(request):
         pass
 
     alert = None
-    referral_letter = ""
     active_conditions = result.get("conditions", [])
     if result["alarm"] in ("RED", "YELLOW"):
         alert = RedFlagAlert.objects.create(
@@ -250,20 +250,6 @@ def save_soap_ajax(request):
             score=result["score"],
             trigger_label=result.get("trigger", ""),
         )
-        if result["alarm"] in ("RED", "YELLOW"):
-            therapist_name = request.user.get_full_name() or request.user.username
-            if len(active_conditions) > 1:
-                referral_letter = generate_multi_referral_letter(
-                    active_conditions,
-                    patient_id=patient_id,
-                    therapist_name=therapist_name,
-                )
-            else:
-                referral_letter = generate_referral_letter(
-                    alert, patient_id=patient_id, therapist_name=therapist_name
-                )
-            alert.referral_letter = referral_letter
-            alert.save(update_fields=["referral_letter"])
 
     vpps = result.get("vpps", {})
     return JsonResponse({
@@ -276,7 +262,7 @@ def save_soap_ajax(request):
         "trigger":         result.get("trigger", ""),
         "conditions":      active_conditions,
         "vpps_hits":       vpps.get("hits", []),
-        "referral_letter": referral_letter,
+        "referral_letter": "",
         "patient_context": patient_ctx,
     })
 
@@ -1321,6 +1307,98 @@ def send_document_email(request):
         )
 
     return JsonResponse({"ok": True, "sent_to": sent_to, "failed": failed})
+
+
+# ── Alarm Action: 임상가 의도 기록 + 리퍼럴 레터 생성 ──────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def alarm_action(request, alert_id):
+    """
+    임상가의 알람 액션 기록.
+
+    action="referral"  → AuditPair(ADOPTED) + 리퍼럴 레터 생성 반환
+    action="monitor"   → AuditPair(MONITORING) 저장 (YELLOW 전용)
+    """
+    from django.utils import timezone as _tz
+
+    alert = _get_alert_for_user(alert_id, request.user)
+    if not alert:
+        return JsonResponse({"error": "Not found"}, status=404)
+
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    action = data.get("action", "").strip()
+    if action not in ("referral", "monitor"):
+        return JsonResponse({"error": "action must be 'referral' or 'monitor'"}, status=400)
+
+    if action == "monitor":
+        if alert.alarm_level != "YELLOW":
+            return JsonResponse({"error": "monitor action is only valid for YELLOW alerts"}, status=400)
+        alert.monitoring_flagged    = True
+        alert.monitoring_flagged_at = _tz.now()
+        alert.save(update_fields=["monitoring_flagged", "monitoring_flagged_at"])
+        AuditPair.objects.create(
+            type=AuditPair.TYPE_ALARM,
+            timeline=alert.timeline,
+            alert=alert,
+            therapist=request.user,
+            decision=AuditPair.DECISION_MONITORING,
+            decision_reason="Flagged for monitoring by clinician",
+        )
+        return JsonResponse({"ok": True, "action": "monitor"})
+
+    # action == "referral"
+    therapist_name = request.user.get_full_name() or request.user.username
+    clinic_name = ""
+    try:
+        if request.user.pt_profile:
+            clinic_name = request.user.pt_profile.clinic_name or ""
+    except Exception:
+        pass
+
+    if not alert.referral_letter:
+        active_conditions = []
+        try:
+            from vertical_pt.engine import score_soap
+            result = score_soap(alert.timeline.soap_text)
+            active_conditions = result.get("conditions", [])
+        except Exception:
+            pass
+
+        if len(active_conditions) > 1:
+            letter = generate_multi_referral_letter(
+                active_conditions,
+                patient_id=alert.timeline.patient_id,
+                therapist_name=therapist_name,
+                clinic_name=clinic_name,
+                session_date=alert.timeline.session_date,
+            )
+        else:
+            letter = generate_referral_letter(
+                alert,
+                patient_id=alert.timeline.patient_id,
+                therapist_name=therapist_name,
+                clinic_name=clinic_name,
+                session_date=alert.timeline.session_date,
+            )
+        alert.referral_letter = letter
+        alert.save(update_fields=["referral_letter"])
+
+    AuditPair.objects.create(
+        type=AuditPair.TYPE_ALARM,
+        timeline=alert.timeline,
+        alert=alert,
+        therapist=request.user,
+        decision=AuditPair.DECISION_ADOPTED,
+        decision_reason="Clinician generated referral letter — alarm adopted",
+        original_content=alert.referral_letter,
+    )
+
+    return JsonResponse({"ok": True, "action": "referral", "referral_letter": alert.referral_letter})
 
 
 # ── Pilot Feedback ────────────────────────────────────────────────────────────

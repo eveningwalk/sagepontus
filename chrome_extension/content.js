@@ -231,11 +231,21 @@ const PANEL_HTML = `
         <button id="btn-show-settings" class="btn-link">⚙ Server settings</button>
       </div>
       <div id="settings-panel" class="hidden">
-        <div class="form-group">
-          <label>Server URL</label>
-          <input type="text" id="server-url-input" placeholder="https://..." />
+        <div style="font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Select Server</div>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <button id="srv-production" class="srv-option"
+            data-url="https://sagepontus-284182376290.us-east4.run.app"
+            style="text-align:left; padding:10px 12px; border-radius:8px; border:2px solid #e5e7eb; background:#f9fafb; cursor:pointer; font-size:12px;">
+            <div style="font-weight:700; color:#1a1a2e; margin-bottom:2px;">Production</div>
+            <div style="color:#6b7280; font-size:11px;">sagepontus.run.app</div>
+          </button>
+          <button id="srv-local" class="srv-option"
+            data-url="http://localhost:8000"
+            style="text-align:left; padding:10px 12px; border-radius:8px; border:2px solid #e5e7eb; background:#f9fafb; cursor:pointer; font-size:12px;">
+            <div style="font-weight:700; color:#1a1a2e; margin-bottom:2px;">Local</div>
+            <div style="color:#6b7280; font-size:11px;">localhost:8000</div>
+          </button>
         </div>
-        <button id="btn-save-settings" class="btn btn-ghost">Save</button>
       </div>
     </div>
 
@@ -299,9 +309,20 @@ P: Plan..."></textarea>
         <div id="context-text" class="context-text"></div>
       </div>
       <div id="referral-section" class="section hidden">
-        <button id="btn-referral" class="btn btn-danger-outline">
+        <!-- RED: single generate button -->
+        <button id="btn-referral" class="btn btn-danger-outline hidden">
           📄 Generate Referral Letter
         </button>
+        <!-- YELLOW: two action buttons -->
+        <div id="yellow-actions" class="btn-row hidden">
+          <button id="btn-monitor" class="btn btn-ghost" style="flex:1; border-color:#d97706; color:#92400e;">
+            🔔 Flag for Monitoring
+          </button>
+          <button id="btn-escalate" class="btn" style="flex:1; background:#dc2626; color:#fff;">
+            📄 Escalate to Referral
+          </button>
+        </div>
+        <div id="yellow-status" class="hidden" style="font-size:12px; color:#92400e; background:#fefce8; border:1px solid #fde047; border-radius:6px; padding:8px 10px; margin-top:4px;"></div>
         <div id="referral-letter" class="referral-letter hidden"></div>
         <button id="btn-copy-referral" class="btn btn-ghost hidden">📋 Copy letter</button>
       </div>
@@ -401,8 +422,6 @@ function initLogic(root) {
     state.username  = stored.username  || null;
     state.serverUrl = stored.serverUrl || DEFAULT_SERVER;
 
-    $("server-url-input").value = state.serverUrl;
-
     if (state.token) {
       showAnalyzeScreen($);
     } else {
@@ -418,15 +437,19 @@ function initLogic(root) {
   });
 
   $("btn-show-settings").addEventListener("click", () => {
-    $("settings-panel").classList.toggle("hidden");
+    const panel = $("settings-panel");
+    panel.classList.toggle("hidden");
+    if (!panel.classList.contains("hidden")) highlightActiveServer($);
   });
-  $("btn-save-settings").addEventListener("click", async () => {
-    const url = $("server-url-input").value.trim().replace(/\/$/, "");
-    if (url) {
+
+  ["srv-production", "srv-local"].forEach(id => {
+    $(id).addEventListener("click", async () => {
+      const url = $(id).dataset.url;
       state.serverUrl = url;
       await chrome.storage.local.set({ serverUrl: url });
+      highlightActiveServer($);
       $("settings-panel").classList.add("hidden");
-    }
+    });
   });
 
   $("btn-logout").addEventListener("click", () => handleLogout($));
@@ -448,7 +471,9 @@ function initLogic(root) {
 
   $("btn-analyze").addEventListener("click", () => handleAnalyze($));
   $("btn-back").addEventListener("click", () => showAnalyzeScreen($));
-  $("btn-referral").addEventListener("click", () => handleGenerateReferral($));
+  $("btn-referral").addEventListener("click", () => handleAlarmAction($, "referral"));
+  $("btn-monitor").addEventListener("click",  () => handleAlarmAction($, "monitor"));
+  $("btn-escalate").addEventListener("click", () => handleAlarmAction($, "referral"));
 
   $("btn-copy-referral").addEventListener("click", () => {
     const text = $("referral-letter").textContent;
@@ -608,12 +633,21 @@ function renderResult($, data, soapText, patientId) {
     $("context-section").classList.add("hidden");
   }
 
-  if (alarm === "RED") {
+  // reset action area
+  $("btn-referral").classList.add("hidden");
+  $("yellow-actions").classList.add("hidden");
+  $("yellow-status").classList.add("hidden");
+  $("referral-letter").classList.add("hidden");
+  $("btn-copy-referral").classList.add("hidden");
+
+  if (alarm === "RED" || alarm === "YELLOW") {
     $("referral-section").classList.remove("hidden");
-    $("referral-letter").classList.add("hidden");
-    $("btn-copy-referral").classList.add("hidden");
-    $("btn-referral").dataset.alertId   = data.alert_id || "";
-    $("btn-referral").dataset.patientId = patientId;
+    $("referral-section").dataset.alertId = data.alert_id || "";
+    if (alarm === "RED") {
+      $("btn-referral").classList.remove("hidden");
+    } else {
+      $("yellow-actions").classList.remove("hidden");
+    }
   } else {
     $("referral-section").classList.add("hidden");
   }
@@ -627,40 +661,58 @@ function renderResult($, data, soapText, patientId) {
   showScreen($, "result");
 }
 
-// ── 리퍼럴 레터 생성 ─────────────────────────────────────────────────
-async function handleGenerateReferral($) {
-  const btn     = $("btn-referral");
-  const alertId = btn.dataset.alertId;
+// ── 알람 액션 (referral / monitor) ───────────────────────────────────
+async function handleAlarmAction($, action) {
+  const alertId = $("referral-section").dataset.alertId;
   if (!alertId) return;
 
-  btn.textContent = "Generating…";
-  btn.disabled    = true;
+  const btnReferral = $("btn-referral");
+  const btnMonitor  = $("btn-monitor");
+  const btnEscalate = $("btn-escalate");
+
+  [btnReferral, btnMonitor, btnEscalate].forEach(b => {
+    if (b) { b.disabled = true; b.style.opacity = ".6"; }
+  });
 
   try {
-    const res = await fetch(`${state.serverUrl}/api/pt/alerts/${alertId}/referral/`, {
+    const res = await fetch(`${state.serverUrl}/api/pt/alerts/${alertId}/action/`, {
       method:  "POST",
       headers: {
         "Content-Type": "application/json",
         "Authorization": `Token ${state.token}`,
       },
+      body: JSON.stringify({ action }),
     });
 
-    if (!res.ok) throw new Error("Failed to generate letter");
+    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+    const data = await res.json();
 
-    const data   = await res.json();
-    const letter = data.referral_letter || "";
-
-    if (letter) {
+    if (action === "monitor") {
+      $("yellow-actions").classList.add("hidden");
+      const status = $("yellow-status");
+      status.textContent = "✓ Flagged for monitoring — escalate to referral if condition worsens.";
+      status.classList.remove("hidden");
+      // keep escalate available via status area re-render
+      const escalateBtn = document.createElement("button");
+      escalateBtn.className = "btn";
+      escalateBtn.style.cssText = "background:#dc2626;color:#fff;width:100%;margin-top:8px;";
+      escalateBtn.textContent = "📄 Escalate to Referral";
+      escalateBtn.addEventListener("click", () => handleAlarmAction($, "referral"));
+      status.after(escalateBtn);
+    } else {
+      const letter = data.referral_letter || "";
+      $("yellow-actions").classList.add("hidden");
+      $("yellow-status").classList.add("hidden");
+      if (btnReferral) btnReferral.classList.add("hidden");
       $("referral-letter").textContent = letter;
       $("referral-letter").classList.remove("hidden");
       $("btn-copy-referral").classList.remove("hidden");
-      btn.textContent = "📄 Referral Letter Generated";
     }
   } catch (err) {
-    btn.textContent = "📄 Generate Referral Letter";
+    [btnReferral, btnMonitor, btnEscalate].forEach(b => {
+      if (b) { b.disabled = false; b.style.opacity = "1"; }
+    });
     alert("Failed: " + err.message);
-  } finally {
-    btn.disabled = false;
   }
 }
 
@@ -695,6 +747,16 @@ chrome.runtime.onMessage.addListener((msg) => {
 function generatePatientId() {
   const now = new Date();
   return `PT-${now.getFullYear()}${String(now.getMonth()+1).padStart(2,"0")}${String(now.getDate()).padStart(2,"0")}-${Math.floor(Math.random()*10000).toString().padStart(4,"0")}`;
+}
+
+function highlightActiveServer($) {
+  ["srv-production", "srv-local"].forEach(id => {
+    const btn = $(id);
+    if (!btn) return;
+    const active = btn.dataset.url === state.serverUrl;
+    btn.style.borderColor = active ? "#4f46e5" : "#e5e7eb";
+    btn.style.background  = active ? "#eef2ff" : "#f9fafb";
+  });
 }
 
 function showError(el, msg) {

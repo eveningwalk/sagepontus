@@ -265,6 +265,86 @@ def generate_referral(request, alert_id: int):
 @api_view(["POST"])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
+def alarm_action(request, alert_id: int):
+    """
+    Extension용 알람 액션 — 임상가 의도 기록 + 리퍼럴 레터 생성.
+
+    action="referral"  → AuditPair(ADOPTED) + 레터 생성 반환
+    action="monitor"   → AuditPair(MONITORING) 저장 (YELLOW 전용)
+    """
+    from django.utils import timezone as _tz
+    from vertical_pt.models import AuditPair
+    from vertical_pt.engine.referral import generate_multi_referral_letter
+
+    try:
+        alert = RedFlagAlert.objects.get(id=alert_id, timeline__therapist=request.user)
+    except RedFlagAlert.DoesNotExist:
+        return Response({"error": "Not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    action = (request.data.get("action") or "").strip()
+    if action not in ("referral", "monitor"):
+        return Response({"error": "action must be 'referral' or 'monitor'"}, status=400)
+
+    if action == "monitor":
+        if alert.alarm_level != "YELLOW":
+            return Response({"error": "monitor action is only valid for YELLOW alerts"}, status=400)
+        alert.monitoring_flagged    = True
+        alert.monitoring_flagged_at = _tz.now()
+        alert.save(update_fields=["monitoring_flagged", "monitoring_flagged_at"])
+        AuditPair.objects.create(
+            type=AuditPair.TYPE_ALARM,
+            timeline=alert.timeline,
+            alert=alert,
+            therapist=request.user,
+            decision=AuditPair.DECISION_MONITORING,
+            decision_reason="Flagged for monitoring by clinician via extension",
+        )
+        return Response({"ok": True, "action": "monitor"})
+
+    # action == "referral"
+    therapist_name = request.user.get_full_name() or request.user.username
+
+    if not alert.referral_letter:
+        try:
+            from vertical_pt.engine import score_soap
+            result = score_soap(alert.timeline.soap_text)
+            active_conditions = result.get("conditions", [])
+        except Exception:
+            active_conditions = []
+
+        if len(active_conditions) > 1:
+            letter = generate_multi_referral_letter(
+                active_conditions,
+                patient_id=alert.timeline.patient_id,
+                therapist_name=therapist_name,
+                session_date=alert.timeline.session_date,
+            )
+        else:
+            letter = generate_referral_letter(
+                alert,
+                patient_id=alert.timeline.patient_id,
+                therapist_name=therapist_name,
+                session_date=alert.timeline.session_date,
+            )
+        alert.referral_letter = letter
+        alert.save(update_fields=["referral_letter"])
+
+    AuditPair.objects.create(
+        type=AuditPair.TYPE_ALARM,
+        timeline=alert.timeline,
+        alert=alert,
+        therapist=request.user,
+        decision=AuditPair.DECISION_ADOPTED,
+        decision_reason="Clinician generated referral letter via extension — alarm adopted",
+        original_content=alert.referral_letter,
+    )
+
+    return Response({"ok": True, "action": "referral", "referral_letter": alert.referral_letter})
+
+
+@api_view(["POST"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def acknowledge_alert(request, alert_id: int):
     """알람 확인 처리 (센터장 → 확인 완료)."""
     try:

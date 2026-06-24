@@ -16,6 +16,7 @@ urlpatterns = [
     path("api/pt/alerts/",                   views_api.alerts_list,       name="alerts"),
     path("api/pt/alerts/<int:alert_id>/acknowledge/", views_api.acknowledge_alert, name="acknowledge"),
     path("api/pt/alerts/<int:alert_id>/referral/",   views_api.generate_referral,  name="api_referral"),
+    path("api/pt/alerts/<int:alert_id>/action/",     views_api.alarm_action,       name="api_alarm_action"),
 
     # ── 사이드바 앱 AJAX 엔드포인트 ──────────────────────────────────────
     path("pt/api/alarms/",                   views_pt_alarm.alarm_dashboard_json,  name="pt_alarms"),
@@ -39,6 +40,7 @@ urlpatterns = [
     path("pt/api/alerts/<int:alert_id>/send/",      views_pt_alarm.referral_send,         name="pt_referral_send"),
     path("pt/api/alerts/<int:alert_id>/followup/",  views_pt_alarm.referral_mark_followup, name="pt_referral_followup"),
     path("pt/api/alerts/<int:alert_id>/print/",     views_pt_alarm.referral_print,         name="pt_referral_print"),
+    path("pt/api/alerts/<int:alert_id>/action/",    views_pt_alarm.alarm_action,           name="pt_alarm_action"),
 
     # ── Phase 7: Audit Loop ────────────────────────────────────────
     path("pt/api/sessions/<int:timeline_id>/soap-edit/",

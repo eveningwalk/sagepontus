@@ -20,13 +20,15 @@ class AuditPair(models.Model):
         (TYPE_DOCUMENT, "문서 수정"),
     ]
 
-    DECISION_ADOPTED  = "ADOPTED"
-    DECISION_REJECTED = "REJECTED"
-    DECISION_MODIFIED = "MODIFIED"
-    DECISION_CHOICES  = [
-        (DECISION_ADOPTED,  "채택"),
-        (DECISION_REJECTED, "기각"),
-        (DECISION_MODIFIED, "수정 후 채택"),
+    DECISION_ADOPTED    = "ADOPTED"
+    DECISION_REJECTED   = "REJECTED"
+    DECISION_MODIFIED   = "MODIFIED"
+    DECISION_MONITORING = "MONITORING"
+    DECISION_CHOICES    = [
+        (DECISION_ADOPTED,    "채택"),
+        (DECISION_REJECTED,   "기각"),
+        (DECISION_MODIFIED,   "수정 후 채택"),
+        (DECISION_MONITORING, "YELLOW 모니터링 지정"),
     ]
 
     type      = models.CharField(max_length=20, choices=TYPE_CHOICES, db_index=True)

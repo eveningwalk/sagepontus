@@ -9,6 +9,8 @@ from datetime import date
 from typing import Any
 
 
+_S = "─" * 80   # section header underline
+
 DOC_TITLES = {
     "medical_necessity":   "Medical Necessity Letter",
     "legal_defense":       "Standard of Care Defense Documentation",
@@ -228,11 +230,13 @@ I am writing to document the medical necessity of physical therapy services
 provided to the above-referenced patient.
 
 PATIENT PROFILE:
+{_S}
   {patient_desc}{comorbidity_line}
   Chief Complaint:    {chief}
   Onset / Duration:   {onset}
 
 TREATMENT SUMMARY:
+{_S}
   Total Sessions:     {st['n']}
   Episode of Care:    {st['first']}  to  {st['last']}
   Primary Condition:  {cond_str}
@@ -240,15 +244,19 @@ TREATMENT SUMMARY:
   Peak Risk Score:    {st['peak']*100:.0f}%
 {flags_note}
 OBJECTIVE FINDINGS AT INITIAL EVALUATION:
+{_S}
 {obj_block}
 
 FUNCTIONAL LIMITATIONS:
+{_S}
 {func_block}
-{(chr(10) + "PRECAUTIONS:" + chr(10) + prec_block) if prec_block else ""}
+{(chr(10) + "PRECAUTIONS:" + chr(10) + _S + chr(10) + prec_block) if prec_block else ""}
 SESSION RISK PROFILE:
+{_S}
 {score_rows}
 
 CLINICAL JUSTIFICATION:
+{_S}
   This patient — {patient_desc} — presented with functional deficits
   requiring skilled physical therapy intervention including therapeutic exercise,
   neuromuscular re-education, and functional retraining.
@@ -258,9 +266,11 @@ CLINICAL JUSTIFICATION:
   Guidelines, ensuring patient safety and evidence-based care delivery.
 
 TREATMENT GOALS:
+{_S}
 {_goals_block(ctx) or "  (Refer to session SOAP documentation for goal details)"}
 
 MEDICAL NECESSITY CRITERIA MET:
+{_S}
   1. Patient presents with a condition requiring skilled PT expertise
   2. Objective measurements document functional deficits (see findings above)
   3. Treatment goals are functional and measurable (see above)
@@ -269,10 +279,10 @@ MEDICAL NECESSITY CRITERIA MET:
 I certify that the services provided were medically necessary and performed
 in accordance with accepted standards of clinical practice.
 
-Respectfully,
-{therapist_name}
-Physical Therapist
-{clinic_name}
+  Respectfully,
+  {therapist_name}
+  Physical Therapist
+  {clinic_name}
 {"="*80}"""
     )
 
@@ -331,6 +341,7 @@ def _legal_defense(sessions, patient_ctx, therapist_name, patient_id, clinic_nam
         + f"""
 
 LEGAL NOTICE:
+{_S}
   This document constitutes an official audit trail certifying that Red Flag
   screening was performed at every physical therapy session in accordance with:
     - Goodman & Snyder: Differential Diagnosis for Physical Therapists (5th ed.)
@@ -339,12 +350,14 @@ LEGAL NOTICE:
     - Applicable State PT Practice Act requirements
 
 PATIENT CLINICAL PROFILE:
+{_S}
   {_patient_profile(ctx)}
   Chief Complaint:  {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal dysfunction'}
 {neuro_block}
 {("  Objective Red Flag Signs Documented:\n" + rf_specific) if rf_specific else ""}
 
 SCREENING COMPLIANCE SUMMARY:
+{_S}
   Total Sessions Screened:      {st['n']}
   RED Alerts with Referrals:    {len(st['red'])}
   YELLOW Flags Monitored:       {len(st['yellow'])}
@@ -359,15 +372,16 @@ DETAILED SESSION SCREENING RECORD:
 {sep}
 
 CERTIFICATION:
+{_S}
   I, {therapist_name}, PT, certify that standardized Red Flag screening was
   conducted at every session listed above. All identified Red Flags were
   escalated with appropriate urgency per evidence-based guidelines. No sessions
   were conducted without screening. This document is an accurate representation
   of the clinical decision-making process throughout this episode of care.
 
-{therapist_name}
-Physical Therapist
-{clinic_name}
+  {therapist_name}
+  Physical Therapist
+  {clinic_name}
 {"="*80}"""
     )
 
@@ -411,10 +425,12 @@ def _clinical_chronology(sessions, patient_ctx, therapist_name, patient_id, clin
         + f"""
 
 PATIENT PROFILE:
+{_S}
   {_patient_profile(ctx)}
   Chief Complaint:  {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal dysfunction'}
 
 EPISODE SUMMARY:
+{_S}
   Episode Duration:  {st['first']}  to  {st['last']}
   Total Sessions:    {st['n']}
   Overall Trend:     {st['trend']}
@@ -424,6 +440,7 @@ EPISODE SUMMARY:
   Conditions Noted:  {', '.join(c.replace('_',' ').title() for c in st['conditions']) or 'None'}
 
 RISK SCORE TRAJECTORY:
+{_S}
   {score_seq}
 
 CHRONOLOGICAL SESSION RECORD:
@@ -431,12 +448,12 @@ CHRONOLOGICAL SESSION RECORD:
 {entries_str}
 {sep}
 
-This chronology was generated from the Sage Pontus PT Red Flag Screening
-System and reflects the documented clinical record for this patient episode.
+  This chronology was generated from the Sage Pontus PT Red Flag Screening
+  System and reflects the documented clinical record for this patient episode.
 
-{therapist_name}
-Physical Therapist
-{clinic_name}
+  {therapist_name}
+  Physical Therapist
+  {clinic_name}
 {"="*80}"""
     )
 
@@ -517,10 +534,12 @@ the above-referenced patient. The following evidence demonstrates that all
 services rendered were medically necessary and clinically justified.
 
 PATIENT PROFILE:
+{_S}
   {_patient_profile(_init)}
   Chief Complaint:    {chief}{comorbidity_note}
 
 TREATMENT DOCUMENTATION:
+{_S}
   Episode of Care:    {st['first']} to {st['last']}
   Total Sessions:     {st['n']}
   Clinical Condition: {cond_str}
@@ -528,17 +547,21 @@ TREATMENT DOCUMENTATION:
   Peak Risk Score:    {st['peak']*100:.0f}%
 
 OBJECTIVE MEASUREMENTS SUPPORTING MEDICAL NECESSITY:
+{_S}
 {quantified_str}
 
 CLINICAL EVIDENCE FOR MEDICAL NECESSITY (SESSION-BY-SESSION):
+{_S}
 {evidence_lines}
 
 APPLICABLE CLINICAL GUIDELINES:
+{_S}
   • APTA Clinical Practice Guidelines — Musculoskeletal Care
   • Goodman & Snyder: Differential Diagnosis for Physical Therapists (5th ed.)
   • CMS Medicare Benefit Policy Manual, Chapter 15 — Skilled Physical Therapy criteria
 
 GROUNDS FOR APPEAL:
+{_S}
 {grounds_1}
   2. All services were delivered by a licensed physical therapist in accordance
      with accepted clinical practice standards.
@@ -548,6 +571,7 @@ GROUNDS FOR APPEAL:
      full episode of care (see risk trajectory above).
 
 SUPPORTING DOCUMENTATION AVAILABLE:
+{_S}
   • Session SOAP notes for all {st['n']} visits
   • Red Flag screening records (Sage Pontus audit trail)
   • Physician referral letters (where applicable)
@@ -556,10 +580,10 @@ SUPPORTING DOCUMENTATION AVAILABLE:
 I respectfully request a full reconsideration of this claim based on the
 clinical evidence presented above.
 
-Respectfully,
-{therapist_name}
-Physical Therapist
-{clinic_name}
+  Respectfully,
+  {therapist_name}
+  Physical Therapist
+  {clinic_name}
 {"="*80}"""
     )
 
@@ -610,48 +634,57 @@ def _functional_report(sessions, patient_ctx, therapist_name, patient_id, clinic
         + f"""
 
 PATIENT PROFILE:
+{_S}
   {_patient_profile(ctx)}
   Chief Complaint:  {_as_str(ctx.get('chief_complaint')) or 'Musculoskeletal dysfunction'}
   Comorbidities:    {', '.join(ctx['comorbidities']) if ctx.get('comorbidities') else 'None documented'}
 
 REPORTING PERIOD:
+{_S}
   Initial Assessment:    {st['first']}
   Most Recent Session:   {st['last']}
   Total Sessions:        {st['n']}
 
 BASELINE OBJECTIVE FINDINGS (Initial Evaluation):
+{_S}
 {init_obj}
 
 CURRENT FUNCTIONAL STATUS:
+{_S}
   Initial Risk Score (Session 1):  {initial.critical_score*100:.0f}%  [{initial.alarm_level}]
   Current Risk Score (Latest):     {latest.critical_score*100:.0f}%  [{latest.alarm_level}]
   Peak Risk Score (Episode):       {st['peak']*100:.0f}%
   Functional Trend:                {st['trend']}
 
 RISK ASSESSMENT HISTORY:
+{_S}
 {score_rows}
 
 FUNCTIONAL LIMITATIONS IDENTIFIED:
+{_S}
   Severity: {severity} functional limitation
 
   Documented Limitations:
 {func_block}
-{(chr(10) + "  Precautions / Safety Concerns:" + chr(10) + prec_block) if prec_block else ""}
+{(chr(10) + "  Precautions / Safety Concerns:" + chr(10) + _S + chr(10) + prec_block) if prec_block else ""}
 
 CLINICAL RATIONALE FOR CONTINUED / COMPLETED SERVICES:
+{_S}
   {trend_clinical}
 
 TREATMENT GOALS:
+{_S}
 {_goals_block(ctx) or "  Short-Term:  Reduce risk score below 0.25; resolve acute functional deficits\n  Long-Term:   Return to prior level of function; independent home program"}
   Safety:      Complete Red Flag clearance; physician follow-up as indicated
 
 SKILLED CARE REQUIREMENT:
+{_S}
   The clinical complexity of this case — including Red Flag screening,
   multi-system risk assessment, and individualized therapeutic progression —
   requires skilled physical therapy oversight.
 
-{therapist_name}
-Physical Therapist
-{clinic_name}
+  {therapist_name}
+  Physical Therapist
+  {clinic_name}
 {"="*80}"""
     )

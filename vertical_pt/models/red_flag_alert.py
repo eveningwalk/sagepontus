@@ -21,6 +21,10 @@ class RedFlagAlert(models.Model):
     acknowledged        = models.BooleanField(default=False)        # 센터장 확인 여부
     acknowledged_at     = models.DateTimeField(null=True, blank=True)
 
+    # ── Alarm Action: 임상가 의도 기록 ──────────────────────────────────
+    monitoring_flagged    = models.BooleanField(default=False)
+    monitoring_flagged_at = models.DateTimeField(null=True, blank=True)
+
     # ── Phase 1: 리퍼럴 추적 ─────────────────────────────────────────
     referral_sent_at          = models.DateTimeField(null=True, blank=True)
     referral_sent_to_email    = models.EmailField(blank=True)

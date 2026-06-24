@@ -54,7 +54,15 @@
   </div>
 
   <div class="box-title">Identified Evidence Mapping</div>
-  <div class="box-content">{% if triggers %}{{ triggers }}{% else %}No immediate critical markers extracted.{% endif %}</div>
+  <div class="box-content">
+    {% if matched %}
+      <ul style="margin:0; padding-left:18px;">
+        {% for item in matched %}<li style="margin-bottom:4px;">{{ item }}</li>{% endfor %}
+      </ul>
+    {% else %}
+      No immediate critical markers extracted.
+    {% endif %}
+  </div>
 
   {% if referral_letter %}
   <div class="box-title">Generated Physician Referral Document</div>
@@ -69,7 +77,7 @@
   </div>
   
   <div style="margin-top:32px; border-top:1px solid rgba(255,255,255,0.05); padding-top:20px;">
-    <a href="{% url 'vertical_pt:pt_app' %}" class="btn-nav" style="background:rgba(255,255,255,0.03); color:var(--text-muted); border: 1px solid var(--border-glow);">← Return to Analysis Panel</a>
+    <a href="{% url 'vertical_pt:pt_index' %}" class="btn-nav" style="background:rgba(255,255,255,0.03); color:var(--text-muted); border: 1px solid var(--border-glow);">← Return to Analysis Panel</a>
   </div>
 </div>
 
