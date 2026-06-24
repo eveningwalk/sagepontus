@@ -349,6 +349,10 @@ function createPanel() {
   const host = document.createElement("div");
   host.id = "sp-host";
   host.style.cssText = "all: initial; position: fixed; z-index: 2147483647;";
+  // Prevent host page keyboard listeners (e.g. Naver search) from stealing typed input
+  ["keydown", "keypress", "keyup"].forEach(evt =>
+    host.addEventListener(evt, e => e.stopPropagation(), false)
+  );
   document.body.appendChild(host);
 
   shadowRoot = host.attachShadow({ mode: "open" });
