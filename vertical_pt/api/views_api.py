@@ -34,6 +34,74 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
+CONDITION_LABELS = {
+    "cauda_equina": "Cauda Equina Syndrome",
+    "fracture":     "Spinal Fracture",
+    "malignancy":   "Spinal Malignancy",
+    "infection":    "Spinal Infection",
+    "vascular":     "Abdominal Aortic Aneurysm",
+    "inflammatory": "Inflammatory Spondyloarthropathy",
+}
+
+
+def _notify_supervisor(therapist, patient_id: str, result: dict) -> None:
+    """RED 알람 발생 시 슈퍼바이저에게 Resend 이메일 발송."""
+    try:
+        from accounts.models import UserProfile
+        profile, _ = UserProfile.objects.get_or_create(user=therapist)
+        supervisor_email = profile.supervisor_email
+        if not supervisor_email:
+            return
+
+        api_key = os.environ.get("RESEND_API_KEY", "")
+        if not api_key:
+            logger.warning("RESEND_API_KEY not set — skipping supervisor notification")
+            return
+
+        import resend
+        resend.api_key = api_key
+
+        condition     = CONDITION_LABELS.get(result.get("condition", ""), result.get("condition", "Unknown"))
+        trigger       = result.get("trigger", "")
+        therapist_name = therapist.get_full_name() or therapist.username
+
+        resend.Emails.send({
+            "from":    "SagePontus Alert <alert@sagepontus.com>",
+            "to":      [supervisor_email],
+            "subject": f"🚨 RED FLAG — Patient {patient_id} ({condition})",
+            "html": f"""
+            <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+                        max-width:520px;margin:0 auto;padding:40px 24px;color:#0F172A;">
+              <div style="background:#DC2626;border-radius:8px;padding:16px 20px;margin-bottom:24px;">
+                <span style="color:#fff;font-size:20px;font-weight:800;">🚨 RED FLAG ALERT</span>
+              </div>
+              <p style="font-size:15px;margin:0 0 16px;">
+                <strong>{therapist_name}</strong> flagged a high-risk case requiring immediate review.
+              </p>
+              <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:24px;">
+                <tr style="border-bottom:1px solid #E2E8F0;">
+                  <td style="padding:10px 0;color:#64748B;width:140px;">Patient ID</td>
+                  <td style="padding:10px 0;font-weight:600;">{patient_id}</td>
+                </tr>
+                <tr style="border-bottom:1px solid #E2E8F0;">
+                  <td style="padding:10px 0;color:#64748B;">Condition</td>
+                  <td style="padding:10px 0;font-weight:600;color:#DC2626;">{condition}</td>
+                </tr>
+                <tr>
+                  <td style="padding:10px 0;color:#64748B;">Primary Trigger</td>
+                  <td style="padding:10px 0;">{trigger}</td>
+                </tr>
+              </table>
+              <p style="font-size:13px;color:#94A3B8;margin:0;">
+                © 2026 SagePontus · This alert was generated automatically.
+              </p>
+            </div>""",
+        })
+        logger.info("Supervisor notification sent to %s for patient %s", supervisor_email, patient_id)
+
+    except Exception as e:
+        logger.warning("Supervisor notification failed: %s", e)
+
 
 @api_view(["POST"])
 @authentication_classes([TokenAuthentication])
@@ -110,6 +178,9 @@ def analyze(request):
             )
             alert.referral_letter = referral_text
             alert.save(update_fields=["referral_letter"])
+
+        if result["alarm"] == "RED":
+            _notify_supervisor(request.user, patient_id, result)
 
         logger.info(
             "RedFlagAlert created: alarm=%s condition=%s score=%.3f patient=%s",

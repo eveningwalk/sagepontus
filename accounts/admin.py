@@ -1,5 +1,11 @@
 from django.contrib import admin
-from .models import EarlyAccessSignup
+from .models import EarlyAccessSignup, UserProfile
+
+
+@admin.register(UserProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ("user", "supervisor_email")
+    search_fields = ("user__username", "supervisor_email")
 
 
 @admin.register(EarlyAccessSignup)
