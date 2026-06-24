@@ -16,6 +16,7 @@ ENV
 env
 animamus_env
 .venv
+*.egg-info
 
 # Django / 로컬 DB
 *.sqlite3
@@ -35,7 +36,21 @@ landingpage_source/node_modules
 landingpage_source/.next
 landingpage_source/out
 
+# Pre-built static assets — Docker rebuilds these from source
+static/landing/
+static/_next/
+
+# Not needed in production
+design/
+docs/
+local/
+chrome_extension/
+scripts/
+landingpage_source/.env.local
+landingpage_source/.env.production
+
 # 기타 (빌드 컨텍스트 축소)
 *.md
 .ipynb_checkpoints
 **/.ipynb_checkpoints
+**/*.log
