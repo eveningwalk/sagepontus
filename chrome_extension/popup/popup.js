@@ -2,6 +2,9 @@
  * Sage Pontus — PT Red Flag Alert
  * popup.js: 로그인 → SOAP 입력 → 분석 → 결과 표시
  */
+(function () {
+if (window.SP_POPUP_INITIALIZED) return;
+window.SP_POPUP_INITIALIZED = true;
 
 // ── 상수 ───────────────────────────────────────────────────────────
 const DEFAULT_SERVER = "https://sagepontus-284182376290.us-east4.run.app";
@@ -333,3 +336,5 @@ function showError(el, msg) {
   el.textContent = msg;
   el.classList.remove("hidden");
 }
+
+})();
