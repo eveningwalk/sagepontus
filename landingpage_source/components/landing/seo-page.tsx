@@ -222,7 +222,7 @@ export function SeoPage() {
             <span className="cursor-pointer hover:text-slate-900">Safety</span>
             <span className="cursor-pointer hover:text-slate-900">Pricing</span>
             <span className="cursor-pointer hover:text-slate-900">Blog</span>
-            <a href={`${process.env.NEXT_PUBLIC_PT_APP_URL ?? ''}/pt/login/`} className="cursor-pointer rounded-lg border border-slate-200 px-3 py-1.5 hover:border-sky-400 hover:text-sky-500">Sign in</a>
+            <a href={`${process.env.NEXT_PUBLIC_PT_APP_URL ?? ''}/pt/login/`} className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-4 py-1.5 text-[14px] font-semibold text-slate-700 shadow-sm hover:border-sky-400 hover:text-sky-500 transition-colors">Sign in</a>
           </nav>
         </div>
 

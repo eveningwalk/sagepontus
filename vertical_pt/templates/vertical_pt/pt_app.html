@@ -1173,5 +1173,205 @@
     if (tab) tab.classList.add('active');
   }
 </script>
+
+<style>
+#feedback-btn {
+  position: fixed; bottom: 28px; right: 28px; z-index: 500;
+  width: 56px; height: 56px; border-radius: 50%; border: none;
+  background: #6366f1;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,.5);
+  transition: transform .2s, box-shadow .2s;
+}
+#feedback-btn:hover { transform: scale(1.08); box-shadow: 0 6px 28px rgba(99,102,241,.6); }
+#feedback-panel {
+  position: fixed; bottom: 96px; right: 28px; z-index: 500;
+  width: 320px; height: 480px; background: #f4f6fb; border-radius: 16px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.18);
+  display: none; flex-direction: column; overflow: hidden;
+  transform: translateY(12px); opacity: 0;
+  transition: transform .22s ease, opacity .22s ease;
+}
+#feedback-panel.open { display: flex; transform: translateY(0); opacity: 1; }
+#feedback-panel-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px; background: #fff;
+  border-bottom: 1px solid #e8eaf0; flex-shrink: 0;
+}
+#fp-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: #6366f1; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 800;
+}
+#fp-header-text { flex: 1; }
+#fp-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: .5px; }
+#fp-name  { font-size: 15px; font-weight: 800; color: #1e293b; }
+#fp-close { background: none; border: none; font-size: 18px; color: #9ca3af; cursor: pointer; }
+#fp-close:hover { color: #374151; }
+#feedback-messages {
+  flex: 1; min-height: 0; overflow-y: auto;
+  padding: 16px 14px; display: flex; flex-direction: column; gap: 10px;
+}
+#feedback-messages::-webkit-scrollbar { width: 4px; }
+#feedback-messages::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+.fb-msg-bot { display: flex; align-items: flex-start; gap: 8px; }
+.fb-msg-bot-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: #6366f1; color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 800;
+}
+.fb-msg-bot-bubble {
+  background: #fff; border-radius: 0 12px 12px 12px;
+  padding: 10px 13px; font-size: 13px; line-height: 1.6; color: #1e293b;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08); max-width: 220px;
+}
+.fb-msg-user { display: flex; justify-content: flex-end; }
+.fb-msg-user-bubble {
+  background: #6366f1; color: #fff; border-radius: 12px 12px 0 12px;
+  padding: 10px 13px; font-size: 13px; line-height: 1.6; max-width: 220px;
+}
+#feedback-quick-replies {
+  padding: 0 14px 10px; display: flex; flex-wrap: wrap; gap: 6px; flex-shrink: 0;
+}
+.fb-quick-btn {
+  font-size: 12px; padding: 6px 13px; border-radius: 20px;
+  border: 1.5px solid #6366f1; background: #fff; color: #4f46e5;
+  cursor: pointer; font-weight: 600; transition: background .15s;
+}
+.fb-quick-btn:hover { background: #eef2ff; }
+#feedback-input-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px 14px; background: #fff;
+  border-top: 1px solid #e8eaf0; flex-shrink: 0;
+}
+#feedback-text {
+  flex: 1; border: 1px solid #e2e8f0; border-radius: 20px;
+  padding: 8px 14px; font-size: 13px; resize: none; box-sizing: border-box;
+  font-family: inherit; outline: none; line-height: 1.4; max-height: 80px; overflow-y: auto;
+}
+#feedback-text:focus { border-color: #6366f1; }
+#feedback-send-btn {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: #f1f5f9; border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+#feedback-send-btn:hover { background: #eef2ff; }
+</style>
+
+<script>
+let _fbCat    = 'improvement';
+let _fbOpened = false;
+let _actionLog = [];
+
+function _fbAddMsg(text, role = 'bot') {
+  const box = document.getElementById('feedback-messages');
+  const el  = document.createElement('div');
+  if (role === 'bot') {
+    el.className = 'fb-msg-bot';
+    el.innerHTML = `<div class="fb-msg-bot-avatar">SP</div><div class="fb-msg-bot-bubble">${text}</div>`;
+  } else {
+    el.className = 'fb-msg-user';
+    el.innerHTML = `<div class="fb-msg-user-bubble">${text}</div>`;
+  }
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+}
+
+function _fbSetQuickReplies(items) {
+  document.getElementById('feedback-quick-replies').innerHTML = items.map(i =>
+    `<button class="fb-quick-btn" onclick="fbQuickSelect('${i.cat}','${i.label}')">${i.label}</button>`
+  ).join('');
+}
+
+function fbQuickSelect(cat, label) {
+  _fbCat = cat;
+  _fbAddMsg(label, 'user');
+  document.getElementById('feedback-quick-replies').innerHTML = '';
+  setTimeout(() => {
+    _fbAddMsg('Feel free to share more details. 😊');
+    document.getElementById('feedback-text').focus();
+  }, 300);
+}
+
+function toggleFeedback() {
+  const panel = document.getElementById('feedback-panel');
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    setTimeout(() => { panel.style.cssText = ''; }, 230);
+    return;
+  }
+  panel.style.cssText = 'display:flex;flex-direction:column;width:320px;height:480px;';
+  requestAnimationFrame(() => panel.classList.add('open'));
+  if (!_fbOpened) {
+    _fbOpened = true;
+    setTimeout(() => {
+      _fbAddMsg('Hi! 👋<br>Tell us what you think about the service.');
+      setTimeout(() => _fbSetQuickReplies([
+        { cat: 'improvement', label: '💡 Suggestion' },
+        { cat: 'bug',         label: '🐛 Bug report' },
+        { cat: 'praise',      label: '👍 Compliment' },
+        { cat: 'question',    label: '❓ Question'   },
+      ]), 500);
+    }, 200);
+  }
+}
+
+async function submitFeedback() {
+  const ta  = document.getElementById('feedback-text');
+  const msg = ta.value.trim();
+  if (!msg) { ta.focus(); return; }
+  _fbAddMsg(msg, 'user');
+  ta.value = '';
+  document.getElementById('feedback-send-btn').disabled = true;
+  try {
+    await fetch('/pt/api/feedback/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+      body: JSON.stringify({ category: _fbCat, message: msg, page_url: location.pathname, action_log: _actionLog }),
+    });
+    setTimeout(() => {
+      _fbAddMsg('Thank you for your feedback! 🙏');
+      _fbSetQuickReplies([{ cat: 'improvement', label: '+ Add more' }]);
+      document.getElementById('feedback-send-btn').disabled = false;
+      _fbCat = 'improvement';
+    }, 300);
+  } catch(e) {
+    _fbAddMsg('Failed to send. Please try again.');
+    document.getElementById('feedback-send-btn').disabled = false;
+  }
+}
+</script>
+
+<!-- ── Pilot Feedback Chatbot ─────────────────────────────────────── -->
+<button id="feedback-btn" onclick="toggleFeedback()" aria-label="Feedback">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="white"/>
+  </svg>
+</button>
+
+<div id="feedback-panel">
+  <div id="feedback-panel-header">
+    <div id="fp-avatar">SP</div>
+    <div id="fp-header-text">
+      <div id="fp-label">feedback bot</div>
+      <div id="fp-name">Sage Pontus</div>
+    </div>
+    <button id="fp-close" onclick="toggleFeedback()">✕</button>
+  </div>
+  <div id="feedback-messages"></div>
+  <div id="feedback-quick-replies"></div>
+  <div id="feedback-input-row">
+    <textarea id="feedback-text" placeholder="Share your thoughts..." rows="1"
+              onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitFeedback();}"></textarea>
+    <button id="feedback-send-btn" onclick="submitFeedback()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+        <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+  </div>
+</div>
 </body>
 </html>
