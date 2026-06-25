@@ -1086,33 +1086,17 @@
       document.body.appendChild(ta); ta.select();
       document.execCommand('copy'); document.body.removeChild(ta);
     }
-    _showCopyToast(btn);
-  }
-
-  function _showCopyToast(btn) {
-    let t = document.getElementById('_copy-toast');
-    if (!t) {
-      t = document.createElement('div');
-      t.id = '_copy-toast';
-      t.textContent = 'Copied ✓';
-      Object.assign(t.style, {
-        position:'fixed', background:'#0f172a', color:'#f1f5f9',
-        fontSize:'12px', fontWeight:'700', padding:'4px 12px',
-        borderRadius:'6px', zIndex:'99999',
-        boxShadow:'0 4px 12px rgba(0,0,0,0.2)', pointerEvents:'none',
-        transition:'opacity .2s',
-      });
-      document.body.appendChild(t);
-    }
     if (btn) {
-      const r = btn.getBoundingClientRect();
-      t.style.top  = (r.top - 32 + window.scrollY) + 'px';
-      t.style.left = (r.left + r.width / 2) + 'px';
-      t.style.transform = 'translateX(-50%)';
+      const orig = btn.textContent;
+      const origColor = btn.style.color;
+      btn.textContent = 'Copied ✓';
+      btn.style.color = '#16a34a';
+      clearTimeout(btn._copyReset);
+      btn._copyReset = setTimeout(() => {
+        btn.textContent = orig;
+        btn.style.color = origColor;
+      }, 1500);
     }
-    t.style.opacity = '1';
-    clearTimeout(t._hide);
-    t._hide = setTimeout(() => { t.style.opacity = '0'; }, 1500);
   }
 
   async function chooseDocVersion(sessionId, versionKey) {
