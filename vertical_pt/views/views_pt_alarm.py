@@ -44,6 +44,10 @@ def index(request):
     return render(request, "vertical_pt/pt_app.html")
 
 
+def demo_emr(request):
+    return render(request, "vertical_pt/mock_emr.html")
+
+
 # ── AJAX: 환자 목록 ───────────────────────────────────────────────
 
 @login_required

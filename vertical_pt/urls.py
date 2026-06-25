@@ -78,6 +78,7 @@ urlpatterns = [
 
     # ── 웹 UI ─────────────────────────────────────────────────────────────
     path("pt/",                views_pt_alarm.index,            name="pt_index"),
+    path("pt/demo/emr/",       views_pt_alarm.demo_emr,         name="pt_demo_emr"),
     path("pt/analyze/",        views_pt_alarm.analyze_view,     name="pt_analyze"),
     path("pt/result/",         views_pt_alarm.result_view,      name="pt_result"),
     path("pt/staff/events/",   views_pt_alarm.event_dashboard,  name="pt_event_dashboard"),

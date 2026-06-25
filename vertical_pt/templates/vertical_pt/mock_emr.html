@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>WebPT — Patient Documentation</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+       font-size: 13px; color: #1f2937; background: #f3f4f6; }
+
+/* ── Top bar ── */
+.topbar {
+  background: #0f4c81; color: #fff;
+  padding: 0 20px; height: 50px;
+  display: flex; align-items: center; gap: 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.3); position: sticky; top:0; z-index:100;
+}
+.topbar-logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+.topbar-logo span { color: #60a5fa; }
+.topbar-nav { display: flex; gap: 2px; margin-left: 20px; }
+.topbar-nav a {
+  padding: 6px 14px; border-radius: 4px; color: rgba(255,255,255,.75);
+  text-decoration: none; font-size: 12px; font-weight: 600;
+  transition: background .15s;
+}
+.topbar-nav a:hover { background: rgba(255,255,255,.12); color: #fff; }
+.topbar-nav a.active { background: rgba(255,255,255,.18); color: #fff; }
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.topbar-user { font-size: 12px; color: rgba(255,255,255,.7); }
+.topbar-clinic { font-size: 11px; color: rgba(255,255,255,.5); }
+
+/* ── Layout ── */
+.layout { display: flex; min-height: calc(100vh - 50px); }
+
+/* ── Left sidebar ── */
+.sidebar {
+  width: 220px; flex-shrink: 0;
+  background: #fff; border-right: 1px solid #e5e7eb;
+  padding: 16px 0;
+}
+.sidebar-section { padding: 0 12px; margin-bottom: 20px; }
+.sidebar-label { font-size: 10px; font-weight: 700; color: #9ca3af;
+                 text-transform: uppercase; letter-spacing: .6px; margin-bottom: 8px; }
+.patient-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  transition: background .15s;
+}
+.patient-item:hover { background: #f9fafb; }
+.patient-item.active { background: #eff6ff; }
+.patient-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: #dbeafe; color: #1d4ed8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.patient-name { font-size: 12px; font-weight: 600; color: #111827; }
+.patient-meta { font-size: 11px; color: #6b7280; }
+
+/* ── Main ── */
+.main { flex: 1; padding: 24px; overflow-y: auto; }
+
+/* ── Patient header ── */
+.pt-header {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 16px 20px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 20px;
+}
+.pt-avatar-lg {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: #dbeafe; color: #1d4ed8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; font-weight: 700; flex-shrink: 0;
+}
+.pt-name { font-size: 18px; font-weight: 700; color: #111827; }
+.pt-info { font-size: 12px; color: #6b7280; margin-top: 3px; }
+.pt-dx { margin-left: auto; text-align: right; }
+.pt-dx-label { font-size: 10px; color: #9ca3af; font-weight: 600;
+               text-transform: uppercase; letter-spacing: .5px; }
+.pt-dx-text { font-size: 13px; font-weight: 600; color: #374151; margin-top: 2px; }
+.pt-status {
+  padding: 4px 10px; border-radius: 99px; font-size: 11px; font-weight: 700;
+  background: #d1fae5; color: #065f46; margin-left: 12px; white-space: nowrap;
+}
+
+/* ── Tabs ── */
+.tabs { display: flex; gap: 2px; margin-bottom: 16px; border-bottom: 2px solid #e5e7eb; }
+.tab {
+  padding: 8px 16px; font-size: 12px; font-weight: 600; color: #6b7280;
+  cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px;
+  transition: color .15s;
+}
+.tab:hover { color: #374151; }
+.tab.active { color: #0f4c81; border-bottom-color: #0f4c81; }
+
+/* ── Session list ── */
+.session-list { display: flex; flex-direction: column; gap: 12px; }
+.session-card {
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden;
+  cursor: pointer; transition: box-shadow .15s;
+}
+.session-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+.session-card.open { box-shadow: 0 0 0 2px #0f4c81; }
+.session-header {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.session-date { font-weight: 700; font-size: 13px; color: #111827; }
+.session-num { font-size: 11px; color: #6b7280; }
+.session-dx { font-size: 12px; color: #374151; margin-left: 4px; }
+.session-badge {
+  margin-left: auto; padding: 3px 9px; border-radius: 99px;
+  font-size: 10px; font-weight: 700;
+}
+.badge-signed { background: #d1fae5; color: #065f46; }
+.badge-draft  { background: #fef3c7; color: #92400e; }
+.badge-alert  { background: #fee2e2; color: #991b1b; }
+
+.session-body { padding: 16px; display: none; }
+.session-card.open .session-body { display: block; }
+
+/* ── SOAP sections ── */
+.soap-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.soap-section { }
+.soap-label {
+  font-size: 10px; font-weight: 700; color: #0f4c81;
+  text-transform: uppercase; letter-spacing: .6px;
+  margin-bottom: 6px; display: flex; align-items: center; gap: 6px;
+}
+.soap-label::after { content: ""; flex: 1; height: 1px; background: #e5e7eb; }
+.soap-text {
+  font-size: 12px; color: #374151; line-height: 1.65;
+  background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px;
+  padding: 10px 12px; white-space: pre-wrap;
+}
+.soap-full { grid-column: 1 / -1; }
+
+/* ── Copy button area ── */
+.copy-area {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; background: #f8fafc; border-top: 1px solid #e5e7eb;
+}
+.copy-hint { font-size: 11px; color: #6b7280; }
+.copy-hint strong { color: #0f4c81; }
+.btn-copy-note {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 16px; border-radius: 6px; border: none;
+  background: #0f4c81; color: #fff; font-size: 12px; font-weight: 700;
+  cursor: pointer; transition: background .15s;
+}
+.btn-copy-note:hover { background: #1e40af; }
+.btn-copy-note.copied { background: #059669; }
+
+/* ── Alert banner inside session ── */
+.alert-banner {
+  background: #fff7f7; border: 1.5px solid #dc2626; border-radius: 8px;
+  padding: 10px 14px; margin-bottom: 14px;
+  display: flex; align-items: center; gap: 10px; font-size: 12px;
+}
+.alert-banner-icon { font-size: 20px; }
+.alert-banner-text { color: #991b1b; font-weight: 600; line-height: 1.4; }
+.alert-banner-sub  { color: #dc2626; font-size: 11px; font-weight: 400; }
+
+/* ── Therapist row ── */
+.therapist-row { font-size: 11px; color: #9ca3af; margin-top: 12px; }
+</style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+  <div class="topbar-logo">Web<span>PT</span></div>
+  <nav class="topbar-nav">
+    <a href="#">Schedule</a>
+    <a href="#" class="active">Documentation</a>
+    <a href="#">Billing</a>
+    <a href="#">Reports</a>
+  </nav>
+  <div class="topbar-right">
+    <div>
+      <div class="topbar-user">Sarah Mitchell, PT, DPT</div>
+      <div class="topbar-clinic">Sunrise Physical Therapy</div>
+    </div>
+  </div>
+</div>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <div class="sidebar-label">Today's Patients</div>
+
+      <div class="patient-item active">
+        <div class="patient-avatar">RC</div>
+        <div>
+          <div class="patient-name">Robert Chen</div>
+          <div class="patient-meta">9:00 AM · LBP</div>
+        </div>
+      </div>
+
+      <div class="patient-item">
+        <div class="patient-avatar" style="background:#ede9fe; color:#6d28d9;">LH</div>
+        <div>
+          <div class="patient-name">Linda Harper</div>
+          <div class="patient-meta">10:30 AM · Knee OA</div>
+        </div>
+      </div>
+
+      <div class="patient-item">
+        <div class="patient-avatar" style="background:#fce7f3; color:#9d174d;">DW</div>
+        <div>
+          <div class="patient-name">David Weston</div>
+          <div class="patient-meta">1:00 PM · Shoulder</div>
+        </div>
+      </div>
+
+      <div class="patient-item">
+        <div class="patient-avatar" style="background:#dcfce7; color:#166534;">AM</div>
+        <div>
+          <div class="patient-name">Alice Monroe</div>
+          <div class="patient-meta">2:30 PM · Cervical</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+
+    <!-- Patient header -->
+    <div class="pt-header">
+      <div class="pt-avatar-lg">RC</div>
+      <div>
+        <div class="pt-name">Robert Chen</div>
+        <div class="pt-info">DOB: 03/14/1961 (64 y.o.) · Male · MRN: WP-2024-00847</div>
+        <div class="pt-info" style="margin-top:2px;">Ins: BlueCross PPO · Auth: 12 visits remaining</div>
+      </div>
+      <div class="pt-dx">
+        <div class="pt-dx-label">Primary Dx</div>
+        <div class="pt-dx-text">M54.5 — Low Back Pain</div>
+      </div>
+      <div class="pt-status">Active</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active">Daily Notes</div>
+      <div class="tab">Evaluations</div>
+      <div class="tab">Home Program</div>
+      <div class="tab">Measurements</div>
+    </div>
+
+    <!-- Session list -->
+    <div class="session-list">
+
+      <!-- ── Session 6 (today — RED FLAG) ─────────────────────── -->
+      <div class="session-card open" id="card-6">
+        <div class="session-header" onclick="toggleCard('card-6')">
+          <div>
+            <div class="session-date">06/25/2026 — Today</div>
+            <div class="session-num">Visit #6 of 12</div>
+          </div>
+          <span class="session-dx">LBP with new neurological symptoms</span>
+          <span class="session-badge badge-draft">⚠ Draft</span>
+        </div>
+
+        <div class="session-body">
+          <div class="alert-banner">
+            <div class="alert-banner-icon">⚠️</div>
+            <div>
+              <div class="alert-banner-text">New symptoms documented — clinical review recommended</div>
+              <div class="alert-banner-sub">Bladder dysfunction + bilateral saddle numbness noted. Use Sage Pontus to screen for red flags.</div>
+            </div>
+          </div>
+
+          <div class="soap-grid">
+            <div class="soap-section">
+              <div class="soap-label">Subjective</div>
+              <div class="soap-text" id="s6-s">Patient is a 64 y.o. male presenting with c/o severe low back pain x 5 days, rated 9/10. He reports sudden worsening from his baseline LBP over the past 48 hours. New onset difficulty urinating — sensation of incomplete bladder emptying. Denies urinary incontinence currently but reports "dribbling." Reports new numbness in the groin and inner thigh area bilaterally. States pain is no longer relieved with his usual positions. Denies bowel changes. No fever/chills. No recent trauma.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Objective</div>
+              <div class="soap-text" id="s6-o">Gait: antalgic, slow. Lumbar AROM severely limited in all planes secondary to pain and guarding. Straight leg raise: positive bilateral at 30°. Sensation: diminished light touch bilaterally in S2–S5 dermatomes (perineal, inner thigh, posterior thigh). Lower extremity strength: 3+/5 bilateral hip flexors, 4/5 knee extensors. Deep tendon reflexes: diminished bilateral Achilles. Perianal sensation not formally tested today.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Assessment</div>
+              <div class="soap-text" id="s6-a">Patient presents with acute worsening of chronic LBP with new onset saddle area paresthesia (bilateral S2-S5), bilateral lower extremity weakness, and reported urinary retention/hesitancy. Clinical presentation raises concern for cauda equina involvement. Functional status declined significantly from last visit. Patient unable to perform any home exercise program due to pain severity.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Plan</div>
+              <div class="soap-text" id="s6-p">Held all manual therapy and exercise interventions today given new neurological presentation. Patient and caregiver educated on urgency of symptoms. Physician notification and/or emergency referral under consideration pending red flag screening. Patient advised not to drive. Caregiver present. Will coordinate with referring physician immediately.</div>
+            </div>
+          </div>
+
+          <div class="therapist-row">Therapist: Sarah Mitchell, PT, DPT · Supervisor: —</div>
+        </div>
+
+        <div class="copy-area">
+          <div class="copy-hint">
+            Copy note → open <strong>Sage Pontus</strong> extension → Paste → Analyze Red Flags
+          </div>
+          <button class="btn-copy-note" id="copy-btn-6" onclick="copyNote('6')">
+            📋 Copy Full Note
+          </button>
+        </div>
+      </div>
+
+      <!-- ── Session 5 ──────────────────────────────────────────── -->
+      <div class="session-card" id="card-5">
+        <div class="session-header" onclick="toggleCard('card-5')">
+          <div>
+            <div class="session-date">06/18/2026</div>
+            <div class="session-num">Visit #5 of 12</div>
+          </div>
+          <span class="session-dx">LBP, lumbar muscle strain</span>
+          <span class="session-badge badge-signed">✓ Signed</span>
+        </div>
+        <div class="session-body">
+          <div class="soap-grid">
+            <div class="soap-section">
+              <div class="soap-label">Subjective</div>
+              <div class="soap-text" id="s5-s">Patient reports low back pain 5/10 today, improved from 7/10 last visit. States he completed his HEP 4/5 days this week. Pain localized to lower lumbar region, no radiation. Morning stiffness resolving within 30 minutes. No new symptoms.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Objective</div>
+              <div class="soap-text" id="s5-o">Lumbar flexion 60° (up from 50°). Extension 15°. Lateral flexion bilateral 20°. SLR negative bilateral. No lower extremity neurological deficits. Posture: mild anterior pelvic tilt. Core activation improved — able to maintain neutral spine during bridging x 3 sets.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Assessment</div>
+              <div class="soap-text" id="s5-a">Patient making steady progress with lumbar mobility and functional strength. Pain decreasing trend. No neurological signs. Tolerating treatment well. On track to meet discharge goals within remaining authorized visits.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Plan</div>
+              <div class="soap-text" id="s5-p">Continue with lumbar stabilization program. Progress core strengthening to include resistance. Add aquatic therapy next visit. Continue manual therapy — joint mobilization grade III lumbar. HEP updated: add bird-dog progression. Next visit in 1 week.</div>
+            </div>
+          </div>
+          <div class="therapist-row">Therapist: Sarah Mitchell, PT, DPT · Supervisor: —</div>
+        </div>
+        <div class="copy-area">
+          <div class="copy-hint">Copy note → <strong>Sage Pontus</strong> extension → Analyze</div>
+          <button class="btn-copy-note" id="copy-btn-5" onclick="copyNote('5')">📋 Copy Full Note</button>
+        </div>
+      </div>
+
+      <!-- ── Session 1 (Initial eval) ───────────────────────────── -->
+      <div class="session-card" id="card-1">
+        <div class="session-header" onclick="toggleCard('card-1')">
+          <div>
+            <div class="session-date">05/14/2026</div>
+            <div class="session-num">Initial Evaluation</div>
+          </div>
+          <span class="session-dx">LBP, onset after lifting</span>
+          <span class="session-badge badge-signed">✓ Signed</span>
+        </div>
+        <div class="session-body">
+          <div class="soap-grid">
+            <div class="soap-section">
+              <div class="soap-label">Subjective</div>
+              <div class="soap-text" id="s1-s">Patient is a 64 y.o. male referred by Dr. Park for evaluation and treatment of low back pain. Reports onset approximately 6 weeks ago after lifting boxes during home move. Pain rated 7/10, localized to L4-L5 region with occasional left buttock radiation. Denies leg pain, numbness, or tingling. No bowel/bladder changes. Occupation: retired engineer. Active prior to injury — walking 2 miles/day.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Objective</div>
+              <div class="soap-text" id="s1-o">Lumbar AROM: flexion 40°, extension 10°, lateral flexion bilateral 15°. SLR negative bilateral. FABER/FADIR negative bilateral. Hip strength 4/5 bilateral. Sensation intact bilateral LE. DTR 2+ bilateral. Palpation: tenderness L4-L5 paraspinals bilateral. Posture: forward head, kyphotic thoracic, anterior pelvic tilt.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Assessment</div>
+              <div class="soap-text" id="s1-a">64 y.o. male with mechanical LBP consistent with lumbar muscle strain and mobility deficit. No neurological deficits at this time. Prognosis: good with conservative PT intervention. STG (4 wks): pain ≤3/10, lumbar flexion ≥65°. LTG (8 wks): return to prior activity level including 2-mile walks without pain limitation.</div>
+            </div>
+            <div class="soap-section">
+              <div class="soap-label">Plan</div>
+              <div class="soap-text" id="s1-p">Initiate lumbar stabilization program 2x/week x 6 weeks. Manual therapy: soft tissue mobilization, joint mobilization grade II-III. Modalities: moist heat pre-treatment. Patient educated on posture correction and body mechanics. HEP: pelvic tilts, knee to chest, cat-camel. Authorize 12 visits.</div>
+            </div>
+          </div>
+          <div class="therapist-row">Therapist: Sarah Mitchell, PT, DPT · Supervisor: James Kuo, PT</div>
+        </div>
+        <div class="copy-area">
+          <div class="copy-hint">Copy note → <strong>Sage Pontus</strong> extension → Analyze</div>
+          <button class="btn-copy-note" id="copy-btn-1" onclick="copyNote('1')">📋 Copy Full Note</button>
+        </div>
+      </div>
+
+    </div><!-- /session-list -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<script>
+  function toggleCard(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('open');
+  }
+
+  function buildNote(num) {
+    const s = document.getElementById(`s${num}-s`)?.textContent.trim() || '';
+    const o = document.getElementById(`s${num}-o`)?.textContent.trim() || '';
+    const a = document.getElementById(`s${num}-a`)?.textContent.trim() || '';
+    const p = document.getElementById(`s${num}-p`)?.textContent.trim() || '';
+    return `Subjective:\n${s}\n\nObjective:\n${o}\n\nAssessment:\n${a}\n\nPlan:\n${p}`;
+  }
+
+  function copyNote(num) {
+    const text = buildNote(num);
+    const btn = document.getElementById(`copy-btn-${num}`);
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = '✅ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '📋 Copy Full Note';
+        btn.classList.remove('copied');
+      }, 2500);
+    }).catch(() => {
+      // fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      btn.textContent = '✅ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '📋 Copy Full Note';
+        btn.classList.remove('copied');
+      }, 2500);
+    });
+  }
+</script>
+</body>
+</html>
