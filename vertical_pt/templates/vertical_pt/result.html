@@ -330,7 +330,7 @@ function copyLetter() {
 
 {% if alarm == 'RED' or alarm == 'YELLOW' %}
 <div id="iv-bubble" style="
-  display:none; position:fixed; bottom:24px; left:24px; z-index:9000;
+  display:none; position:fixed; bottom:24px; right:24px; z-index:9000;
   width:320px; background:#fff; border:1.5px solid #0d9488; border-radius:16px;
   box-shadow:0 8px 32px rgba(0,0,0,0.18); overflow:hidden;
   animation:iv-slide-up .3s ease;">
@@ -376,7 +376,29 @@ function copyLetter() {
     alarm_fired:         "What's your first reaction to this alarm? (No wrong answer — just your gut)",
     referral_generated:  "Would you hand this referral letter to a patient today? Why or why not?",
   };
+  const IV_ANCHORS = { alarm_fired: 'action-area', referral_generated: 'letter-wrap' };
   let _ivTrigger = '';
+
+  function ivAnchorTo(anchorEl) {
+    const bubble = document.getElementById('iv-bubble');
+    if (!anchorEl || !bubble) return;
+    const rect = anchorEl.getBoundingClientRect();
+    const bw = 320, bh = 240, mg = 12;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left, top;
+    if (rect.right + mg + bw <= vw - mg) {
+      left = rect.right + mg; top = rect.top;
+    } else if (rect.left - mg - bw >= mg) {
+      left = rect.left - mg - bw; top = rect.top;
+    } else {
+      left = Math.max(mg, rect.left);
+      top = rect.bottom + mg;
+    }
+    top  = Math.max(mg, Math.min(top,  vh - bh - mg));
+    left = Math.max(mg, Math.min(left, vw - bw - mg));
+    bubble.style.top = top + 'px'; bubble.style.left = left + 'px';
+    bubble.style.bottom = ''; bubble.style.right = '';
+  }
 
   function ivShow(trigger) {
     if (_ivShown.has(trigger)) return;
@@ -384,6 +406,7 @@ function copyLetter() {
     const q = document.getElementById('iv-question');
     if (q) q.textContent = IV_PROMPTS[trigger] || '';
     document.getElementById('iv-answer').value = '';
+    ivAnchorTo(document.getElementById(IV_ANCHORS[trigger]));
     document.getElementById('iv-bubble').style.display = 'block';
   }
 

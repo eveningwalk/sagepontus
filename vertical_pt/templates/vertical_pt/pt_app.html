@@ -738,7 +738,10 @@
     const alarmColors = { RED: '#dc2626', YELLOW: '#d97706', NONE: '#16a34a' };
     const color = alarmColors[s.alarm_level] || '#64748b';
     if (s.alarm_level === 'RED' || s.alarm_level === 'YELLOW') {
-      setTimeout(() => ivShow('alarm_fired'), 2000);
+      setTimeout(() => {
+        const badge = document.querySelector('#session-detail-panel .badge-flag');
+        ivShow('alarm_fired', badge);
+      }, 2000);
     }
     const indicators = Array.isArray(s.matched_indicators) ? s.matched_indicators : [];
     const ctx = s.clinical_context || {};
@@ -901,7 +904,7 @@
         const s = _sessions.find(x => String(x.id) === String(sessionId));
         if (s) s.referral_letter = d.referral_letter;
         area.innerHTML = renderDocCard(d.referral_letter, sessionId);
-        setTimeout(() => ivShow('referral_generated'), 1500);
+        setTimeout(() => ivShow('referral_generated', area), 1500);
       }
     } catch(e) {
       area.querySelectorAll('button').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
@@ -1394,7 +1397,7 @@ async function submitFeedback() {
 
 <!-- ── Interview Research Prompt Bubble ────────────────────────────── -->
 <div id="iv-bubble" style="
-  display:none; position:fixed; bottom:24px; left:24px; z-index:9000;
+  display:none; position:fixed; bottom:24px; right:24px; z-index:9000;
   width:320px; background:#fff; border:1.5px solid #0d9488; border-radius:16px;
   box-shadow:0 8px 32px rgba(0,0,0,0.18); overflow:hidden;
   animation:iv-slide-up .3s ease;">
@@ -1441,13 +1444,35 @@ async function submitFeedback() {
     referral_generated:  "Would you hand this referral letter to a patient today? Why or why not?",
   };
 
-  function ivShow(trigger) {
+  function ivAnchorTo(anchorEl) {
+    const bubble = document.getElementById('iv-bubble');
+    if (!anchorEl || !bubble) return;
+    const rect = anchorEl.getBoundingClientRect();
+    const bw = 320, bh = 240, mg = 12;
+    const vw = window.innerWidth, vh = window.innerHeight;
+    let left, top;
+    if (rect.right + mg + bw <= vw - mg) {
+      left = rect.right + mg; top = rect.top;
+    } else if (rect.left - mg - bw >= mg) {
+      left = rect.left - mg - bw; top = rect.top;
+    } else {
+      left = Math.max(mg, rect.left);
+      top = rect.bottom + mg;
+    }
+    top  = Math.max(mg, Math.min(top,  vh - bh - mg));
+    left = Math.max(mg, Math.min(left, vw - bw - mg));
+    bubble.style.top = top + 'px'; bubble.style.left = left + 'px';
+    bubble.style.bottom = ''; bubble.style.right = '';
+  }
+
+  function ivShow(trigger, anchorEl) {
     if (_ivShown.has(trigger)) return;
     const question = IV_PROMPTS[trigger];
     if (!question) return;
     _ivTrigger = trigger;
     document.getElementById('iv-question').textContent = question;
     document.getElementById('iv-answer').value = '';
+    ivAnchorTo(anchorEl);
     document.getElementById('iv-bubble').style.display = 'block';
   }
 
