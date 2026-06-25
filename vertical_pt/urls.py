@@ -65,6 +65,9 @@ urlpatterns = [
     # ── Interview Research ──────────────────────────────────────────────
     path("pt/api/interview/respond/",        views_pt_alarm.interview_respond,       name="pt_interview_respond"),
 
+    # ── E-Fax ──────────────────────────────────────────────────────────
+    path("pt/api/efax/",                     views_pt_alarm.efax_referral,           name="pt_efax"),
+
     path("pt/api/backfill-rescore/",            views_pt_alarm.backfill_rescore_ajax,  name="pt_backfill_rescore"),
     path("pt/api/admin/clear/",                 views_pt_alarm.admin_clear_sessions,   name="pt_admin_clear"),
     path("pt/api/admin/reseed/",                views_pt_alarm.admin_reseed_ajax,      name="pt_admin_reseed"),

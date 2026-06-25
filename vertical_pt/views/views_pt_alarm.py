@@ -1740,6 +1740,21 @@ def interview_respond(request):
     return JsonResponse({"ok": True})
 
 
+# ── E-Fax ─────────────────────────────────────────────────────────────────────
+
+@login_required
+def efax_referral(request):
+    if request.method != "POST":
+        return JsonResponse({"ok": False}, status=405)
+    data = json.loads(request.body)
+    fax_number = data.get("fax_number", "").strip()
+    if not fax_number:
+        return JsonResponse({"ok": False, "error": "Fax number required"}, status=400)
+    alert_id = data.get("alert_id")
+    track(request.user, "efax_sent", fax_number=fax_number, alert_id=alert_id)
+    return JsonResponse({"ok": True, "message": "Fax queued successfully"})
+
+
 # ── Staff: Interview Event Dashboard ─────────────────────────────────────────
 
 def event_dashboard(request):
