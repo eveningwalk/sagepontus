@@ -270,6 +270,7 @@ async function handleAlarmAction(action) {
       document.getElementById("action-area").style.display = "none";
       document.getElementById("letter-body").textContent = data.referral_letter || "";
       document.getElementById("letter-wrap").style.display = "block";
+      setTimeout(() => ivShow('referral_generated'), 1500);
     }
   } catch (err) {
     document.querySelectorAll("#action-area button").forEach(b => { b.disabled = false; b.style.opacity = "1"; });
@@ -351,7 +352,7 @@ function copyLetter() {
     <button onclick="ivDismiss()" style="margin-left:auto; background:none; border:none; color:#fff; font-size:16px; cursor:pointer; line-height:1;">✕</button>
   </div>
   <div style="padding:14px;">
-    <p style="font-size:13px; color:#1e293b; margin-bottom:10px; line-height:1.5;">
+    <p id="iv-question" style="font-size:13px; color:#1e293b; margin-bottom:10px; line-height:1.5;">
       What's your first reaction to this alarm? (No wrong answer — just your gut)
     </p>
     <textarea id="iv-answer" rows="3" placeholder="Type your thoughts here…"></textarea>
@@ -371,8 +372,23 @@ function copyLetter() {
 <script>
   const _ivShown = new Set(JSON.parse(sessionStorage.getItem('_ivShown') || '[]'));
 
+  const IV_PROMPTS = {
+    alarm_fired:         "What's your first reaction to this alarm? (No wrong answer — just your gut)",
+    referral_generated:  "Would you hand this referral letter to a patient today? Why or why not?",
+  };
+  let _ivTrigger = '';
+
+  function ivShow(trigger) {
+    if (_ivShown.has(trigger)) return;
+    _ivTrigger = trigger;
+    const q = document.getElementById('iv-question');
+    if (q) q.textContent = IV_PROMPTS[trigger] || '';
+    document.getElementById('iv-answer').value = '';
+    document.getElementById('iv-bubble').style.display = 'block';
+  }
+
   function ivDismiss() {
-    _ivShown.add('alarm_fired');
+    _ivShown.add(_ivTrigger || 'alarm_fired');
     sessionStorage.setItem('_ivShown', JSON.stringify([..._ivShown]));
     document.getElementById('iv-bubble').style.display = 'none';
   }
@@ -385,8 +401,8 @@ function copyLetter() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
         body: JSON.stringify({
-          trigger:  'alarm_fired',
-          prompt:   "What's your first reaction to this alarm? (No wrong answer — just your gut)",
+          trigger:  _ivTrigger,
+          prompt:   IV_PROMPTS[_ivTrigger] || '',
           response: answer,
         }),
       });
@@ -395,7 +411,7 @@ function copyLetter() {
   }
 
   if (!_ivShown.has('alarm_fired')) {
-    setTimeout(() => { document.getElementById('iv-bubble').style.display = 'block'; }, 2000);
+    setTimeout(() => ivShow('alarm_fired'), 2000);
   }
 </script>
 {% endif %}

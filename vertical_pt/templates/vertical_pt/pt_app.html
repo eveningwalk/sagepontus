@@ -901,6 +901,7 @@
         const s = _sessions.find(x => String(x.id) === String(sessionId));
         if (s) s.referral_letter = d.referral_letter;
         area.innerHTML = renderDocCard(d.referral_letter, sessionId);
+        setTimeout(() => ivShow('referral_generated'), 1500);
       }
     } catch(e) {
       area.querySelectorAll('button').forEach(b => { b.disabled = false; b.style.opacity = '1'; });
