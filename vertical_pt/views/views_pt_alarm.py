@@ -25,6 +25,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_http_methods
 
 from vertical_pt.engine import score_soap, build_patient_context
+from vertical_pt.engine.tracker import track
 from vertical_pt.engine.referral import generate_referral_letter, generate_referral_letter_ai, generate_multi_referral_letter
 from vertical_pt.engine.documents import generate_document, DOC_TITLES
 from vertical_pt.engine.documents_ai import generate_document_ai
@@ -229,6 +230,11 @@ def save_soap_ajax(request):
         alarm_level=result["alarm"],
         triggered_condition=result["condition"] or "",
     )
+    track(request.user, "soap_pasted",
+          patient_id=patient_id,
+          alarm_level=result["alarm"],
+          condition=result["condition"] or "",
+          score=round((result["score"] or 0) * 100))
 
     # SOAP 임상 컨텍스트 AI 추출 (temperature=0, 입력 분류만)
     try:
@@ -487,6 +493,8 @@ def generate_doc_ajax(request, patient_id):
         except Exception as e:
             logger.warning("AI document generation failed for %s: %s", doc_type, e)
 
+    track(request.user, "doc_generated", patient_id=patient_id, doc_type=doc_type,
+          has_ai=ai_doc is not None)
     return JsonResponse({
         "ok":           True,
         "doc_type":     doc_type,
@@ -709,6 +717,7 @@ def referral_send(request, alert_id):
         mark_sent(alert, to_email=to_email)
         delivered = None  # 이메일 없이 수동 체크
 
+    track(request.user, "referral_sent", alert_id=alert_id, email_sent=send_email)
     return JsonResponse({
         "ok":        True,
         "email_sent": send_email,
@@ -1125,6 +1134,8 @@ def referral_print(request, alert_id):
     if not alert:
         return JsonResponse({"error": "Not found"}, status=404)
 
+    track(request.user, "referral_viewed", alert_id=alert_id,
+          patient_id=alert.timeline.patient_id, alarm_level=alert.alarm_level)
     letter = alert.referral_letter or "(No referral letter generated)"
     html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8">
@@ -1153,6 +1164,7 @@ def choose_doc_version(request, doc_id: int):
     doc.chosen    = True
     doc.chosen_at = timezone.now()
     doc.save(update_fields=["chosen", "chosen_at"])
+    track(request.user, "doc_chosen", doc_id=doc_id, doc_type=doc.doc_type, version=doc.version)
 
     # 리퍼럴 레터 선택 시 alert.referral_letter도 동기화 (이메일 발송 등 downstream 보호)
     if doc.doc_type == "referral":
@@ -1417,6 +1429,7 @@ def compliance_dashboard_json(request):
     URGENT_DAYS = 3
 
     cases = list(ComplianceCase.objects.filter(therapist=request.user))
+    track(request.user, "compliance_viewed")
 
     # ── Section 1: Direct Access ──────────────────────────────────────────────
     da_items = []
@@ -1699,3 +1712,95 @@ def submit_feedback(request):
         action_log = data.get("action_log", [])[:5],
     )
     return JsonResponse({"ok": True})
+
+
+# ── Staff: Interview Event Dashboard ─────────────────────────────────────────
+
+def event_dashboard(request):
+    """Staff-only live dashboard showing per-user event timelines."""
+    if not request.user.is_authenticated or not request.user.is_staff:
+        from django.shortcuts import redirect as _redir
+        return _redir("vertical_pt:pt_login")
+
+    import datetime as _dt
+    from django.contrib.auth.models import User
+    from vertical_pt.models import UserEvent, PTProfile
+
+    DOT = {
+        "soap_pasted":        "soap",
+        "doc_generated":      "doc",
+        "doc_chosen":         "doc",
+        "referral_generated": "referral",
+        "referral_sent":      "referral",
+        "referral_viewed":    "referral",
+        "compliance_viewed":  "compliance",
+    }
+
+    LABEL = {
+        "soap_pasted":        "SOAP Pasted",
+        "doc_generated":      "Document Generated",
+        "doc_chosen":         "Document Version Chosen",
+        "referral_generated": "Referral Letter Generated",
+        "referral_sent":      "Referral Sent to Doctor",
+        "referral_viewed":    "Referral Letter Viewed/Printed",
+        "compliance_viewed":  "Compliance Dashboard Viewed",
+    }
+
+    def _detail(ev):
+        m = ev.meta
+        parts = []
+        if m.get("patient_id"):   parts.append(f"patient: {m['patient_id']}")
+        if m.get("alarm_level"):  parts.append(f"alarm: {m['alarm_level']}")
+        if m.get("condition"):    parts.append(f"condition: {m['condition']}")
+        if m.get("doc_type"):     parts.append(f"doc: {m['doc_type']}")
+        if m.get("version"):      parts.append(f"version: {m['version']}")
+        if m.get("email_sent"):   parts.append("email sent")
+        return " · ".join(parts)
+
+    pt_users = User.objects.filter(pt_profile__isnull=False).select_related("pt_profile").order_by("-date_joined")
+
+    # funnel counts (distinct users who did each action)
+    all_events = UserEvent.objects.filter(user__pt_profile__isnull=False)
+    def _distinct(event_name):
+        return all_events.filter(event=event_name).values("user_id").distinct().count()
+
+    funnel = {
+        "signups":            pt_users.count(),
+        "soap_pasted":        _distinct("soap_pasted"),
+        "alarm_triggered":    UserEvent.objects.filter(
+                                  user__pt_profile__isnull=False,
+                                  event="soap_pasted",
+                                  meta__alarm_level__in=["RED", "YELLOW"]
+                              ).values("user_id").distinct().count(),
+        "referral_generated": _distinct("referral_generated"),
+        "referral_sent":      _distinct("referral_sent"),
+        "compliance_viewed":  _distinct("compliance_viewed"),
+        "doc_generated":      _distinct("doc_generated"),
+    }
+
+    users = []
+    for u in pt_users:
+        evs = list(UserEvent.objects.filter(user=u).order_by("created_at"))
+        is_ea = getattr(getattr(u, "pt_profile", None), "is_early_access", False)
+        users.append({
+            "display_name": u.get_full_name() or u.username,
+            "email":        u.email,
+            "joined":       u.date_joined.strftime("%b %d %H:%M"),
+            "is_early_access": is_ea,
+            "event_count":  len(evs),
+            "events": [
+                {
+                    "dot_class": DOT.get(e.event, "other"),
+                    "label":     LABEL.get(e.event, e.event),
+                    "time":      e.created_at.strftime("%b %d %H:%M"),
+                    "detail":    _detail(e),
+                }
+                for e in evs
+            ],
+        })
+
+    return render(request, "vertical_pt/event_dashboard.html", {
+        "funnel": funnel,
+        "users":  users,
+        "now":    _dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    })
