@@ -56,5 +56,6 @@ class PTSignupForm(forms.Form):
             role=cd["role"],
             clinic_name=cd.get("clinic_name", ""),
             license_number=cd.get("license_number", ""),
+            is_early_access=True,
         )
         return user

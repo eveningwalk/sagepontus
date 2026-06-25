@@ -740,21 +740,18 @@ def admin_clear_sessions(request):
     return JsonResponse({"ok": True, "deleted": deleted})
 
 
-@login_required
-@require_http_methods(["POST"])
-def admin_reseed_ajax(request):
-    """전체 삭제 + 실습 케이스 16개 + Margaret 10개 재적재 + 재스코어링."""
-    import time
+def seed_demo_data(user) -> dict:
+    """신규 가입 또는 어드민 리셋 시 데모 데이터 적재. user 객체를 받아 동작."""
     import json as _json
     from pathlib import Path
-    from vertical_pt.engine.referral import generate_referral_letter, generate_multi_referral_letter
+    from vertical_pt.models import ComplianceCase
 
-    # 1. 전체 삭제
-    PatientTimeline.objects.filter(therapist=request.user).delete()
+    PatientTimeline.objects.filter(therapist=user).delete()
+    ComplianceCase.objects.filter(therapist=user).delete()
 
     results = {"seeded": 0, "errors": []}
 
-    # 2. 16개 실습 케이스
+    # 16개 실습 케이스
     cases_path = Path(__file__).resolve().parents[2] / "data" / "soap_samples" / "cases.json"
     if cases_path.exists():
         cases = _json.loads(cases_path.read_text(encoding="utf-8"))
@@ -771,44 +768,39 @@ def admin_reseed_ajax(request):
                 except Exception:
                     session_date = datetime.date(2022,12,1) + datetime.timedelta(days=case["id"])
 
-                _create_session(request.user, f"PT-{case['id']:03d}",
+                _create_session(user, f"PT-{case['id']:03d}",
                                 pt.get("name","Unknown"), session_date, soap)
                 results["seeded"] += 1
             except Exception as e:
                 results["errors"].append(str(e))
 
-
-    # 3. Margaret Wilson 10회
+    # Margaret Wilson 10회
     from vertical_pt.management.commands.seed_multi_session_patient import SESSIONS, PATIENT_ID, PATIENT_NAME
     for s in SESSIONS:
         try:
-            _create_session(request.user, PATIENT_ID, PATIENT_NAME,
+            _create_session(user, PATIENT_ID, PATIENT_NAME,
                             s["date"], s["soap"].strip())
             results["seeded"] += 1
         except Exception as e:
             results["errors"].append(str(e))
 
-    # 4. ComplianceCase 재생성 (Direct Access deadline이 있는 주 배정)
-    from vertical_pt.models import ComplianceCase
-    ComplianceCase.objects.filter(therapist=request.user).delete()
-
+    # ComplianceCase (Direct Access deadline)
     today = datetime.date.today()
     _STATES   = ["NY", "NJ", "AL", "DE", "MO", "NY", "NJ", "AL", "NY", "DE",
-                 "MO", "NJ", "AL", "NY", "NJ", "MO"]   # 16개 PT-xxx 용
+                 "MO", "NJ", "AL", "NY", "NJ", "MO"]
     _INSURERS = ["bcbs", "aetna", "medicare", "cigna", "united", "bcbs",
                  "aetna", "medicare", "cigna", "bcbs", "united", "aetna",
                  "bcbs", "medicare", "cigna", "united"]
     compliance_count = 0
     for i in range(1, 17):
         pid        = f"PT-{i:03d}"
-        state      = _STATES[i - 1]
         start_date = today - datetime.timedelta(days=(i * 4) + 2)
         notified   = (start_date + datetime.timedelta(days=5)) if i % 4 == 0 else None
         poc_sent   = (start_date + datetime.timedelta(days=7)) if i % 6 == 0 else None
         ComplianceCase.objects.update_or_create(
-            therapist=request.user, patient_id=pid,
+            therapist=user, patient_id=pid,
             defaults={
-                "state":                 state,
+                "state":                 _STATES[i - 1],
                 "treatment_start_date":  start_date,
                 "insurer_type":          _INSURERS[i - 1],
                 "physician_notified_at": notified,
@@ -819,7 +811,7 @@ def admin_reseed_ajax(request):
 
     # Margaret Wilson — NY (10일 기한), 8일 경과 → urgent
     ComplianceCase.objects.update_or_create(
-        therapist=request.user, patient_id=PATIENT_ID,
+        therapist=user, patient_id=PATIENT_ID,
         defaults={
             "state":                "NY",
             "treatment_start_date": today - datetime.timedelta(days=8),
@@ -830,7 +822,14 @@ def admin_reseed_ajax(request):
     )
     compliance_count += 1
     results["compliance_seeded"] = compliance_count
+    return results
 
+
+@login_required
+@require_http_methods(["POST"])
+def admin_reseed_ajax(request):
+    """전체 삭제 + 실습 케이스 16개 + Margaret 10개 재적재 + 재스코어링."""
+    results = seed_demo_data(request.user)
     return JsonResponse({"ok": True, **results})
 
 

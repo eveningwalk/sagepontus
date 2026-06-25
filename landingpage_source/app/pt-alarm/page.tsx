@@ -1,9 +1,7 @@
 "use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { SignupModal } from "@/components/landing/signup-modal"
 import {
   AlertTriangle,
   ArrowRight,
@@ -90,9 +88,9 @@ const STEPS = [
 ]
 
 // ── Main Page ───────────────────────────────────────────────────────
-export default function PtAlarmPage() {
-  const [signupOpen, setSignupOpen] = useState(false)
+const PT_APP_URL = process.env.NEXT_PUBLIC_PT_APP_URL ?? ""
 
+export default function PtAlarmPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
 
@@ -110,9 +108,9 @@ export default function PtAlarmPage() {
             >
               Sign in
             </a>
-            <Button size="sm" onClick={() => setSignupOpen(true)}>
-              Get Early Access
-            </Button>
+            <a href={`${PT_APP_URL}/pt/signup/`}>
+              <Button size="sm">Get Early Access</Button>
+            </a>
           </div>
         </div>
       </header>
@@ -141,13 +139,11 @@ export default function PtAlarmPage() {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button
-                size="lg"
-                className="bg-red-600 hover:bg-red-700 text-white gap-2"
-                onClick={() => setSignupOpen(true)}
-              >
-                Get Early Access <ArrowRight className="w-4 h-4" />
-              </Button>
+              <a href={`${PT_APP_URL}/pt/signup/`}>
+                <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white gap-2">
+                  Get Early Access <ArrowRight className="w-4 h-4" />
+                </Button>
+              </a>
               <Button
                 size="lg"
                 variant="outline"
@@ -304,13 +300,11 @@ export default function PtAlarmPage() {
             <p className="text-background/70 mb-10 text-lg">
               Join PTs who are building the documentation trail that protects their clinic.
             </p>
-            <Button
-              size="lg"
-              className="bg-red-600 hover:bg-red-700 text-white gap-2 text-base"
-              onClick={() => setSignupOpen(true)}
-            >
-              Request Early Access <ArrowRight className="w-4 h-4" />
-            </Button>
+            <a href={`${PT_APP_URL}/pt/signup/`}>
+              <Button size="lg" className="bg-red-600 hover:bg-red-700 text-white gap-2 text-base">
+                Get Early Access <ArrowRight className="w-4 h-4" />
+              </Button>
+            </a>
             <p className="mt-4 text-xs text-background/50">
               Chrome Extension · Physical Therapy clinics · Limited early access slots
             </p>
@@ -332,7 +326,6 @@ export default function PtAlarmPage() {
         </div>
       </footer>
 
-      <SignupModal open={signupOpen} onOpenChange={setSignupOpen} />
     </div>
   )
 }

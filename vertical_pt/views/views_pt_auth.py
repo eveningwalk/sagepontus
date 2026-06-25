@@ -18,6 +18,8 @@ def pt_signup(request):
     if request.method == "POST" and form.is_valid():
         user = form.save()
         login(request, user)
+        from vertical_pt.views.views_pt_alarm import seed_demo_data
+        seed_demo_data(user)
         return redirect("vertical_pt:pt_index")
 
     return render(request, "vertical_pt/pt_signup.html", {"form": form})
