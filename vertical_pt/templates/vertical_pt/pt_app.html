@@ -735,6 +735,9 @@
 
     const alarmColors = { RED: '#dc2626', YELLOW: '#d97706', NONE: '#16a34a' };
     const color = alarmColors[s.alarm_level] || '#64748b';
+    if (s.alarm_level === 'RED' || s.alarm_level === 'YELLOW') {
+      setTimeout(() => ivShow('alarm_fired'), 2000);
+    }
     const indicators = Array.isArray(s.matched_indicators) ? s.matched_indicators : [];
     const ctx = s.clinical_context || {};
 
@@ -957,6 +960,7 @@
 
       abHtml += `</div>`;
       if (area) area.innerHTML = abHtml;
+      if (docType === 'referral') setTimeout(() => ivShow('referral_generated'), 1500);
     } catch(e) {
       if (area) area.innerHTML = `<div style="font-size:12px; color:#ef4444; padding:8px 0;">Generation failed: ${_esc(e.message)}</div>`;
     }
@@ -1373,5 +1377,88 @@ async function submitFeedback() {
     </button>
   </div>
 </div>
+
+<!-- ── Interview Research Prompt Bubble ────────────────────────────── -->
+<div id="iv-bubble" style="
+  display:none; position:fixed; bottom:24px; left:24px; z-index:9000;
+  width:320px; background:#fff; border:1.5px solid #0d9488; border-radius:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.18); overflow:hidden;
+  animation:iv-slide-up .3s ease;">
+  <style>
+    @keyframes iv-slide-up {
+      from { opacity:0; transform:translateY(20px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    #iv-bubble textarea {
+      width:100%; border:1px solid #e2e8f0; border-radius:8px;
+      padding:8px 10px; font-size:13px; font-family:inherit;
+      resize:none; outline:none; color:#1e293b; line-height:1.5;
+    }
+    #iv-bubble textarea:focus { border-color:#0d9488; }
+  </style>
+  <div style="background:#0d9488; padding:10px 14px; display:flex; align-items:center; gap:8px;">
+    <span style="font-size:16px;">💬</span>
+    <span style="color:#fff; font-size:13px; font-weight:700;">Quick question for you</span>
+    <button onclick="ivDismiss()" style="margin-left:auto; background:none; border:none; color:#fff; font-size:16px; cursor:pointer; line-height:1;">✕</button>
+  </div>
+  <div style="padding:14px;">
+    <p id="iv-question" style="font-size:13px; color:#1e293b; margin-bottom:10px; line-height:1.5;"></p>
+    <textarea id="iv-answer" rows="3" placeholder="Type your thoughts here…"></textarea>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button onclick="ivSubmit()"
+        style="flex:1; padding:8px; background:#0d9488; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer;">
+        Submit
+      </button>
+      <button onclick="ivDismiss()"
+        style="padding:8px 14px; background:#f1f5f9; color:#64748b; border:none; border-radius:8px; font-size:13px; cursor:pointer;">
+        Skip
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── Interview prompt bubble ────────────────────────────────────────
+  let _ivTrigger = '';
+  const _ivShown = new Set(JSON.parse(sessionStorage.getItem('_ivShown') || '[]'));
+
+  const IV_PROMPTS = {
+    alarm_fired:         "What's your first reaction to this alarm? (No wrong answer — just your gut)",
+    referral_generated:  "Would you hand this referral letter to a patient today? Why or why not?",
+  };
+
+  function ivShow(trigger) {
+    if (_ivShown.has(trigger)) return;
+    const question = IV_PROMPTS[trigger];
+    if (!question) return;
+    _ivTrigger = trigger;
+    document.getElementById('iv-question').textContent = question;
+    document.getElementById('iv-answer').value = '';
+    document.getElementById('iv-bubble').style.display = 'block';
+  }
+
+  function ivDismiss() {
+    _ivShown.add(_ivTrigger);
+    sessionStorage.setItem('_ivShown', JSON.stringify([..._ivShown]));
+    document.getElementById('iv-bubble').style.display = 'none';
+  }
+
+  async function ivSubmit() {
+    const answer = document.getElementById('iv-answer').value.trim();
+    if (!answer) { document.getElementById('iv-answer').focus(); return; }
+    try {
+      await fetch('/pt/api/interview/respond/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': CSRF },
+        body: JSON.stringify({
+          trigger:  _ivTrigger,
+          prompt:   IV_PROMPTS[_ivTrigger],
+          response: answer,
+        }),
+      });
+    } catch(e) { /* silent — never break the main flow */ }
+    ivDismiss();
+  }
+</script>
 </body>
 </html>

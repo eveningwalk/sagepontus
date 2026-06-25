@@ -1714,6 +1714,32 @@ def submit_feedback(request):
     return JsonResponse({"ok": True})
 
 
+# ── Interview Research Prompt ─────────────────────────────────────────────────
+
+@login_required
+@require_http_methods(["POST"])
+def interview_respond(request):
+    """Save an interviewee's typed response to a research prompt."""
+    from vertical_pt.models import InterviewResponse
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    trigger  = data.get("trigger", "").strip()
+    prompt   = data.get("prompt", "").strip()
+    response = data.get("response", "").strip()
+    if not trigger or not response:
+        return JsonResponse({"error": "trigger and response required"}, status=400)
+
+    InterviewResponse.objects.create(
+        user=request.user, trigger=trigger, prompt=prompt,
+        response=response, meta=data.get("meta", {}),
+    )
+    track(request.user, f"interview_response_{trigger}")
+    return JsonResponse({"ok": True})
+
+
 # ── Staff: Interview Event Dashboard ─────────────────────────────────────────
 
 def event_dashboard(request):
@@ -1724,7 +1750,7 @@ def event_dashboard(request):
 
     import datetime as _dt
     from django.contrib.auth.models import User
-    from vertical_pt.models import UserEvent, PTProfile
+    from vertical_pt.models import UserEvent, PTProfile, InterviewResponse
 
     DOT = {
         "soap_pasted":        "soap",
@@ -1780,7 +1806,8 @@ def event_dashboard(request):
 
     users = []
     for u in pt_users:
-        evs = list(UserEvent.objects.filter(user=u).order_by("created_at"))
+        evs  = list(UserEvent.objects.filter(user=u).order_by("created_at"))
+        resp = list(InterviewResponse.objects.filter(user=u).order_by("created_at"))
         is_ea = getattr(getattr(u, "pt_profile", None), "is_early_access", False)
         users.append({
             "display_name": u.get_full_name() or u.username,
@@ -1796,6 +1823,15 @@ def event_dashboard(request):
                     "detail":    _detail(e),
                 }
                 for e in evs
+            ],
+            "responses": [
+                {
+                    "trigger":  r.trigger,
+                    "prompt":   r.prompt,
+                    "response": r.response,
+                    "time":     r.created_at.strftime("%b %d %H:%M"),
+                }
+                for r in resp
             ],
         })
 
