@@ -74,7 +74,7 @@ urlpatterns = [
     path("pt/",                views_pt_alarm.index,            name="pt_index"),
     path("pt/analyze/",        views_pt_alarm.analyze_view,     name="pt_analyze"),
     path("pt/result/",         views_pt_alarm.result_view,      name="pt_result"),
-    path("pt/admin/events/",   views_pt_alarm.event_dashboard,  name="pt_event_dashboard"),
+    path("pt/staff/events/",   views_pt_alarm.event_dashboard,  name="pt_event_dashboard"),
 
     # ── Landing page waitlist (no auth) ──────────────────────────────────
     path("api/pt/waitlist/", views_api.waitlist, name="waitlist"),
