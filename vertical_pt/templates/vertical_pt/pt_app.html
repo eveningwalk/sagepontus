@@ -497,10 +497,12 @@
 
     form.addEventListener('submit', (e) => {
       ensurePatientId();
-      const s = document.getElementById('soap-s').value;
-      const o = document.getElementById('soap-o').value;
-      const a = document.getElementById('soap-a').value;
-      const p = document.getElementById('soap-p').value;
+      const stripHeader = (label, text) =>
+        text.replace(new RegExp(`^\\s*${label}\\s*:\\s*\\n?`, 'i'), '').trim();
+      const s = stripHeader('subjective', document.getElementById('soap-s').value);
+      const o = stripHeader('objective',  document.getElementById('soap-o').value);
+      const a = stripHeader('assessment', document.getElementById('soap-a').value);
+      const p = stripHeader('plan',       document.getElementById('soap-p').value);
       document.getElementById('final-soap-payload').value = `Subjective:\n${s}\n\nObjective:\n${o}\n\nAssessment:\n${a}\n\nPlan:\n${p}`;
     });
 
