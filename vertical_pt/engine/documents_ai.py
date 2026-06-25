@@ -74,6 +74,15 @@ def generate_document_ai(
         v = ctx.get(key) or []
         return ", ".join(v) if v else "N/A"
 
+    # RAG-1: inject MCID context when outcome measures appear in the clinical data
+    from vertical_pt.engine.rag import get_mcid_context
+    _ctx_text = " ".join([
+        ctx.get("chief_complaint", ""), ctx.get("primary_diagnosis", ""),
+        " ".join(ctx.get("functional_limitations", [])),
+    ])
+    mcid_block = get_mcid_context(_ctx_text)
+    mcid_section = f"\n\nMCID REFERENCE:\n{mcid_block}\n" if mcid_block else ""
+
     user_prompt = (
         f"Generate a {_DOC_LABELS.get(doc_type, doc_type)} for the following patient."
         f"{few_shot_block}\n"
@@ -94,7 +103,9 @@ def generate_document_ai(
         f"  LTG: {_list('goals_ltg')}\n\n"
         f"SESSION HISTORY ({len(sessions)} sessions):\n"
         + "\n".join(session_lines)
+        + mcid_section
         + "\n\nIMPORTANT: Use only the anonymous patient ID above. "
+        "If MCID reference is provided, cite it where clinically relevant to justify skilled care. "
         "Format as a complete, professional clinical document ready to send."
     )
 

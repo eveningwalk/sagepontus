@@ -294,6 +294,12 @@ def generate_referral_letter_ai(
         "Use ALL CAPS for section headers and plain bullet points (•) for lists."
     )
 
+    # RAG-2: retrieve APTA CPG chunks relevant to this condition
+    from vertical_pt.engine.rag import retrieve_cpg
+    cpg_query = f"{meta['title']} {' '.join(list(alert.matched_indicators)[:5])}"
+    cpg_block = retrieve_cpg(cpg_query, condition=alert.condition, top_k=2)
+    cpg_section = f"\n\nAPTA CPG EVIDENCE (cite in letter):\n{cpg_block}\n" if cpg_block else ""
+
     user_prompt = (
         f"Write a Physician Referral Letter for the following red flag alert.{few_shot_block}\n"
         f"THERAPIST: {therapist_name}, PT\n"
@@ -307,8 +313,10 @@ def generate_referral_letter_ai(
         f"  Risk Score:           {alert.score:.2f} / 1.00\n\n"
         f"OBSERVED INDICATORS:\n{indicators_str}\n\n"
         f"RECOMMENDED EVALUATION:\n  {meta['action']}\n\n"
-        f"CLINICAL GUIDELINE:\n  {meta['guideline']}\n\n"
+        f"CLINICAL GUIDELINE:\n  {meta['guideline']}\n"
+        f"{cpg_section}"
         "IMPORTANT: Use only the anonymous patient ID above. "
+        "If APTA CPG evidence is provided, cite the guideline title and URL in the letter. "
         "Output a complete referral letter ready to send. No markdown formatting."
     )
 

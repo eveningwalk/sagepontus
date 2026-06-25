@@ -1,0 +1,147 @@
+{
+  "measures": [
+    {
+      "id": "nprs",
+      "names": ["nprs", "numeric pain rating scale", "pain rating", "pain score", "vas", "visual analog scale", "nrs"],
+      "full_name": "Numeric Pain Rating Scale (NPRS)",
+      "mcid": 2.0,
+      "unit": "points (0–10)",
+      "direction": "decrease",
+      "context": "A reduction of 2.0 or more points on the NPRS represents a clinically meaningful improvement in pain.",
+      "source": "Farrar et al., 2001; Childs et al., 2005",
+      "conditions": ["low back pain", "neck pain", "shoulder", "general musculoskeletal"]
+    },
+    {
+      "id": "odi",
+      "names": ["odi", "oswestry", "oswestry disability index"],
+      "full_name": "Oswestry Disability Index (ODI)",
+      "mcid": 12.0,
+      "unit": "points (0–100%)",
+      "direction": "decrease",
+      "context": "A reduction of 12 or more points on the ODI indicates clinically meaningful improvement in lumbar disability.",
+      "source": "Fritz & Irrgang, 2001; Grotle et al., 2004",
+      "conditions": ["low back pain", "lumbar"]
+    },
+    {
+      "id": "psfs",
+      "names": ["psfs", "patient specific functional scale", "patient-specific functional scale"],
+      "full_name": "Patient-Specific Functional Scale (PSFS)",
+      "mcid": 2.0,
+      "unit": "points per activity (0–10)",
+      "direction": "increase",
+      "context": "An improvement of 2.0 or more points per activity on the PSFS represents a clinically meaningful functional gain.",
+      "source": "Stratford et al., 1995; Cleland et al., 2006",
+      "conditions": ["general musculoskeletal", "low back pain", "neck pain", "knee"]
+    },
+    {
+      "id": "lefs",
+      "names": ["lefs", "lower extremity functional scale", "lower extremity functional"],
+      "full_name": "Lower Extremity Functional Scale (LEFS)",
+      "mcid": 9.0,
+      "unit": "points (0–80)",
+      "direction": "increase",
+      "context": "An improvement of 9 or more points on the LEFS indicates clinically meaningful improvement in lower extremity function.",
+      "source": "Binkley et al., 1999; Stratford et al., 1995",
+      "conditions": ["knee", "hip", "ankle", "lower extremity"]
+    },
+    {
+      "id": "dash",
+      "names": ["dash", "disabilities of arm shoulder hand", "dash score"],
+      "full_name": "Disabilities of the Arm, Shoulder and Hand (DASH)",
+      "mcid": 10.83,
+      "unit": "points (0–100)",
+      "direction": "decrease",
+      "context": "A reduction of 10.83 or more points on the DASH represents clinically meaningful improvement in upper extremity function.",
+      "source": "Beaton et al., 2001; Schmitt & Di Fabio, 2004",
+      "conditions": ["shoulder", "elbow", "wrist", "hand", "upper extremity"]
+    },
+    {
+      "id": "quickdash",
+      "names": ["quickdash", "quick dash", "quick-dash"],
+      "full_name": "QuickDASH",
+      "mcid": 16.0,
+      "unit": "points (0–100)",
+      "direction": "decrease",
+      "context": "A reduction of 16 or more points on the QuickDASH indicates clinically meaningful improvement.",
+      "source": "Beaton et al., 2005",
+      "conditions": ["shoulder", "elbow", "wrist", "hand", "upper extremity"]
+    },
+    {
+      "id": "npdi",
+      "names": ["npdi", "neck disability index", "ndi"],
+      "full_name": "Neck Disability Index (NDI)",
+      "mcid": 7.5,
+      "unit": "points (0–50)",
+      "direction": "decrease",
+      "context": "A reduction of 7.5 or more points on the NDI represents clinically meaningful improvement in cervical function.",
+      "source": "Vernon, 2008; Cleland et al., 2008",
+      "conditions": ["neck", "cervical"]
+    },
+    {
+      "id": "groc",
+      "names": ["groc", "global rating of change", "global rating", "perceived recovery"],
+      "full_name": "Global Rating of Change (GROC)",
+      "mcid": 4.0,
+      "unit": "points on +7 to -7 scale",
+      "direction": "increase",
+      "context": "A score of +4 or higher on the GROC scale indicates the patient perceives a meaningful overall improvement.",
+      "source": "Jaeschke et al., 1989; Schmitt & Di Fabio, 2004",
+      "conditions": ["general musculoskeletal"]
+    },
+    {
+      "id": "6mwt",
+      "names": ["6mwt", "6 minute walk", "six minute walk", "6-minute walk test"],
+      "full_name": "6-Minute Walk Test (6MWT)",
+      "mcid": 50.0,
+      "unit": "meters",
+      "direction": "increase",
+      "context": "An improvement of 50 or more meters on the 6MWT represents a clinically meaningful gain in functional ambulation.",
+      "source": "Perera et al., 2006",
+      "conditions": ["cardiopulmonary", "general mobility", "neurological"]
+    },
+    {
+      "id": "tug",
+      "names": ["tug", "timed up and go", "timed up-and-go"],
+      "full_name": "Timed Up and Go Test (TUG)",
+      "mcid": 1.4,
+      "unit": "seconds",
+      "direction": "decrease",
+      "context": "A reduction of 1.4 or more seconds on the TUG indicates clinically meaningful improvement in functional mobility.",
+      "source": "Flansbjer et al., 2005; Huang et al., 2011",
+      "conditions": ["balance", "fall risk", "geriatric", "neurological"]
+    },
+    {
+      "id": "koos",
+      "names": ["koos", "knee injury osteoarthritis outcome score"],
+      "full_name": "Knee Injury and Osteoarthritis Outcome Score (KOOS)",
+      "mcid": 10.0,
+      "unit": "points per subscale (0–100)",
+      "direction": "increase",
+      "context": "An improvement of 10 or more points per KOOS subscale represents clinically meaningful improvement.",
+      "source": "Roos & Lohmander, 2003",
+      "conditions": ["knee", "osteoarthritis"]
+    },
+    {
+      "id": "hoos",
+      "names": ["hoos", "hip disability osteoarthritis outcome score"],
+      "full_name": "Hip Disability and Osteoarthritis Outcome Score (HOOS)",
+      "mcid": 10.0,
+      "unit": "points per subscale (0–100)",
+      "direction": "increase",
+      "context": "An improvement of 10 or more points per HOOS subscale indicates clinically meaningful improvement.",
+      "source": "Klassbo et al., 2003",
+      "conditions": ["hip", "osteoarthritis"]
+    },
+    {
+      "id": "faam",
+      "names": ["faam", "foot and ankle ability measure"],
+      "full_name": "Foot and Ankle Ability Measure (FAAM)",
+      "mcid": 8.0,
+      "unit": "points (ADL subscale, 0–84)",
+      "direction": "increase",
+      "context": "An improvement of 8 or more points on the FAAM ADL subscale represents clinically meaningful improvement in foot/ankle function.",
+      "source": "Martin et al., 2005",
+      "conditions": ["ankle", "foot"]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 from .audit_pair import AuditPair
+from .knowledge_chunk import KnowledgeChunk
 from .compliance_case import ComplianceCase
 from .generated_document import GeneratedDocument
 from .interview_response import InterviewResponse
@@ -11,4 +12,4 @@ from .symptom_weight import SymptomWeight
 from .user_event import UserEvent
 from .waitlist_entry import WaitlistEntry
 
-__all__ = ["AuditPair", "ComplianceCase", "GeneratedDocument", "InterviewResponse", "PatientContact", "PatientTimeline", "PilotFeedback", "PTProfile", "RedFlagAlert", "SymptomWeight", "UserEvent", "WaitlistEntry"]
+__all__ = ["AuditPair", "ComplianceCase", "GeneratedDocument", "InterviewResponse", "KnowledgeChunk", "PatientContact", "PatientTimeline", "PilotFeedback", "PTProfile", "RedFlagAlert", "SymptomWeight", "UserEvent", "WaitlistEntry"]
