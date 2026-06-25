@@ -1086,6 +1086,27 @@
       document.body.appendChild(ta); ta.select();
       document.execCommand('copy'); document.body.removeChild(ta);
     }
+    _showCopyToast();
+  }
+
+  function _showCopyToast() {
+    let t = document.getElementById('_copy-toast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = '_copy-toast';
+      t.textContent = 'Copied ✓';
+      Object.assign(t.style, {
+        position:'fixed', top:'18px', left:'50%', transform:'translateX(-50%)',
+        background:'#0f172a', color:'#f1f5f9', fontSize:'13px', fontWeight:'700',
+        padding:'7px 18px', borderRadius:'8px', zIndex:'99999',
+        boxShadow:'0 4px 16px rgba(0,0,0,0.2)', pointerEvents:'none',
+        transition:'opacity .2s',
+      });
+      document.body.appendChild(t);
+    }
+    t.style.opacity = '1';
+    clearTimeout(t._hide);
+    t._hide = setTimeout(() => { t.style.opacity = '0'; }, 1500);
   }
 
   async function chooseDocVersion(sessionId, versionKey) {
