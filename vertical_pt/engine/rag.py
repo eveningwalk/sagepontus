@@ -1,7 +1,7 @@
 """RAG retrieval engine.
 
 RAG-1: MCID lookup — structured JSON KB, no embeddings needed.
-RAG-2: APTA CPG semantic search — Gemini text-embedding-004 + cosine similarity.
+RAG-2: APTA CPG semantic search — Gemini gemini-embedding-001 + cosine similarity.
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ def get_mcid_context(soap_text: str) -> str:
 # ── Gemini Embedding ──────────────────────────────────────────────────────────
 
 def _embed(text: str) -> list[float]:
-    """Call Gemini text-embedding-004 and return float list."""
+    """Call Gemini gemini-embedding-001 and return float list."""
     import requests
 
     api_key = os.environ.get("GEMINI_API_KEY", "").strip()
@@ -65,15 +65,17 @@ def _embed(text: str) -> list[float]:
         raise RuntimeError("GEMINI_API_KEY not set")
 
     url = (
-        f"https://generativelanguage.googleapis.com/v1beta/"
-        f"models/text-embedding-004:embedContent?key={api_key}"
+        f"https://generativelanguage.googleapis.com/v1/"
+        f"models/gemini-embedding-001:embedContent?key={api_key}"
     )
+    # gemini-embedding-001 limit: 2048 tokens (~1500 chars safe margin)
     payload = {
-        "model": "models/text-embedding-004",
-        "content": {"parts": [{"text": text[:8000]}]},
+        "content": {"parts": [{"text": text[:1500]}]},
+        "taskType": "RETRIEVAL_DOCUMENT",
     }
     resp = requests.post(url, json=payload, timeout=30)
-    resp.raise_for_status()
+    if not resp.ok:
+        raise RuntimeError(f"Embedding API {resp.status_code}: {resp.text[:200]}")
     return resp.json()["embedding"]["values"]
 
 

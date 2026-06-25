@@ -31,6 +31,8 @@ class RedFlagAlert(models.Model):
     referral_email_delivered  = models.BooleanField(default=False)  # SMTP 발송 성공 여부
     referral_followup_checked = models.BooleanField(default=False)  # PT 수동 확인 여부
     referral_followup_at      = models.DateTimeField(null=True, blank=True)
+    referral_faxed_at         = models.DateTimeField(null=True, blank=True)
+    referral_faxed_to         = models.CharField(max_length=30, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
 

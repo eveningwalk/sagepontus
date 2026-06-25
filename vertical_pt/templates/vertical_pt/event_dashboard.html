@@ -87,6 +87,10 @@
       <div class="num">{{ funnel.referral_sent }}</div>
       <div class="label">Referral Sent</div>
     </div>
+    <div class="funnel-card {% if funnel.efax_sent %}highlight{% endif %}">
+      <div class="num">{{ funnel.efax_sent }}</div>
+      <div class="label">E-Fax Sent</div>
+    </div>
     <div class="funnel-card {% if funnel.compliance_viewed %}highlight{% endif %}">
       <div class="num">{{ funnel.compliance_viewed }}</div>
       <div class="label">Compliance Viewed</div>

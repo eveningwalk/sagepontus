@@ -1755,6 +1755,12 @@ def efax_referral(request):
     if not fax_number:
         return JsonResponse({"ok": False, "error": "Fax number required"}, status=400)
     alert_id = data.get("alert_id")
+    if alert_id:
+        from vertical_pt.models import RedFlagAlert
+        RedFlagAlert.objects.filter(pk=alert_id).update(
+            referral_faxed_at=datetime.datetime.now(datetime.timezone.utc),
+            referral_faxed_to=fax_number,
+        )
     track(request.user, "efax_sent", fax_number=fax_number, alert_id=alert_id)
     return JsonResponse({"ok": True, "message": "Fax queued successfully"})
 
@@ -1819,6 +1825,7 @@ def event_dashboard(request):
                               ).values("user_id").distinct().count(),
         "referral_generated": _distinct("referral_generated"),
         "referral_sent":      _distinct("referral_sent"),
+        "efax_sent":          _distinct("efax_sent"),
         "compliance_viewed":  _distinct("compliance_viewed"),
         "doc_generated":      _distinct("doc_generated"),
     }
