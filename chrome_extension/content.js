@@ -8,7 +8,7 @@ if (window.SAGE_PONTUS_INITIALIZED) return;
 window.SAGE_PONTUS_INITIALIZED = true;
 
 // ── 상수 ───────────────────────────────────────────────────────────
-const DEFAULT_SERVER = "https://sagepontus-284182376290.us-east4.run.app";
+const DEFAULT_SERVER = "https://pt.sagepontus.com";
 
 const CONDITION_LABELS = {
   cauda_equina: "Cauda Equina Syndrome",
@@ -235,7 +235,7 @@ const PANEL_HTML = `
         <div style="font-size:11px; font-weight:600; color:#6b7280; text-transform:uppercase; letter-spacing:.5px; margin-bottom:8px;">Select Server</div>
         <div style="display:flex; flex-direction:column; gap:6px;">
           <button id="srv-production" class="srv-option"
-            data-url="https://sagepontus-284182376290.us-east4.run.app"
+            data-url="https://pt.sagepontus.com"
             style="text-align:left; padding:10px 12px; border-radius:8px; border:2px solid #e5e7eb; background:#f9fafb; cursor:pointer; font-size:12px;">
             <div style="font-weight:700; color:#1a1a2e; margin-bottom:2px;">Production</div>
             <div style="color:#6b7280; font-size:11px;">sagepontus.run.app</div>

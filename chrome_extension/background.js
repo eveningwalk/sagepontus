@@ -1,7 +1,7 @@
 // Service worker — toolbar 클릭 시 content script에 toggle 메시지 전송
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.set({ serverUrl: "https://sagepontus-284182376290.us-east4.run.app" });
+  chrome.storage.local.set({ serverUrl: "https://pt.sagepontus.com" });
 });
 
 chrome.action.onClicked.addListener((tab) => {
