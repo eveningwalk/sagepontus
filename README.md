@@ -54,7 +54,7 @@ Shadow DOM floating panel — overlays any EMR without page conflicts. SOAP past
 
 ### Test Coverage (`vertical_pt/tests/`)
 
-29 scenario-based integration tests across all 8 conditions (RED / YELLOW / NONE). Real-world SOAP note validation against MTSamples, PMC case reports, and PT Reddit anonymized cases.
+116 unit and scenario tests total. Document generation quality subset (85 cases): **79/85 passing (93%)**. 6 failures involve complex negation patterns and non-standard abbreviations — targeted for next release. Real-world SOAP note validation against MTSamples, PMC case reports, and PT Reddit anonymized cases.
 
 ---
 
